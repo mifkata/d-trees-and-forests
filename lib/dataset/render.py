@@ -342,6 +342,23 @@ class Render:
         cls.footer(filename, title="Random Forest Proximity Matrix")
 
     @classmethod
+    def gradient_forest_importance(cls, importances, feature_names, filename="gradient_forest_feature_importance.png"):
+        """Render feature importance bar chart for gradient boosted trees.
+
+        Args:
+            importances: Array of importance values (one per feature)
+            feature_names: List of feature names
+            filename: Output filename
+        """
+        cls.header(figsize=(10, 6))
+        feature_importance = pd.Series(importances, index=feature_names)
+        feature_importance.sort_values(ascending=True).plot(kind="barh", color="darkorange")
+        plt.xlabel("Importance")
+        plt.ylabel("Feature")
+        plt.title("Gradient Boosted Trees Feature Importance")
+        cls.footer(filename)
+
+    @classmethod
     def gradient_forest_staged(cls, clf, X_train, X_test, y_train, y_test, filename="gradient_forest_staged_accuracy.png"):
         """Render staged training accuracy for gradient boosting.
 

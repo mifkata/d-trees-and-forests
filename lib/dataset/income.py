@@ -1,37 +1,51 @@
 import os
-import kagglehub
 import numpy as np
 import pandas as pd
 from sklearn.impute import KNNImputer
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
 
 OUTPUT_DIR = "./output"
+DATA_URL = "https://raw.githubusercontent.com/google/yggdrasil-decision-forests/main/yggdrasil_decision_forests/test_data/dataset/adult.csv"
 
 
-class Iris:
+class Income:
+    _label_encoders = {}
+
     @staticmethod
     def _load_raw():
-        """Load raw Iris dataset.
+        """Load raw Adult Income dataset.
 
         Returns:
             tuple: (X, y) feature matrix and target series
         """
-        path = kagglehub.dataset_download("saurabh00007/iriscsv")
-        df = pd.read_csv(f"{path}/Iris.csv")
+        df = pd.read_csv(DATA_URL)
 
-        X = df.drop(columns=["Id", "Species"])
-        y = df["Species"]
+        # Target column
+        y = df["income"]
+
+        # Feature columns (drop target)
+        X = df.drop(columns=["income"])
+
+        # Encode categorical columns for sklearn compatibility
+        categorical_cols = X.select_dtypes(include=["object"]).columns
+        Income._label_encoders = {}
+
+        for col in categorical_cols:
+            le = LabelEncoder()
+            X[col] = le.fit_transform(X[col].astype(str))
+            Income._label_encoders[col] = le
 
         return X, y
 
     @staticmethod
     def load():
-        """Load Iris dataset and return train/test splits.
+        """Load Income dataset and return train/test splits.
 
         Returns:
             tuple: (X_train, X_test, y_train, y_test) with 2/3 train, 1/3 test split
         """
-        X, y = Iris._load_raw()
+        X, y = Income._load_raw()
 
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=1/3, random_state=42
@@ -41,7 +55,7 @@ class Iris:
 
     @staticmethod
     def load_masked(mask_rate=0.1, random_state=42):
-        """Load Iris dataset with missing data.
+        """Load Income dataset with missing data.
 
         Args:
             mask_rate: Fraction of values to set as missing (default 0.1)
@@ -50,7 +64,7 @@ class Iris:
         Returns:
             tuple: (X_train, X_test, y_train, y_test) with 2/3 train, 1/3 test split
         """
-        X, y = Iris._load_raw()
+        X, y = Income._load_raw()
 
         # Introduce missing values
         rng = np.random.default_rng(random_state)
@@ -77,8 +91,8 @@ class Iris:
             FileNotFoundError: If train or test CSV files don't exist
         """
         mask_pct = int(mask_rate * 100)
-        train_path = f"{OUTPUT_DIR}/iris_masked_{mask_pct}_train.csv"
-        test_path = f"{OUTPUT_DIR}/iris_masked_{mask_pct}_test.csv"
+        train_path = f"{OUTPUT_DIR}/income_masked_{mask_pct}_train.csv"
+        test_path = f"{OUTPUT_DIR}/income_masked_{mask_pct}_test.csv"
 
         if not os.path.exists(train_path):
             raise FileNotFoundError(f"Train dataset not found: {train_path}")
@@ -88,21 +102,16 @@ class Iris:
         train_df = pd.read_csv(train_path)
         test_df = pd.read_csv(test_path)
 
-        X_train = train_df.drop(columns=["Species"])
-        y_train = train_df["Species"]
-        X_test = test_df.drop(columns=["Species"])
-        y_test = test_df["Species"]
+        X_train = train_df.drop(columns=["income"])
+        y_train = train_df["income"]
+        X_test = test_df.drop(columns=["income"])
+        y_test = test_df["income"]
 
         return X_train, X_test, y_train, y_test
 
     @staticmethod
     def _impute(X_train, X_test):
         """Impute missing values in training data using KNN.
-
-        KNN imputation works well for Iris because:
-        - Samples within species are similar (local structure)
-        - Features are correlated (petal/sepal dimensions)
-        - No convergence issues unlike iterative methods
 
         Args:
             X_train: Training feature DataFrame with potential NaN values
@@ -124,7 +133,7 @@ class Iris:
 
     @staticmethod
     def input(mask_rate=0.0, reuse_dataset=False, impute=False):
-        """Load Iris dataset based on input parameters.
+        """Load Income dataset based on input parameters.
 
         Args:
             mask_rate: Fraction of values to mask (0.0 = no masking)
@@ -135,15 +144,15 @@ class Iris:
             tuple: (X_train, X_test, y_train, y_test) with 2/3 train, 1/3 test split
         """
         if reuse_dataset:
-            X_train, X_test, y_train, y_test = Iris.load_from_csv(mask_rate)
+            X_train, X_test, y_train, y_test = Income.load_from_csv(mask_rate)
         elif mask_rate > 0:
-            X_train, X_test, y_train, y_test = Iris.load_masked(mask_rate=mask_rate)
+            X_train, X_test, y_train, y_test = Income.load_masked(mask_rate=mask_rate)
         else:
-            return Iris.load()
+            return Income.load()
 
         # Impute missing values in training set if impute is enabled
         if impute:
-            X_train, X_test = Iris._impute(X_train, X_test)
+            X_train, X_test = Income._impute(X_train, X_test)
 
         return X_train, X_test, y_train, y_test
 
@@ -158,12 +167,12 @@ class Iris:
         """
         os.makedirs(OUTPUT_DIR, exist_ok=True)
         mask_pct = int(mask_rate * 100)
-        prefix = f"iris_masked_{mask_pct}"
+        prefix = f"income_masked_{mask_pct}"
 
         train_df = X_train.copy()
-        train_df["Species"] = y_train.values
+        train_df["income"] = y_train.values
         train_df.to_csv(f"{OUTPUT_DIR}/{prefix}_train.csv", index=False)
 
         test_df = X_test.copy()
-        test_df["Species"] = y_test.values
+        test_df["income"] = y_test.values
         test_df.to_csv(f"{OUTPUT_DIR}/{prefix}_test.csv", index=False)
