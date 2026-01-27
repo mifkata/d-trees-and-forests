@@ -1,5 +1,6 @@
 # D-trees and Random Forests
 
+Experimental project for an Abstract in the study of Artificial Intelligence.
 A Python application for training decision tree and random forest models using TensorFlow, Keras, and the Iris dataset.
 
 ## Prerequisites
