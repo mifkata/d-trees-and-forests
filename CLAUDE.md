@@ -38,6 +38,7 @@ Use 2/3 of the data for training and 1/3 for testing. Dataset should be Iris dat
 * `--impute` - Impute missing values in training set only (test set keeps missing values for realistic evaluation)
 * `--images` - Generate plot images to `./output/`
 * `--accuracy-only` - Output only accuracy as float (e.g., `0.9800`)
+* `--json` - Output summary as JSON (accuracy and classification report)
 * `--dataset Iris|Income` - Dataset to use (default: Iris)
 
 ### Output files

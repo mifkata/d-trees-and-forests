@@ -34,9 +34,14 @@ clf.fit(X_train, y_train)
 
 # Predictions and evaluation
 y_pred = clf.predict(X_test)
-Model.report(y_test, y_pred, accuracy_only=args.accuracy_only)
+model_info = {
+    "model": "HistGradientBoostingClassifier",
+    "n_iterations": clf.n_iter_
+}
+Model.report(y_test, y_pred, accuracy_only=args.accuracy_only, json_output=args.json,
+             model_info=model_info if args.json else None)
 
-if args.accuracy_only:
+if args.accuracy_only or args.json:
     exit(0)
 
 # Print model info
