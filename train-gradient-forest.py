@@ -1,49 +1,53 @@
-import argparse
-from sklearn.ensemble import GradientBoostingClassifier
-from lib import Dataset, Model
+import yaml
+from sklearn.ensemble import HistGradientBoostingClassifier
+from sklearn.inspection import permutation_importance
+from lib import Args, Dataset, Model
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--mask", type=int, nargs="?", const=10, default=0,
-                    help="Mask percentage for missing values (default: 10 if flag present, 0 otherwise)")
-parser.add_argument("--use-output", type=lambda x: x.lower() == "true", default=False,
-                    help="Reuse dataset from CSV files (true/false)")
-args = parser.parse_args()
+args = Args.get_inputs()
 
-# Convert mask percentage to rate
-mask_rate = args.mask / 100.0
+# Select dataset
+DataSource = Dataset.Iris if args.dataset == "Iris" else Dataset.Income
+
+# Load model config
+with open(f"config/gradient-{args.dataset}.yml") as f:
+    config = yaml.safe_load(f)
 
 # Set mask rate for render filenames
-Dataset.Render.set_mask(mask_rate)
+Dataset.Render.set_mask(args.mask_rate)
 
 # Load dataset
-X_train, X_test, y_train, y_test = Dataset.Iris.input(
-    mask_rate=mask_rate,
-    reuse_dataset=args.use_output
+# HistGradientBoostingClassifier natively supports missing values
+X_train, X_test, y_train, y_test = DataSource.input(
+    mask_rate=args.mask_rate,
+    reuse_dataset=args.use_output,
+    impute=args.impute
 )
 
 # Export masked dataset if generating new data with masking
-if mask_rate > 0 and not args.use_output:
-    Dataset.Iris.export(X_train, X_test, y_train, y_test, mask_rate=mask_rate)
+if args.mask_rate > 0 and not args.use_output:
+    DataSource.export(X_train, X_test, y_train, y_test, mask_rate=args.mask_rate)
 
-# Train gradient boosting forest
-clf = GradientBoostingClassifier(n_estimators=100, random_state=42)
+# Train histogram-based gradient boosting (decision tree ensemble with gradient boosting)
+# HistGradientBoostingClassifier natively supports missing values
+clf = HistGradientBoostingClassifier(**config)
 clf.fit(X_train, y_train)
 
 # Predictions and evaluation
 y_pred = clf.predict(X_test)
-Model.report(y_test, y_pred)
+Model.report(y_test, y_pred, accuracy_only=args.accuracy_only)
 
-# Export feature importance visualization
-Dataset.Render.forest_importance(
-    clf,
-    X_train.columns,
-    filename="gradient_forest_feature_importance.png",
-    color="darkorange",
-    title="Gradient Boosting Feature Importance"
-)
+if args.accuracy_only:
+    exit(0)
 
-# Export staged training accuracy
-Dataset.Render.gradient_forest_staged(clf, X_train, X_test, y_train, y_test)
+# Print model info
+print(f"\nModel: HistGradientBoostingClassifier")
+print(f"Number of iterations: {clf.n_iter_}")
 
-# Export sample trees
-Dataset.Render.gradient_forest_trees(clf, X_train.columns.tolist())
+if args.images:
+    # Export feature importance visualization using permutation importance
+    perm_importance = permutation_importance(clf, X_test, y_test, n_repeats=10, random_state=42)
+    Dataset.Render.gradient_forest_importance(
+        perm_importance.importances_mean,
+        X_train.columns.tolist(),
+        filename="gradient_forest_feature_importance.png"
+    )

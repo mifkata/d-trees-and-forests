@@ -1,0 +1,40 @@
+# DecisionTreeClassifier config for Income dataset
+
+# gini | entropy | log_loss (default: gini)
+criterion: gini
+
+# best | random (default: best)
+splitter: best
+
+# int or null for unlimited (default: null)
+max_depth: 10
+
+# int or float (default: 2)
+min_samples_split: 20
+
+# int or float (default: 1)
+min_samples_leaf: 10
+
+# float (default: 0.0)
+min_weight_fraction_leaf: 0.0
+
+# int | float | sqrt | log2 | null for all features (default: null)
+max_features: null
+
+# int or null (default: null)
+random_state: 42
+
+# int or null for unlimited (default: null)
+max_leaf_nodes: null
+
+# float (default: 0.0)
+min_impurity_decrease: 0.0
+
+# balanced | balanced_subsample | dict | null (default: null)
+class_weight: null
+
+# float, complexity parameter for pruning (default: 0.0 = no pruning)
+ccp_alpha: 0.0
+
+# array-like of int or null (default: null)
+monotonic_cst: null

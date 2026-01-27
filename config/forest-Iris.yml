@@ -1,0 +1,58 @@
+# RandomForestClassifier config for Iris dataset
+
+# int (default: 100)
+n_estimators: 10
+
+# gini | entropy | log_loss (default: gini)
+criterion: gini
+
+# int or null for unlimited (default: null)
+max_depth: 3
+
+# int or float (default: 2)
+min_samples_split: 2
+
+# int or float (default: 1)
+min_samples_leaf: 1
+
+# float (default: 0.0)
+min_weight_fraction_leaf: 0.0
+
+# int | float | sqrt | log2 | null for all features (default: sqrt)
+max_features: sqrt
+
+# int or null for unlimited (default: null)
+max_leaf_nodes: null
+
+# float (default: 0.0)
+min_impurity_decrease: 0.0
+
+# bool, whether to use bootstrap samples (default: true)
+bootstrap: true
+
+# bool, compute out-of-bag score, requires bootstrap=true (default: false)
+oob_score: true
+
+# int or null, number of parallel jobs, -1 = all CPUs (default: null)
+n_jobs: null
+
+# int or null (default: null)
+random_state: 42
+
+# int, 0 = silent, >0 = verbose (default: 0)
+verbose: 0
+
+# bool, reuse previous fit (default: false)
+warm_start: false
+
+# balanced | balanced_subsample | dict | null (default: null)
+class_weight: null
+
+# float, complexity parameter for pruning (default: 0.0 = no pruning)
+ccp_alpha: 0.0
+
+# int | float | null for all samples (default: null)
+max_samples: 100
+
+# array-like of int or null (default: null)
+monotonic_cst: null

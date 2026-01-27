@@ -1,0 +1,33 @@
+# DecisionTreeClassifier config for Iris dataset
+
+# gini | entropy | log_loss
+criterion: gini
+
+# best | random
+splitter: best
+
+# int or null (unlimited)
+max_depth: null
+
+min_samples_split: 2
+min_samples_leaf: 1
+min_weight_fraction_leaf: 0.0
+
+# int | float | sqrt | log2 | null (all features)
+max_features: null
+
+random_state: 42
+
+# int or null (unlimited)
+max_leaf_nodes: null
+
+min_impurity_decrease: 0.0
+
+# balanced | balanced_subsample | dict | null
+class_weight: null
+
+# complexity parameter for pruning (0.0 = no pruning)
+ccp_alpha: 0.0
+
+# array-like of int or null
+monotonic_cst: null
