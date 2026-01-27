@@ -28,3 +28,4 @@ Train a random forest ensemble classifier on tabular datasets with support for m
 ## Related specs
 - [train/DecisionTree](DecisionTree.md) - Single decision tree
 - [train/GradientBoostedTrees](GradientBoostedTrees.md) - Gradient boosted tree ensemble
+- [lib/Render](../lib/Render.md) - Visualization utilities

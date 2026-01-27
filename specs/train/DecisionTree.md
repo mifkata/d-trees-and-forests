@@ -26,3 +26,4 @@ Train a single decision tree classifier on tabular datasets with support for mis
 ## Related specs
 - [train/RandomForest](RandomForest.md) - Ensemble of decision trees
 - [train/GradientBoostedTrees](GradientBoostedTrees.md) - Gradient boosted tree ensemble
+- [lib/Render](../lib/Render.md) - Visualization utilities

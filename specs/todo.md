@@ -1,1 +1,0 @@
-extract --args from scripts

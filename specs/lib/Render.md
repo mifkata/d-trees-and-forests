@@ -1,4 +1,4 @@
-# Dataset.Render
+# Render
 
 ## Overview
 Visualization utilities for model analysis. Generates matplotlib plots for feature analysis, tree visualization, and model interpretation.
@@ -48,7 +48,6 @@ Visualization utilities for model analysis. Generates matplotlib plots for featu
 - **Default DPI**: 150
 
 ## Related specs
-- [lib/Dataset](Dataset.md) - Parent container
 - [train/DecisionTree](../train/DecisionTree.md) - Uses tree visualization methods
 - [train/RandomForest](../train/RandomForest.md) - Uses forest visualization methods
 - [train/GradientBoostedTrees](../train/GradientBoostedTrees.md) - Uses gradient visualization methods

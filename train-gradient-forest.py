@@ -1,7 +1,7 @@
 import yaml
 from sklearn.ensemble import HistGradientBoostingClassifier
 from sklearn.inspection import permutation_importance
-from lib import Args, Dataset, Model
+from lib import Args, Dataset, Model, Render
 
 args = Args.get_inputs()
 
@@ -13,7 +13,7 @@ with open(f"config/gradient-{args.dataset}.yml") as f:
     config = yaml.safe_load(f)
 
 # Set mask rate for render filenames
-Dataset.Render.set_mask(args.mask_rate)
+Render.set_mask(args.mask_rate)
 
 # Load dataset
 # HistGradientBoostingClassifier natively supports missing values
@@ -46,7 +46,7 @@ print(f"Number of iterations: {clf.n_iter_}")
 if args.images:
     # Export feature importance visualization using permutation importance
     perm_importance = permutation_importance(clf, X_test, y_test, n_repeats=10, random_state=42)
-    Dataset.Render.gradient_forest_importance(
+    Render.gradient_forest_importance(
         perm_importance.importances_mean,
         X_train.columns.tolist(),
         filename="gradient_forest_feature_importance.png"

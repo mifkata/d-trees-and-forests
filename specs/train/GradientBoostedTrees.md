@@ -25,3 +25,4 @@ Train a histogram-based gradient boosted trees classifier on tabular datasets. N
 ## Related specs
 - [train/DecisionTree](DecisionTree.md) - Single decision tree
 - [train/RandomForest](RandomForest.md) - Random forest ensemble
+- [lib/Render](../lib/Render.md) - Visualization utilities

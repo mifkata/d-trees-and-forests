@@ -1,12 +1,11 @@
 # Dataset
 
 ## Overview
-Container class exposing dataset loaders and rendering utilities. Provides unified interface for data loading and visualization.
+Container class exposing dataset loaders. Provides unified interface for data loading.
 
 ## Requirements
 - Expose `Dataset.Iris` - Iris flower dataset loader
 - Expose `Dataset.Income` - Adult Income dataset loader
-- Expose `Dataset.Render` - Visualization utilities
 
 ## Implementation Details
 - **Location**: `lib/dataset/__init__.py`
@@ -15,4 +14,4 @@ Container class exposing dataset loaders and rendering utilities. Provides unifi
 ## Related specs
 - [lib/Dataset-Iris](Dataset-Iris.md) - Iris dataset implementation
 - [lib/Dataset-Income](Dataset-Income.md) - Income dataset implementation
-- [lib/Dataset-Render](Dataset-Render.md) - Visualization implementation
+- [lib/Render](Render.md) - Visualization utilities (separate top-level import)
