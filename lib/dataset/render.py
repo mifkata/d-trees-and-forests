@@ -414,3 +414,63 @@ class Render:
                 ax.set_title(f"Class {class_idx} - Iter {iter_idx + 1}")
 
         cls.footer(filename, title="Gradient Boosting Sample Trees (by class and iteration)")
+
+    @classmethod
+    def compare_accuracy(cls, mask_values, results, colors, filename="accuracy_comparison.png"):
+        """Render accuracy comparison across models.
+
+        Args:
+            mask_values: List of mask percentages (x-axis)
+            results: Dict mapping model names to accuracy lists
+            colors: Dict mapping model names to colors
+            filename: Output filename
+        """
+        cls.header(figsize=(12, 8))
+        ax = plt.gca()
+
+        for name, color in colors.items():
+            if name in results:
+                ax.plot(mask_values, results[name],
+                        label=name, color=color, linewidth=2, marker="o")
+
+        ax.set_xlabel("Mask %", fontsize=12)
+        ax.set_ylabel("Accuracy", fontsize=12)
+        ax.set_title("Model Accuracy vs Missing Data Rate", fontsize=14)
+        ax.set_xlim(0, max(mask_values))
+        ax.set_ylim(0, 1.05)
+        ax.set_xticks(mask_values)
+        ax.legend(loc="lower left", fontsize=10)
+        ax.grid(True, alpha=0.3)
+        cls.footer(filename)
+
+    @classmethod
+    def compare_accuracy_impute(cls, mask_values, results, colors, filename="accuracy_comparison_impute.png"):
+        """Render accuracy comparison with imputation variants.
+
+        Args:
+            mask_values: List of mask percentages (x-axis)
+            results: Dict mapping model names to accuracy lists (includes {name}_impute keys)
+            colors: Dict mapping model names to colors
+            filename: Output filename
+        """
+        cls.header(figsize=(12, 8))
+        ax = plt.gca()
+
+        for name, color in colors.items():
+            if name in results:
+                ax.plot(mask_values, results[name],
+                        label=name, color=color, linewidth=2, marker="o")
+            if f"{name}_impute" in results:
+                ax.plot(mask_values, results[f"{name}_impute"],
+                        label=f"{name} (imputed)", color=color, linewidth=2,
+                        linestyle="--", marker="s", alpha=0.7)
+
+        ax.set_xlabel("Mask %", fontsize=12)
+        ax.set_ylabel("Accuracy", fontsize=12)
+        ax.set_title("Model Accuracy vs Missing Data Rate (with Imputation)", fontsize=14)
+        ax.set_xlim(0, max(mask_values))
+        ax.set_ylim(0, 1.05)
+        ax.set_xticks(mask_values)
+        ax.legend(loc="lower left", fontsize=10)
+        ax.grid(True, alpha=0.3)
+        cls.footer(filename)

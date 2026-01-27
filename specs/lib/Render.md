@@ -40,6 +40,12 @@ Visualization utilities for model analysis. Generates matplotlib plots for featu
 | `gradient_forest_staged(clf, X_train, X_test, y_train, y_test, filename)` | Staged training accuracy |
 | `gradient_forest_trees(clf, feature_names, filename)` | Sample trees by class and iteration |
 
+### Comparison
+| Method | Description |
+|--------|-------------|
+| `compare_accuracy(mask_values, results, colors, filename)` | Accuracy comparison line plot |
+| `compare_accuracy_impute(mask_values, results, colors, filename)` | Accuracy comparison with impute variants |
+
 ## Implementation Details
 - **Libraries**: matplotlib, seaborn, sklearn.tree.plot_tree, sklearn.inspection (PartialDependenceDisplay, DecisionBoundaryDisplay)
 - **Location**: `lib/dataset/render.py`
@@ -51,3 +57,4 @@ Visualization utilities for model analysis. Generates matplotlib plots for featu
 - [train/DecisionTree](../train/DecisionTree.md) - Uses tree visualization methods
 - [train/RandomForest](../train/RandomForest.md) - Uses forest visualization methods
 - [train/GradientBoostedTrees](../train/GradientBoostedTrees.md) - Uses gradient visualization methods
+- [Compare](../Compare.md) - Uses comparison visualization methods
