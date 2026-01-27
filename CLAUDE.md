@@ -5,10 +5,12 @@
 ### Model Training
 
 * `make tree` - Train decision tree model
-* `make tree MASK=30` - Train with 30% masked data
-* `make tree MASK=30 USE_OUTPUT=true` - Train using cached masked dataset
 * `make forest` - Train random forest model
-* `make forest MASK=30` - Train with 30% masked data
+* `make gradient` - Train gradient boosted trees model
+* `make compare` - Run accuracy comparison across all models and mask rates
+* `make tree MASK=30` - Train with 30% masked data
+* `make tree MASK=30 IMAGES=true` - Train with images output
+* `make forest MASK=30 IMPUTE=true` - Train with imputed training data
 * `make forest MASK=30 USE_OUTPUT=true` - Train using cached masked dataset
 
 ### Devcontainer
@@ -32,7 +34,11 @@ Use 2/3 of the data for training and 1/3 for testing. Dataset should be Iris dat
 ### Parameters
 
 * `--mask [PERCENT]` - Mask percentage for missing values (0-100). Defaults to 10 if flag present without value, 0 otherwise.
-* `--dataset true|false` - If true, load dataset from `./output/iris_masked_XX_train.csv` and `./output/iris_masked_XX_test.csv`
+* `--use-output true|false` - If true, load dataset from `./output/iris_masked_XX_train.csv` and `./output/iris_masked_XX_test.csv`
+* `--impute` - Impute missing values in training set only (test set keeps missing values for realistic evaluation)
+* `--images` - Generate plot images to `./output/`
+* `--accuracy-only` - Output only accuracy as float (e.g., `0.9800`)
+* `--dataset Iris|Income` - Dataset to use (default: Iris)
 
 ### Output files
 
@@ -40,6 +46,6 @@ Files are named with mask percentage: `{name}_{mask_pct}.{ext}` (e.g., `forest_t
 
 ### Scripts
 
-* `train-tree.py` - Script to train a decision tree model. Outputs accuracy and classification report. Exports heatmap of feature correlations and tree visualization.
-* `train-forest.py` - Script to train a random forest model. Outputs accuracy and classification report. Exports scaled heatmap of feature correlations.
-* `train-gradient-forest.py` - Script to train a gradient boosting forest model.
+* `train-tree.py` - Train a decision tree model. Outputs accuracy and classification report. With `--images`: exports heatmap, tree visualization, feature importance, and decision boundaries.
+* `train-forest.py` - Train a random forest model. Outputs accuracy and classification report. With `--images`: exports feature importance, sample trees, PDP/ICE plots, OOB errors, and proximity matrix.
+* `train-gradient-forest.py` - Train a gradient boosted trees model using HistGradientBoostingClassifier (decision tree ensemble with gradient boosting, natively supports missing values). Outputs accuracy, classification report, and model info. With `--images`: exports feature importance.

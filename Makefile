@@ -1,7 +1,7 @@
-.PHONY: tree forest devcontainer.start devcontainer.stop devcontainer.restart devcontainer.build devcontainer.rebuild devcontainer.shell
+.PHONY: tree forest gradient compare devcontainer.start devcontainer.stop devcontainer.restart devcontainer.build devcontainer.rebuild devcontainer.shell
 
 define pyrun
-	python $(1) $(if $(MASK),--mask $(MASK)) $(if $(USE_OUTPUT),--use-output $(USE_OUTPUT))
+	python $(1) $(if $(MASK),--mask $(MASK)) $(if $(USE_OUTPUT),--use-output $(USE_OUTPUT)) $(if $(IMPUTE),--impute) $(if $(IMAGES),--images) $(if $(ACCURACY_ONLY),--accuracy-only) $(if $(DATASET),--dataset $(DATASET))
 endef
 
 tree:
@@ -9,6 +9,12 @@ tree:
 
 forest:
 	$(call pyrun,train-forest.py)
+
+gradient:
+	$(call pyrun,train-gradient-forest.py)
+
+compare:
+	python compare.py
 
 devcontainer.start:
 	docker compose -f .devcontainer/docker-compose.yml up -d --remove-orphans
