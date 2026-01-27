@@ -31,9 +31,9 @@ clf.fit(X_train, y_train)
 
 # Predictions and evaluation
 y_pred = clf.predict(X_test)
-Model.report(y_test, y_pred, accuracy_only=args.accuracy_only)
+Model.report(y_test, y_pred, accuracy_only=args.accuracy_only, json_output=args.json)
 
-if args.accuracy_only:
+if args.accuracy_only or args.json:
     exit(0)
 
 if args.images:

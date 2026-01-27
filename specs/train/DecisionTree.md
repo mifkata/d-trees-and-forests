@@ -9,7 +9,7 @@ Train a single decision tree classifier on tabular datasets with support for mis
 - Optionally impute missing values in training set when `--impute` flag is present
 - Load model hyperparameters from YAML config file (`config/tree-{dataset}.yml`)
 - Train sklearn DecisionTreeClassifier
-- Output accuracy and classification report (or accuracy only with `--accuracy-only`)
+- Output accuracy and classification report (or accuracy only with `--accuracy-only`, or JSON summary with `--json`)
 - Generate visualizations when `--images` flag is present:
   - Feature correlation heatmap
   - Tree structure visualization

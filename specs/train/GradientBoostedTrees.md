@@ -9,7 +9,7 @@ Train a histogram-based gradient boosted trees classifier on tabular datasets. N
 - Optionally impute missing values in training set when `--impute` flag is present (though model handles NaN natively)
 - Load model hyperparameters from YAML config file (`config/gradient-{dataset}.yml`)
 - Train sklearn HistGradientBoostingClassifier
-- Output accuracy and classification report (or accuracy only with `--accuracy-only`)
+- Output accuracy and classification report (or accuracy only with `--accuracy-only`, or JSON summary with `--json`)
 - Print model info: classifier name and number of iterations
 - Generate visualizations when `--images` flag is present:
   - Feature importance bar chart (using permutation importance)

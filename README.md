@@ -75,6 +75,7 @@ All training commands support these parameters:
 | `IMPUTE` | Impute missing values in training set only | `IMPUTE=true` |
 | `IMAGES` | Generate plot images to `./output/` | `IMAGES=true` |
 | `ACCURACY_ONLY` | Output only accuracy as float | `ACCURACY_ONLY=true` |
+| `JSON` | Output summary as JSON (accuracy and classification report) | `JSON=true` |
 | `DATASET` | Dataset to use: Iris or Income | `DATASET=Income` |
 
 ### Examples
@@ -93,6 +94,9 @@ make forest MASK=30 IMPUTE=true IMAGES=true
 
 # Reuse cached dataset
 make tree MASK=30 USE_OUTPUT=true
+
+# Output results as JSON
+make tree JSON=true
 ```
 
 ### Output Files

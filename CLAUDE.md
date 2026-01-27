@@ -10,6 +10,7 @@
 * `make compare` - Run accuracy comparison across all models and mask rates
 * `make tree MASK=30` - Train with 30% masked data
 * `make tree MASK=30 IMAGES=true` - Train with images output
+* `make tree JSON=true` - Train with JSON output
 * `make forest MASK=30 IMPUTE=true` - Train with imputed training data
 * `make forest MASK=30 USE_OUTPUT=true` - Train using cached masked dataset
 
@@ -38,6 +39,7 @@ Use 2/3 of the data for training and 1/3 for testing. Dataset should be Iris dat
 * `--impute` - Impute missing values in training set only (test set keeps missing values for realistic evaluation)
 * `--images` - Generate plot images to `./output/`
 * `--accuracy-only` - Output only accuracy as float (e.g., `0.9800`)
+* `--json` - Output summary as JSON (accuracy and classification report)
 * `--dataset Iris|Income` - Dataset to use (default: Iris)
 
 ### Output files
