@@ -10,6 +10,7 @@
 * `make compare` - Run accuracy comparison across all models and mask rates
 * `make tree MASK=30` - Train with 30% masked data
 * `make tree MASK=30 IMAGES=true` - Train with images output
+* `make tree JSON=true` - Train with JSON output
 * `make forest MASK=30 IMPUTE=true` - Train with imputed training data
 * `make forest MASK=30 USE_OUTPUT=true` - Train using cached masked dataset
 

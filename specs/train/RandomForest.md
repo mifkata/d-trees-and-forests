@@ -9,7 +9,7 @@ Train a random forest ensemble classifier on tabular datasets with support for m
 - Optionally impute missing values in training set when `--impute` flag is present
 - Load model hyperparameters from YAML config file (`config/forest-{dataset}.yml`)
 - Train sklearn RandomForestClassifier
-- Output accuracy and classification report (or accuracy only with `--accuracy-only`)
+- Output accuracy and classification report (or accuracy only with `--accuracy-only`, or JSON summary with `--json`)
 - Generate visualizations when `--images` flag is present:
   - Feature importance bar chart
   - Sample trees from the forest (2x2 grid)

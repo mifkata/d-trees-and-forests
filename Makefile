@@ -1,7 +1,7 @@
 .PHONY: tree forest gradient compare devcontainer.start devcontainer.stop devcontainer.restart devcontainer.build devcontainer.rebuild devcontainer.shell
 
 define pyrun
-	python $(1) $(if $(MASK),--mask $(MASK)) $(if $(USE_OUTPUT),--use-output $(USE_OUTPUT)) $(if $(IMPUTE),--impute) $(if $(IMAGES),--images) $(if $(ACCURACY_ONLY),--accuracy-only) $(if $(DATASET),--dataset $(DATASET))
+	python $(1) $(if $(MASK),--mask $(MASK)) $(if $(USE_OUTPUT),--use-output $(USE_OUTPUT)) $(if $(IMPUTE),--impute) $(if $(IMAGES),--images) $(if $(ACCURACY_ONLY),--accuracy-only) $(if $(JSON),--json) $(if $(DATASET),--dataset $(DATASET))
 endef
 
 tree:
