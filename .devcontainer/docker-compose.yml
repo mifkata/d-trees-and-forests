@@ -8,6 +8,8 @@ services:
     volumes:
       - ..:/app
       - home:/home/dev
+    ports:
+      - "3000:3000"
     working_dir: /app
     stdin_open: true
     tty: true
