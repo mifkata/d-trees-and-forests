@@ -31,7 +31,14 @@ clf.fit(X_train, y_train)
 
 # Predictions and evaluation
 y_pred = clf.predict(X_test)
-Model.report(y_test, y_pred, accuracy_only=args.accuracy_only, json_output=args.json)
+model_info = {
+    "type": "forest",
+    "nEstimators": clf.n_estimators
+}
+if hasattr(clf, 'oob_score_'):
+    model_info["oobScore"] = clf.oob_score_
+Model.report(y_test, y_pred, accuracy_only=args.accuracy_only, json_output=args.json,
+             model_info=model_info if args.json else None)
 
 if args.accuracy_only or args.json:
     exit(0)
