@@ -47,8 +47,8 @@ export function DatasetParams({ params, onChange, onReset, disabled }: DatasetPa
           />
           <Checkbox
             label="Use cached dataset"
-            checked={params.useOutput}
-            onChange={(useOutput) => onChange({ useOutput })}
+            checked={params.use_output}
+            onChange={(use_output) => onChange({ use_output })}
             disabled={disabled}
           />
         </div>

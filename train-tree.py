@@ -2,15 +2,16 @@ import pandas as pd
 import yaml
 from sklearn.tree import DecisionTreeClassifier
 from lib import Args, Dataset, Model, Render
+from lib.args import merge_config
 
 args = Args.get_inputs()
 
 # Select dataset
 DataSource = Dataset.Iris if args.dataset == "Iris" else Dataset.Income
 
-# Load model config
+# Load model config (YAML base + CLI overrides)
 with open(f"config/tree-{args.dataset}.yml") as f:
-    config = yaml.safe_load(f)
+    config = merge_config(yaml.safe_load(f), args.model_config)
 
 # Set mask rate for render filenames
 Render.set_mask(args.mask_rate)

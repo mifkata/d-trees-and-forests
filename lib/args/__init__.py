@@ -1,4 +1,29 @@
 import argparse
+import json
+
+
+def merge_config(yaml_config, json_config):
+    """Merge JSON config overrides into YAML config.
+
+    Args:
+        yaml_config: Base config from YAML file
+        json_config: JSON string with overrides (snake_case keys)
+
+    Returns:
+        Merged config dict
+    """
+    if not json_config:
+        return yaml_config
+
+    try:
+        overrides = json.loads(json_config)
+    except json.JSONDecodeError:
+        return yaml_config
+
+    merged = yaml_config.copy()
+    merged.update(overrides)
+
+    return merged
 
 
 class Args:
@@ -31,6 +56,8 @@ class Args:
                             help="Output summary as JSON")
         parser.add_argument("--dataset", type=str, choices=["Iris", "Income"], default="Iris",
                             help="Dataset to use (default: Iris)")
+        parser.add_argument("--model-config", type=str, default=None,
+                            help="JSON string with model config overrides (camelCase keys)")
         args = parser.parse_args()
 
         # Add computed mask_rate

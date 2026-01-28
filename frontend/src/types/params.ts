@@ -4,47 +4,47 @@ import type { ModelId } from './model';
 export interface DatasetParams {
   mask: number;
   impute: boolean;
-  useOutput: boolean;
+  use_output: boolean;
   images: boolean;
 }
 
 export const DEFAULT_DATASET_PARAMS: DatasetParams = {
   mask: 0,
   impute: false,
-  useOutput: false,
+  use_output: false,
   images: false,
 };
 
 export interface TreeParams {
   criterion: 'gini' | 'entropy' | 'log_loss';
   splitter: 'best' | 'random';
-  maxDepth: number | null;
-  minSamplesSplit: number;
-  minSamplesLeaf: number;
-  maxFeatures: 'sqrt' | 'log2' | null;
+  max_depth: number | null;
+  min_samples_split: number;
+  min_samples_leaf: number;
+  max_features: 'sqrt' | 'log2' | null;
 }
 
 export interface ForestParams {
-  nEstimators: number;
+  n_estimators: number;
   criterion: 'gini' | 'entropy' | 'log_loss';
-  maxDepth: number | null;
-  minSamplesSplit: number;
-  minSamplesLeaf: number;
-  maxFeatures: 'sqrt' | 'log2' | null;
+  max_depth: number | null;
+  min_samples_split: number;
+  min_samples_leaf: number;
+  max_features: 'sqrt' | 'log2' | null;
   bootstrap: boolean;
-  oobScore: boolean;
-  maxSamples: number | null;
+  oob_score: boolean;
+  max_samples: number | null;
 }
 
 export interface GradientParams {
   loss: 'log_loss';
-  learningRate: number;
-  maxIter: number;
-  maxLeafNodes: number | null;
-  maxDepth: number | null;
-  minSamplesLeaf: number;
-  maxBins: number;
-  earlyStopping: boolean | 'auto';
+  learning_rate: number;
+  max_iter: number;
+  max_leaf_nodes: number | null;
+  max_depth: number | null;
+  min_samples_leaf: number;
+  max_bins: number;
+  early_stopping: boolean | 'auto';
 }
 
 export type ModelParams = TreeParams | ForestParams | GradientParams;
@@ -53,66 +53,66 @@ export const DEFAULT_TREE_PARAMS: Record<DatasetId, TreeParams> = {
   Iris: {
     criterion: 'gini',
     splitter: 'best',
-    maxDepth: null,
-    minSamplesSplit: 2,
-    minSamplesLeaf: 1,
-    maxFeatures: null,
+    max_depth: null,
+    min_samples_split: 2,
+    min_samples_leaf: 1,
+    max_features: null,
   },
   Income: {
     criterion: 'gini',
     splitter: 'best',
-    maxDepth: 10,
-    minSamplesSplit: 20,
-    minSamplesLeaf: 10,
-    maxFeatures: null,
+    max_depth: 10,
+    min_samples_split: 20,
+    min_samples_leaf: 10,
+    max_features: null,
   },
 };
 
 export const DEFAULT_FOREST_PARAMS: Record<DatasetId, ForestParams> = {
   Iris: {
-    nEstimators: 10,
+    n_estimators: 10,
     criterion: 'gini',
-    maxDepth: 3,
-    minSamplesSplit: 2,
-    minSamplesLeaf: 1,
-    maxFeatures: 'sqrt',
+    max_depth: 3,
+    min_samples_split: 2,
+    min_samples_leaf: 1,
+    max_features: 'sqrt',
     bootstrap: true,
-    oobScore: true,
-    maxSamples: 100,
+    oob_score: true,
+    max_samples: 100,
   },
   Income: {
-    nEstimators: 100,
+    n_estimators: 100,
     criterion: 'gini',
-    maxDepth: 10,
-    minSamplesSplit: 20,
-    minSamplesLeaf: 10,
-    maxFeatures: 'sqrt',
+    max_depth: 10,
+    min_samples_split: 20,
+    min_samples_leaf: 10,
+    max_features: 'sqrt',
     bootstrap: true,
-    oobScore: false,
-    maxSamples: null,
+    oob_score: false,
+    max_samples: null,
   },
 };
 
 export const DEFAULT_GRADIENT_PARAMS: Record<DatasetId, GradientParams> = {
   Iris: {
     loss: 'log_loss',
-    learningRate: 0.2,
-    maxIter: 200,
-    maxLeafNodes: 31,
-    maxDepth: 4,
-    minSamplesLeaf: 1,
-    maxBins: 255,
-    earlyStopping: false,
+    learning_rate: 0.2,
+    max_iter: 200,
+    max_leaf_nodes: 31,
+    max_depth: 4,
+    min_samples_leaf: 1,
+    max_bins: 255,
+    early_stopping: false,
   },
   Income: {
     loss: 'log_loss',
-    learningRate: 0.1,
-    maxIter: 200,
-    maxLeafNodes: 31,
-    maxDepth: 6,
-    minSamplesLeaf: 20,
-    maxBins: 255,
-    earlyStopping: 'auto',
+    learning_rate: 0.1,
+    max_iter: 200,
+    max_leaf_nodes: 31,
+    max_depth: 6,
+    min_samples_leaf: 20,
+    max_bins: 255,
+    early_stopping: 'auto',
   },
 };
 

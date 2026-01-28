@@ -1,5 +1,7 @@
+.DS_Store
 output/
 __pycache__/
 .next/
 node_modules/
 .pnpm/
+*.tsbuildinfo

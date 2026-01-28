@@ -71,8 +71,8 @@ function TreeParamsForm({ params, onChange, disabled }: TreeParamsFormProps) {
       <Input
         label="Max Depth"
         type="number"
-        value={params.maxDepth ?? ''}
-        onChange={(v) => onChange({ maxDepth: v === '' ? null : Number(v) })}
+        value={params.max_depth ?? ''}
+        onChange={(v) => onChange({ max_depth: v === '' ? null : Number(v) })}
         placeholder="Unlimited"
         min={1}
         disabled={disabled}
@@ -81,8 +81,8 @@ function TreeParamsForm({ params, onChange, disabled }: TreeParamsFormProps) {
       <Input
         label="Min Samples Split"
         type="number"
-        value={params.minSamplesSplit}
-        onChange={(v) => onChange({ minSamplesSplit: Number(v) || 2 })}
+        value={params.min_samples_split}
+        onChange={(v) => onChange({ min_samples_split: Number(v) || 2 })}
         min={2}
         disabled={disabled}
       />
@@ -90,16 +90,16 @@ function TreeParamsForm({ params, onChange, disabled }: TreeParamsFormProps) {
       <Input
         label="Min Samples Leaf"
         type="number"
-        value={params.minSamplesLeaf}
-        onChange={(v) => onChange({ minSamplesLeaf: Number(v) || 1 })}
+        value={params.min_samples_leaf}
+        onChange={(v) => onChange({ min_samples_leaf: Number(v) || 1 })}
         min={1}
         disabled={disabled}
       />
 
       <Select
         label="Max Features"
-        value={params.maxFeatures ?? 'auto'}
-        onChange={(v) => onChange({ maxFeatures: v === 'auto' ? null : v as 'sqrt' | 'log2' })}
+        value={params.max_features ?? 'auto'}
+        onChange={(v) => onChange({ max_features: v === 'auto' ? null : v as 'sqrt' | 'log2' })}
         options={[
           { value: 'auto', label: 'Auto (all)' },
           { value: 'sqrt', label: 'Square Root' },
@@ -124,8 +124,8 @@ function ForestParamsForm({ params, onChange, disabled }: ForestParamsFormProps)
         <Input
           label="N Estimators"
           type="number"
-          value={params.nEstimators}
-          onChange={(v) => onChange({ nEstimators: Number(v) || 10 })}
+          value={params.n_estimators}
+          onChange={(v) => onChange({ n_estimators: Number(v) || 10 })}
           min={1}
           disabled={disabled}
         />
@@ -145,8 +145,8 @@ function ForestParamsForm({ params, onChange, disabled }: ForestParamsFormProps)
         <Input
           label="Max Depth"
           type="number"
-          value={params.maxDepth ?? ''}
-          onChange={(v) => onChange({ maxDepth: v === '' ? null : Number(v) })}
+          value={params.max_depth ?? ''}
+          onChange={(v) => onChange({ max_depth: v === '' ? null : Number(v) })}
           placeholder="Unlimited"
           min={1}
           disabled={disabled}
@@ -155,8 +155,8 @@ function ForestParamsForm({ params, onChange, disabled }: ForestParamsFormProps)
         <Input
           label="Min Samples Split"
           type="number"
-          value={params.minSamplesSplit}
-          onChange={(v) => onChange({ minSamplesSplit: Number(v) || 2 })}
+          value={params.min_samples_split}
+          onChange={(v) => onChange({ min_samples_split: Number(v) || 2 })}
           min={2}
           disabled={disabled}
         />
@@ -164,16 +164,16 @@ function ForestParamsForm({ params, onChange, disabled }: ForestParamsFormProps)
         <Input
           label="Min Samples Leaf"
           type="number"
-          value={params.minSamplesLeaf}
-          onChange={(v) => onChange({ minSamplesLeaf: Number(v) || 1 })}
+          value={params.min_samples_leaf}
+          onChange={(v) => onChange({ min_samples_leaf: Number(v) || 1 })}
           min={1}
           disabled={disabled}
         />
 
         <Select
           label="Max Features"
-          value={params.maxFeatures ?? 'auto'}
-          onChange={(v) => onChange({ maxFeatures: v === 'auto' ? null : v as 'sqrt' | 'log2' })}
+          value={params.max_features ?? 'auto'}
+          onChange={(v) => onChange({ max_features: v === 'auto' ? null : v as 'sqrt' | 'log2' })}
           options={[
             { value: 'auto', label: 'Auto (all)' },
             { value: 'sqrt', label: 'Square Root' },
@@ -185,8 +185,8 @@ function ForestParamsForm({ params, onChange, disabled }: ForestParamsFormProps)
         <Input
           label="Max Samples"
           type="number"
-          value={params.maxSamples ?? ''}
-          onChange={(v) => onChange({ maxSamples: v === '' ? null : Number(v) })}
+          value={params.max_samples ?? ''}
+          onChange={(v) => onChange({ max_samples: v === '' ? null : Number(v) })}
           placeholder="All"
           min={1}
           disabled={disabled}
@@ -202,8 +202,8 @@ function ForestParamsForm({ params, onChange, disabled }: ForestParamsFormProps)
         />
         <Checkbox
           label="OOB Score"
-          checked={params.oobScore}
-          onChange={(oobScore) => onChange({ oobScore })}
+          checked={params.oob_score}
+          onChange={(oob_score) => onChange({ oob_score })}
           disabled={disabled}
         />
       </div>
@@ -223,8 +223,8 @@ function GradientParamsForm({ params, onChange, disabled }: GradientParamsFormPr
       <Input
         label="Learning Rate"
         type="number"
-        value={params.learningRate}
-        onChange={(v) => onChange({ learningRate: Number(v) || 0.1 })}
+        value={params.learning_rate}
+        onChange={(v) => onChange({ learning_rate: Number(v) || 0.1 })}
         min={0.01}
         max={1}
         step={0.01}
@@ -234,8 +234,8 @@ function GradientParamsForm({ params, onChange, disabled }: GradientParamsFormPr
       <Input
         label="Max Iterations"
         type="number"
-        value={params.maxIter}
-        onChange={(v) => onChange({ maxIter: Number(v) || 100 })}
+        value={params.max_iter}
+        onChange={(v) => onChange({ max_iter: Number(v) || 100 })}
         min={1}
         disabled={disabled}
       />
@@ -243,8 +243,8 @@ function GradientParamsForm({ params, onChange, disabled }: GradientParamsFormPr
       <Input
         label="Max Depth"
         type="number"
-        value={params.maxDepth ?? ''}
-        onChange={(v) => onChange({ maxDepth: v === '' ? null : Number(v) })}
+        value={params.max_depth ?? ''}
+        onChange={(v) => onChange({ max_depth: v === '' ? null : Number(v) })}
         placeholder="Unlimited"
         min={1}
         disabled={disabled}
@@ -253,8 +253,8 @@ function GradientParamsForm({ params, onChange, disabled }: GradientParamsFormPr
       <Input
         label="Max Leaf Nodes"
         type="number"
-        value={params.maxLeafNodes ?? ''}
-        onChange={(v) => onChange({ maxLeafNodes: v === '' ? null : Number(v) })}
+        value={params.max_leaf_nodes ?? ''}
+        onChange={(v) => onChange({ max_leaf_nodes: v === '' ? null : Number(v) })}
         placeholder="Unlimited"
         min={2}
         disabled={disabled}
@@ -263,8 +263,8 @@ function GradientParamsForm({ params, onChange, disabled }: GradientParamsFormPr
       <Input
         label="Min Samples Leaf"
         type="number"
-        value={params.minSamplesLeaf}
-        onChange={(v) => onChange({ minSamplesLeaf: Number(v) || 1 })}
+        value={params.min_samples_leaf}
+        onChange={(v) => onChange({ min_samples_leaf: Number(v) || 1 })}
         min={1}
         disabled={disabled}
       />
@@ -272,8 +272,8 @@ function GradientParamsForm({ params, onChange, disabled }: GradientParamsFormPr
       <Input
         label="Max Bins"
         type="number"
-        value={params.maxBins}
-        onChange={(v) => onChange({ maxBins: Number(v) || 255 })}
+        value={params.max_bins}
+        onChange={(v) => onChange({ max_bins: Number(v) || 255 })}
         min={2}
         max={255}
         disabled={disabled}
@@ -281,10 +281,10 @@ function GradientParamsForm({ params, onChange, disabled }: GradientParamsFormPr
 
       <Select
         label="Early Stopping"
-        value={String(params.earlyStopping)}
+        value={String(params.early_stopping)}
         onChange={(v) => {
           const value = v === 'auto' ? 'auto' : v === 'true';
-          onChange({ earlyStopping: value });
+          onChange({ early_stopping: value });
         }}
         options={[
           { value: 'false', label: 'Off' },

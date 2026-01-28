@@ -6,6 +6,7 @@ import type {
   TrainResponse,
   TrainResult,
   ErrorCode,
+  ModelInfo,
 } from "@/types/api";
 import { MODELS } from "@/types/model";
 
@@ -31,16 +32,8 @@ interface ScriptResult {
   code: number;
 }
 
-function camelToKebab(str: string): string {
-  return str.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
-}
-
-function camelToSnake(str: string): string {
-  return str.replace(/([a-z])([A-Z])/g, "$1_$2").toLowerCase();
-}
-
 function buildArgs(request: TrainRequest): string[] {
-  const { dataset, datasetParams } = request;
+  const { dataset, datasetParams, modelParams } = request;
 
   const args: string[] = [
     "--json",
@@ -54,12 +47,17 @@ function buildArgs(request: TrainRequest): string[] {
     args.push("--impute");
   }
 
-  if (datasetParams.useOutput) {
+  if (datasetParams.use_output) {
     args.push("--use-output", "true");
   }
 
   if (datasetParams.images) {
     args.push("--images");
+  }
+
+  // Add model config as JSON (already in snake_case)
+  if (modelParams) {
+    args.push("--model-config", JSON.stringify(modelParams));
   }
 
   return args;
@@ -210,7 +208,7 @@ function parseJsonOutput(stdout: string): TrainResult | null {
 
     if (jsonOutput.model_info) {
       result.modelInfo = {
-        type: jsonOutput.model_info.type as TrainResult["modelInfo"]["type"],
+        type: jsonOutput.model_info.type as ModelInfo["type"],
         nIterations:
           jsonOutput.model_info.nIterations || jsonOutput.model_info.n_iter_,
         treeDepth: jsonOutput.model_info.treeDepth,
