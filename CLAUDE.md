@@ -5,7 +5,7 @@
 - `/spec-editor` (skill)
 
 ## Stack
-* Use `tensorflow`, `scikit-learn`, `pandas`, `numpy` to train and run models.
+* Use `scikit-learn`, `pandas`, `numpy` to train and run models.
 * Do not implement classification algorithms from scratch; use existing libraries.
 
 ## Specs

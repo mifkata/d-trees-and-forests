@@ -63,6 +63,7 @@ claude
 | `make forest` | Train a random forest model |
 | `make gradient` | Train a gradient boosted trees model |
 | `make compare` | Run accuracy comparison across all models and mask rates |
+| `make ui` | Start the frontend app in development mode |
 
 ### Parameters
 
@@ -97,6 +98,9 @@ make tree MASK=30 USE_OUTPUT=true
 
 # Output results as JSON
 make tree JSON=true
+
+# Start the web UI
+make ui
 ```
 
 ### Output Files

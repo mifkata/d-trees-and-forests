@@ -3,6 +3,7 @@ services:
     build:
       context: ..
       dockerfile: .devcontainer/Dockerfile
+    platform: linux/amd64
     container_name: d-trees-and-forests
     user: dev
     volumes:
