@@ -18,7 +18,7 @@ Train a histogram-based gradient boosted trees classifier using scikit-learn's H
 ## Implementation Details
 - **Library**: sklearn.ensemble.HistGradientBoostingClassifier
 - **Why HistGradientBoostingClassifier**: XGBoost-style histogram-based gradient boosting, orders of magnitude faster than GradientBoostingClassifier for larger datasets, native categorical and missing value support
-- **Data split**: 2/3 training, 1/3 testing (random_state=42)
+- **Data split**: Configurable via `--split` (default 33% test, 67% train), random_state=42
 - **Config loading**: YAML files with all sklearn HistGradientBoostingClassifier parameters
 - **Config merging**: YAML config loaded first, then `--model-config` JSON merged (CLI takes precedence)
 

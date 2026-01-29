@@ -19,7 +19,7 @@ Train a single decision tree classifier on tabular datasets with support for mis
 
 ## Implementation Details
 - **Library**: sklearn.tree.DecisionTreeClassifier
-- **Data split**: 2/3 training, 1/3 testing (random_state=42)
+- **Data split**: Configurable via `--split` (default 33% test, 67% train), random_state=42
 - **Config loading**: YAML files with all sklearn DecisionTreeClassifier parameters; CLI `--model-config` JSON overrides YAML values
 - **Config merging**: YAML config loaded first, then `--model-config` JSON merged (CLI takes precedence); keys use snake_case (e.g. `max_depth`)
 - **Imputation**: KNNImputer (n_neighbors=5, weights="distance") applied to training set only

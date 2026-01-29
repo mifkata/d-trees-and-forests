@@ -11,7 +11,9 @@ Centralized argument parsing for all training scripts. Provides consistent CLI i
 - Parse `--json` as boolean flag, default false
 - Parse `--dataset` as choice (Iris|Income), default "Iris"
 - Parse `--model-config` as JSON string for model hyperparameter overrides
+- Parse `--split` as integer percentage (10-90) for test set size, default 33
 - Compute `mask_rate` as float (mask / 100.0)
+- Compute `test_size` as float (split / 100.0)
 
 ## Implementation Details
 - **Library**: argparse

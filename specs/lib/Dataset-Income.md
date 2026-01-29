@@ -4,7 +4,7 @@
 Loader for the Adult Income (Census) dataset with support for masking, imputation, and caching.
 
 ## Requirements
-- Load Adult Income dataset from URL (yggdrasil-decision-forests repository)
+- Load Adult Income dataset via kagglehub (`uciml/adult-census-income`)
 - Encode categorical columns using LabelEncoder for sklearn compatibility
 - Split data 2/3 train, 1/3 test with random_state=42
 - Support masking: randomly set values to NaN based on mask_rate
@@ -13,9 +13,9 @@ Loader for the Adult Income (Census) dataset with support for masking, imputatio
 - Unified `input()` method orchestrating all loading modes
 
 ## Implementation Details
-- **Libraries**: pandas, numpy, sklearn.impute.KNNImputer, sklearn.model_selection.train_test_split, sklearn.preprocessing.LabelEncoder
+- **Libraries**: kagglehub, pandas, numpy, sklearn.impute.KNNImputer, sklearn.model_selection.train_test_split, sklearn.preprocessing.LabelEncoder
 - **Location**: `lib/dataset/income.py`
-- **Data URL**: `https://raw.githubusercontent.com/google/yggdrasil-decision-forests/main/yggdrasil_decision_forests/test_data/dataset/adult.csv`
+- **Dataset**: `kagglehub.dataset_download("uciml/adult-census-income")` → `adult.csv`
 - **Features**: age, workclass, fnlwgt, education, education_num, marital_status, occupation, relationship, race, sex, capital_gain, capital_loss, hours_per_week, native_country
 - **Target**: income (<=50K, >50K)
 - **Imputer**: KNNImputer(n_neighbors=5, weights="distance")
@@ -24,7 +24,7 @@ Loader for the Adult Income (Census) dataset with support for masking, imputatio
 ### Methods
 | Method | Description |
 |--------|-------------|
-| `_load_raw()` | Load raw data from URL, encode categoricals |
+| `_load_raw()` | Load raw data via kagglehub, encode categoricals |
 | `load()` | Load and split without masking |
 | `load_masked(mask_rate, random_state)` | Load with random NaN masking |
 | `load_from_csv(mask_rate)` | Load from cached CSV files |
