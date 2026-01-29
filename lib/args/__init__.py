@@ -38,7 +38,6 @@ class Args:
                 - use_output: bool, reuse cached dataset
                 - impute: bool, impute training missing values
                 - images: bool, generate plot images
-                - accuracy_only: bool, output only accuracy as float
                 - json: bool, output summary as JSON
         """
         parser = argparse.ArgumentParser()
@@ -50,8 +49,6 @@ class Args:
                             help="Impute missing values in training set only")
         parser.add_argument("--images", action="store_true",
                             help="Generate plot images")
-        parser.add_argument("--accuracy-only", action="store_true",
-                            help="Output only accuracy as float")
         parser.add_argument("--json", action="store_true",
                             help="Output summary as JSON")
         parser.add_argument("--dataset", type=str, choices=["Iris", "Income"], default="Iris",

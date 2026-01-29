@@ -4,8 +4,7 @@ import pandas as pd
 from sklearn.impute import KNNImputer
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-
-OUTPUT_DIR = "./output"
+from config import OUTPUT_DIR
 DATA_URL = "https://raw.githubusercontent.com/google/yggdrasil-decision-forests/main/yggdrasil_decision_forests/test_data/dataset/adult.csv"
 
 

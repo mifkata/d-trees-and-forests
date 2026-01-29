@@ -43,13 +43,15 @@ function safeSetItem(key: string, value: unknown): void {
 
 export const storage = {
   getDatasetParams(dataset: DatasetId, model: ModelId): DatasetParams {
-    const cached = safeGetItem<DatasetParams>(getDatasetParamsKey(dataset, model));
-    return cached ?? { ...DEFAULT_DATASET_PARAMS };
+    const cached = safeGetItem<Partial<DatasetParams>>(getDatasetParamsKey(dataset, model));
+    // Merge with defaults to ensure new fields are present
+    return { ...DEFAULT_DATASET_PARAMS, ...cached };
   },
 
   getModelParams(dataset: DatasetId, model: ModelId): ModelParams {
-    const cached = safeGetItem<ModelParams>(getModelParamsKey(dataset, model));
-    return cached ?? getDefaultModelParams(model, dataset);
+    const cached = safeGetItem<Partial<ModelParams>>(getModelParamsKey(dataset, model));
+    // Merge with defaults to ensure new fields are present
+    return { ...getDefaultModelParams(model, dataset), ...cached };
   },
 
   getLastSelection(): LastSelection | null {

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Compare accuracy across training scripts with varying mask rates."""
 
+import json
 import subprocess
 from lib import Render
 
@@ -14,8 +15,8 @@ COLORS = {
 
 
 def run_script(script, mask, impute=False, use_output=False):
-    """Run a training script and return accuracy."""
-    cmd = ["python", "-W", "ignore", script, "--accuracy-only"]
+    """Run a training script and return accuracy from JSON output."""
+    cmd = ["python", "-W", "ignore", script, "--json"]
 
     if mask > 0:
         cmd.extend(["--mask", str(mask)])
@@ -26,9 +27,18 @@ def run_script(script, mask, impute=False, use_output=False):
 
     result = subprocess.run(cmd, capture_output=True, text=True)
     try:
-        return float(result.stdout.strip())
-    except ValueError:
-        print(f"Error: {script} mask={mask} impute={impute}: {result.stderr[:100]}")
+        # Extract JSON from stdout (may contain warnings before JSON)
+        stdout = result.stdout
+        json_start = stdout.find("{")
+        json_end = stdout.rfind("}") + 1
+        if json_start == -1 or json_end == 0:
+            raise ValueError("No JSON found in output")
+        output = json.loads(stdout[json_start:json_end])
+        return output["accuracy"]
+    except (json.JSONDecodeError, KeyError, ValueError) as e:
+        print(f"Error: {script} mask={mask} impute={impute}: {e}")
+        if result.stderr:
+            print(f"  stderr: {result.stderr[:100]}")
         return None
 
 

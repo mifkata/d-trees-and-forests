@@ -4,25 +4,25 @@
 loss: log_loss
 
 # float (default: 0.1)
-learning_rate: 0.2
+learning_rate: 0.05
 
 # int (default: 100)
-max_iter: 200
+max_iter: 100
 
 # int (default: 31)
-max_leaf_nodes: 31
+max_leaf_nodes: 8
 
 # int or null for unlimited (default: null)
-max_depth: 4
+max_depth: 2
 
 # int (default: 20)
 min_samples_leaf: 1
 
 # float (default: 0.0)
-l2_regularization: 0.0
+l2_regularization: 0.1
 
 # float 0.0-1.0, fraction of features (default: 1.0)
-max_features: 1.0
+max_features: 0.1
 
 # int 2-255, max bins for discretization (default: 255)
 max_bins: 255

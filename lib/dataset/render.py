@@ -8,8 +8,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.inspection import PartialDependenceDisplay, DecisionBoundaryDisplay
 from sklearn.preprocessing import LabelEncoder
 from itertools import combinations
-
-OUTPUT_DIR = "./output"
+from config import OUTPUT_DIR, VERBOSE
 
 
 class Render:
@@ -74,7 +73,8 @@ class Render:
         plt.tight_layout()
         plt.savefig(filepath, dpi=dpi)
         plt.close()
-        print(f"Saved: {filepath}")
+        if VERBOSE:
+            print(f"Saved: {filepath}")
         cls._fig = None
         cls._axes = None
 

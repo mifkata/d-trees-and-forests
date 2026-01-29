@@ -4,8 +4,7 @@ import numpy as np
 import pandas as pd
 from sklearn.impute import KNNImputer
 from sklearn.model_selection import train_test_split
-
-OUTPUT_DIR = "./output"
+from config import OUTPUT_DIR
 
 
 class Iris:

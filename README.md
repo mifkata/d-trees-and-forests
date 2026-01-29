@@ -75,7 +75,6 @@ All training commands support these parameters:
 | `USE_OUTPUT` | Load from cached CSV files instead of downloading | `USE_OUTPUT=true` |
 | `IMPUTE` | Impute missing values in training set only | `IMPUTE=true` |
 | `IMAGES` | Generate plot images to `./output/` | `IMAGES=true` |
-| `ACCURACY_ONLY` | Output only accuracy as float | `ACCURACY_ONLY=true` |
 | `JSON` | Output summary as JSON (accuracy and classification report) | `JSON=true` |
 | `DATASET` | Dataset to use: Iris or Income | `DATASET=Income` |
 

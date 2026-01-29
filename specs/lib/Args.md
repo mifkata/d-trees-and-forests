@@ -8,8 +8,9 @@ Centralized argument parsing for all training scripts. Provides consistent CLI i
 - Parse `--use-output` as boolean string ("true"/"false"), default false
 - Parse `--impute` as boolean flag, default false
 - Parse `--images` as boolean flag, default false
-- Parse `--accuracy-only` as boolean flag, default false
+- Parse `--json` as boolean flag, default false
 - Parse `--dataset` as choice (Iris|Income), default "Iris"
+- Parse `--model-config` as JSON string for model hyperparameter overrides
 - Compute `mask_rate` as float (mask / 100.0)
 
 ## Implementation Details
@@ -19,4 +20,4 @@ Centralized argument parsing for all training scripts. Provides consistent CLI i
 
 ## Related specs
 - [lib/Dataset](Dataset.md) - Uses mask_rate and dataset args
-- [lib/Model](Model.md) - Uses accuracy_only arg
+- [lib/Model](Model.md) - Uses json arg

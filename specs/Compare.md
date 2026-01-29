@@ -4,7 +4,8 @@
 Benchmark script that runs all training models across varying mask rates and generates comparison visualizations.
 
 ## Requirements
-- Run each training script (tree, forest, gradient-forest) with `--accuracy-only` flag
+- Run each training script (tree, forest, gradient-forest) with `--json` flag
+- Parse accuracy from JSON output
 - Test mask rates from 0% to 90% in 5% increments
 - For each mask rate, test both with and without `--impute` flag
 - Reuse cached masked datasets across models (first script generates, others reuse)
@@ -14,7 +15,7 @@ Benchmark script that runs all training models across varying mask rates and gen
 
 ## Implementation Details
 - **Location**: `compare.py`
-- **Dependencies**: subprocess for running training scripts, lib.Render for visualization
+- **Dependencies**: subprocess for running training scripts, json for parsing output, lib.Render for visualization
 - **Scripts tested**: `train-tree.py`, `train-forest.py`, `train-gradient-forest.py`
 - **Mask values**: 0, 5, 10, 15, ..., 90
 - **Output files**: `./output/accuracy_comparison.png`, `./output/accuracy_comparison_impute.png`
@@ -22,10 +23,14 @@ Benchmark script that runs all training models across varying mask rates and gen
 ### Execution Flow
 1. Initialize results dict for each model (with and without impute)
 2. For each mask value:
-   - First script runs with `--mask` (generates new dataset)
-   - Subsequent scripts run with `--mask --use-output true` (reuse dataset)
+   - First script runs with `--json --mask` (generates new dataset)
+   - Subsequent scripts run with `--json --mask --use-output true` (reuse dataset)
    - All scripts also run with `--impute` flag using cached dataset
-3. Pass results to `Render.compare_accuracy()` and `Render.compare_accuracy_impute()`
+3. Extract accuracy from JSON output (`output["accuracy"]`)
+4. Pass results to `Render.compare_accuracy()` and `Render.compare_accuracy_impute()`
+
+### JSON Output Parsing
+Scripts output JSON with warnings potentially before the JSON object. Parser finds first `{` and last `}` to extract JSON, then reads `accuracy` field.
 
 ### Color Scheme
 | Model | Color |

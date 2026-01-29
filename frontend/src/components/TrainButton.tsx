@@ -3,18 +3,17 @@
 import { Button } from './ui';
 
 interface TrainButtonProps {
-  onClick: () => void;
   loading: boolean;
   disabled?: boolean;
 }
 
-export function TrainButton({ onClick, loading, disabled }: TrainButtonProps) {
+export function TrainButton({ loading, disabled }: TrainButtonProps) {
   return (
     <Button
+      type="submit"
       variant="primary"
       size="lg"
       fullWidth
-      onClick={onClick}
       loading={loading}
       disabled={disabled}
     >

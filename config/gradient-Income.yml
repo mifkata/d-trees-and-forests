@@ -10,10 +10,10 @@ learning_rate: 0.1
 max_iter: 200
 
 # int (default: 31)
-max_leaf_nodes: 31
+max_leaf_nodes: 8
 
 # int or null for unlimited (default: null)
-max_depth: 6
+max_depth: null
 
 # int (default: 20)
 min_samples_leaf: 20

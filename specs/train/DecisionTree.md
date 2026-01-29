@@ -10,7 +10,7 @@ Train a single decision tree classifier on tabular datasets with support for mis
 - Load model hyperparameters from YAML config file (`config/tree-{dataset}.yml`)
 - Override model hyperparameters via `--model-config` flag (JSON string with snake_case keys, e.g. `--model-config '{"max_depth": 10, "criterion": "entropy"}'`)
 - Train sklearn DecisionTreeClassifier
-- Output accuracy and classification report (or accuracy only with `--accuracy-only`, or JSON summary with `--json`)
+- Output accuracy and classification report (or JSON summary with `--json`)
 - Generate visualizations when `--images` flag is present:
   - Feature correlation heatmap
   - Tree structure visualization
