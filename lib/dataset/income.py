@@ -1,11 +1,11 @@
 import os
+import kagglehub
 import numpy as np
 import pandas as pd
 from sklearn.impute import KNNImputer
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 from config import OUTPUT_DIR
-DATA_URL = "https://raw.githubusercontent.com/google/yggdrasil-decision-forests/main/yggdrasil_decision_forests/test_data/dataset/adult.csv"
 
 
 class Income:
@@ -13,12 +13,13 @@ class Income:
 
     @staticmethod
     def _load_raw():
-        """Load raw Adult Income dataset.
+        """Load raw Adult Income dataset via kagglehub.
 
         Returns:
             tuple: (X, y) feature matrix and target series
         """
-        df = pd.read_csv(DATA_URL)
+        path = kagglehub.dataset_download("uciml/adult-census-income")
+        df = pd.read_csv(f"{path}/adult.csv")
 
         # Target column
         y = df["income"]
