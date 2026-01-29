@@ -60,10 +60,18 @@ class Args:
                             help="Dataset to use (default: Iris)")
         parser.add_argument("--model-config", type=str, default=None,
                             help="JSON string with model config overrides (snake_case keys)")
+        parser.add_argument("--dataset-ignore-columns", type=str, default=None,
+                            help="Comma-separated list of column indices to drop (e.g., '0,2')")
         args = parser.parse_args()
 
         # Add computed rates
         args.mask_rate = args.mask / 100.0
         args.test_size = args.split / 100.0
+
+        # Parse ignore_columns
+        if args.dataset_ignore_columns:
+            args.ignore_columns = [int(x.strip()) for x in args.dataset_ignore_columns.split(",")]
+        else:
+            args.ignore_columns = []
 
         return args

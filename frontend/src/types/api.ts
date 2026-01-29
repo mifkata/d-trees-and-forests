@@ -40,11 +40,26 @@ export interface ModelInfo {
   nLeaves?: number;
 }
 
+export interface TrainParams {
+  dataset: string;
+  mask: number;
+  split: number;
+  impute: boolean;
+  ignore_columns: number[];
+}
+
 export interface TrainResult {
   accuracy: number;
   accuracyPercent: string;
   classificationReport: ClassificationReport;
   modelInfo?: ModelInfo;
+  featureImportance?: Record<string, number>;
+  params?: TrainParams;
+  trainData?: Record<string, unknown>[];
+  testData?: Record<string, unknown>[];
+  trainLabels?: string[];
+  testLabels?: string[];
+  featureNames?: string[];
   executionTime: number;
 }
 

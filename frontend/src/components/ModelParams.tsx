@@ -1,6 +1,6 @@
 'use client';
 
-import { Card, CardHeader, CardTitle, Select, Input, Checkbox, Button } from './ui';
+import { Select, Input, Checkbox, Button } from './ui';
 import type { ModelId } from '@/types/model';
 import type { TreeParams, ForestParams, GradientParams, ModelParams as ModelParamsType } from '@/types/params';
 import { MODELS } from '@/types/model';
@@ -15,13 +15,15 @@ interface ModelParamsProps {
 
 export function ModelParams({ model, params, onChange, onReset, disabled }: ModelParamsProps) {
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Model Parameters ({MODELS[model].name})</CardTitle>
+    <div>
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-sm font-medium text-gray-700">
+          Model Parameters ({MODELS[model].name})
+        </h3>
         <Button variant="ghost" size="sm" onClick={onReset} disabled={disabled}>
           Reset to Defaults
         </Button>
-      </CardHeader>
+      </div>
 
       {model === 'tree' && (
         <TreeParamsForm params={params as TreeParams} onChange={onChange} disabled={disabled} />
@@ -32,7 +34,7 @@ export function ModelParams({ model, params, onChange, onReset, disabled }: Mode
       {model === 'gradient' && (
         <GradientParamsForm params={params as GradientParams} onChange={onChange} disabled={disabled} />
       )}
-    </Card>
+    </div>
   );
 }
 

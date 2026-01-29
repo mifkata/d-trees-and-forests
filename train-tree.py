@@ -21,7 +21,8 @@ X_train, X_test, y_train, y_test = DataSource.input(
     mask_rate=args.mask_rate,
     test_size=args.test_size,
     reuse_dataset=args.use_output,
-    impute=args.impute
+    impute=args.impute,
+    ignore_columns=args.ignore_columns
 )
 
 # Export masked dataset if generating new data with masking
@@ -36,11 +37,34 @@ clf.fit(X_train, y_train)
 y_pred = clf.predict(X_test)
 model_info = {
     "type": "tree",
-    "treeDepth": clf.get_depth(),
-    "nLeaves": clf.get_n_leaves()
+    "tree_depth": clf.get_depth(),
+    "n_leaves": clf.get_n_leaves()
 }
-Model.report(y_test, y_pred, json_output=args.json,
-             model_info=model_info if args.json else None)
+
+# Feature importance
+feature_importance = dict(zip(X_train.columns.tolist(), clf.feature_importances_.tolist()))
+
+# Build params for JSON output
+params = {
+    "dataset": args.dataset,
+    "mask": args.mask,
+    "split": args.split,
+    "impute": args.impute,
+    "ignore_columns": args.ignore_columns,
+    "model_config": config
+}
+
+Model.report(
+    y_test, y_pred,
+    json_output=args.json,
+    model_info=model_info if args.json else None,
+    params=params if args.json else None,
+    feature_importance=feature_importance if args.json else None,
+    X_train=X_train if args.json else None,
+    X_test=X_test if args.json else None,
+    y_train=y_train if args.json else None,
+    y_test=y_test if args.json else None
+)
 
 if args.images:
     # Export heatmap of feature correlations

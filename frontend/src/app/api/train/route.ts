@@ -57,6 +57,10 @@ function buildArgs(request: TrainRequest): string[] {
     args.push("--images");
   }
 
+  if (datasetParams.ignore_columns && datasetParams.ignore_columns.length > 0) {
+    args.push("--dataset-ignore-columns", datasetParams.ignore_columns.join(","));
+  }
+
   // Add model config as JSON (already in snake_case)
   if (modelParams) {
     args.push("--model-config", JSON.stringify(modelParams));
@@ -141,11 +145,29 @@ interface PythonOutput {
     type?: string;
     nIterations?: number;
     n_iter_?: number;
+    n_iterations?: number;
     treeDepth?: number;
+    tree_depth?: number;
     nLeaves?: number;
+    n_leaves?: number;
     nEstimators?: number;
+    n_estimators?: number;
     oobScore?: number;
+    oob_score?: number;
   };
+  feature_importance?: Record<string, number>;
+  params?: {
+    dataset: string;
+    mask: number;
+    split: number;
+    impute: boolean;
+    ignore_columns: number[];
+  };
+  train_data?: Record<string, unknown>[];
+  test_data?: Record<string, unknown>[];
+  train_labels?: string[];
+  test_labels?: string[];
+  feature_names?: string[];
 }
 
 function parseJsonOutput(stdout: string): TrainResult | null {
@@ -212,12 +234,46 @@ function parseJsonOutput(stdout: string): TrainResult | null {
       result.modelInfo = {
         type: jsonOutput.model_info.type as ModelInfo["type"],
         nIterations:
-          jsonOutput.model_info.nIterations || jsonOutput.model_info.n_iter_,
-        treeDepth: jsonOutput.model_info.treeDepth,
-        nLeaves: jsonOutput.model_info.nLeaves,
-        nEstimators: jsonOutput.model_info.nEstimators,
-        oobScore: jsonOutput.model_info.oobScore,
+          jsonOutput.model_info.nIterations ||
+          jsonOutput.model_info.n_iter_ ||
+          jsonOutput.model_info.n_iterations,
+        treeDepth:
+          jsonOutput.model_info.treeDepth || jsonOutput.model_info.tree_depth,
+        nLeaves: jsonOutput.model_info.nLeaves || jsonOutput.model_info.n_leaves,
+        nEstimators:
+          jsonOutput.model_info.nEstimators ||
+          jsonOutput.model_info.n_estimators,
+        oobScore:
+          jsonOutput.model_info.oobScore || jsonOutput.model_info.oob_score,
       };
+    }
+
+    if (jsonOutput.feature_importance) {
+      result.featureImportance = jsonOutput.feature_importance;
+    }
+
+    if (jsonOutput.params) {
+      result.params = jsonOutput.params;
+    }
+
+    if (jsonOutput.train_data) {
+      result.trainData = jsonOutput.train_data;
+    }
+
+    if (jsonOutput.test_data) {
+      result.testData = jsonOutput.test_data;
+    }
+
+    if (jsonOutput.train_labels) {
+      result.trainLabels = jsonOutput.train_labels;
+    }
+
+    if (jsonOutput.test_labels) {
+      result.testLabels = jsonOutput.test_labels;
+    }
+
+    if (jsonOutput.feature_names) {
+      result.featureNames = jsonOutput.feature_names;
     }
 
     return result;

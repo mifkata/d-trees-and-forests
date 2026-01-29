@@ -136,7 +136,7 @@ class Income:
         return X_train_imputed, X_test
 
     @staticmethod
-    def input(mask_rate=0.0, test_size=0.33, reuse_dataset=False, impute=False):
+    def input(mask_rate=0.0, test_size=0.33, reuse_dataset=False, impute=False, ignore_columns=None):
         """Load Income dataset based on input parameters.
 
         Args:
@@ -144,6 +144,7 @@ class Income:
             test_size: Fraction of data for test set (default 0.33)
             reuse_dataset: If True, load from previously exported CSV files
             impute: If True, impute missing values in training set only
+            ignore_columns: List of column indices to drop (default None)
 
         Returns:
             tuple: (X_train, X_test, y_train, y_test)
@@ -153,7 +154,13 @@ class Income:
         elif mask_rate > 0:
             X_train, X_test, y_train, y_test = Income.load_masked(mask_rate=mask_rate, test_size=test_size)
         else:
-            return Income.load(test_size=test_size)
+            X_train, X_test, y_train, y_test = Income.load(test_size=test_size)
+
+        # Drop ignored columns
+        if ignore_columns:
+            cols_to_drop = [X_train.columns[i] for i in ignore_columns if i < len(X_train.columns)]
+            X_train = X_train.drop(columns=cols_to_drop)
+            X_test = X_test.drop(columns=cols_to_drop)
 
         # Impute missing values in training set if impute is enabled
         if impute:

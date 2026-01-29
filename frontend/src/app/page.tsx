@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useParamsCache, useTraining } from '@/hooks';
 import {
   Card,
@@ -11,6 +12,7 @@ import {
   ResultsDisplay,
   ErrorDisplay,
 } from '@/components';
+import { ControlledTabs } from '@/components/ui';
 
 export default function Home() {
   const {
@@ -28,6 +30,7 @@ export default function Home() {
   } = useParamsCache();
 
   const { isLoading, result, error, train, clearError } = useTraining();
+  const [paramsTab, setParamsTab] = useState<'dataset' | 'model'>('dataset');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,18 +89,33 @@ export default function Home() {
               </Card>
             </div>
 
-            <DatasetParams
-              params={datasetParams}
-              onChange={setDatasetParams}
-              onReset={resetDatasetParams}
-            />
-
-            <ModelParams
-              model={model}
-              params={modelParams}
-              onChange={setModelParams}
-              onReset={resetModelParams}
-            />
+            <Card>
+              <ControlledTabs
+                tabs={[
+                  { id: 'dataset', label: 'Dataset' },
+                  { id: 'model', label: 'Model' },
+                ]}
+                activeTab={paramsTab}
+                onTabChange={(tab) => setParamsTab(tab as 'dataset' | 'model')}
+              >
+                {paramsTab === 'dataset' && (
+                  <DatasetParams
+                    params={datasetParams}
+                    dataset={dataset}
+                    onChange={setDatasetParams}
+                    onReset={resetDatasetParams}
+                  />
+                )}
+                {paramsTab === 'model' && (
+                  <ModelParams
+                    model={model}
+                    params={modelParams}
+                    onChange={setModelParams}
+                    onReset={resetModelParams}
+                  />
+                )}
+              </ControlledTabs>
+            </Card>
 
             <Card padding="sm">
               <TrainButton loading={isLoading} disabled={isLoading} />

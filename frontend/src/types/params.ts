@@ -4,6 +4,7 @@ import type { ModelId } from './model';
 export interface DatasetParams {
   mask: number;
   split: number;
+  ignore_columns: number[];
   impute: boolean;
   use_output: boolean;
   images: boolean;
@@ -12,6 +13,7 @@ export interface DatasetParams {
 export const DEFAULT_DATASET_PARAMS: DatasetParams = {
   mask: 0,
   split: 30,
+  ignore_columns: [],
   impute: false,
   use_output: false,
   images: false,
