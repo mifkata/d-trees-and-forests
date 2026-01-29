@@ -32,6 +32,17 @@ export function DatasetParams({ params, onChange, onReset, disabled }: DatasetPa
           disabled={disabled}
         />
 
+        <Slider
+          label="Test Split"
+          value={params.split}
+          onChange={(split) => onChange({ split })}
+          min={10}
+          max={90}
+          step={5}
+          unit="%"
+          disabled={disabled}
+        />
+
         <div className="flex flex-wrap gap-4">
           <Checkbox
             label="Impute missing values"

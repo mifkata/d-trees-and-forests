@@ -27,6 +27,7 @@ Form components for selecting dataset, model, and configuring training parameter
 ### DatasetParams
 - Card with header "Dataset Parameters" and Reset button
 - Mask rate slider (0-100%, step 5)
+- Split slider for train/test split (10-90%, step 5, default 30) - defines test set percentage
 - Checkboxes: Impute missing values, Generate images, Use cached dataset
 - Props: `params`, `onChange`, `onReset`, `disabled`
 

@@ -72,6 +72,7 @@ All training commands support these parameters:
 | Parameter | Description | Example |
 |-----------|-------------|---------|
 | `MASK` | Mask percentage for missing values (0-100). Default: 0 | `MASK=30` |
+| `SPLIT` | Test set percentage (10-90). Default: 33 | `SPLIT=20` |
 | `USE_OUTPUT` | Load from cached CSV files instead of downloading | `USE_OUTPUT=true` |
 | `IMPUTE` | Impute missing values in training set only | `IMPUTE=true` |
 | `IMAGES` | Generate plot images to `./output/` | `IMAGES=true` |

@@ -41,6 +41,8 @@ function buildArgs(request: TrainRequest): string[] {
     dataset,
     "--mask",
     String(datasetParams.mask),
+    "--split",
+    String(datasetParams.split),
   ];
 
   if (datasetParams.impute) {

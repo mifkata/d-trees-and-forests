@@ -35,6 +35,8 @@ class Args:
             argparse.Namespace with:
                 - mask: int, mask percentage (0-100)
                 - mask_rate: float, mask rate (0.0-1.0)
+                - split: int, test split percentage (10-90)
+                - test_size: float, test size (0.1-0.9)
                 - use_output: bool, reuse cached dataset
                 - impute: bool, impute training missing values
                 - images: bool, generate plot images
@@ -43,6 +45,9 @@ class Args:
         parser = argparse.ArgumentParser()
         parser.add_argument("--mask", type=int, nargs="?", const=10, default=0,
                             help="Mask percentage for missing values (default: 10 if flag present, 0 otherwise)")
+        parser.add_argument("--split", type=int, default=33, choices=range(10, 91),
+                            metavar="[10-90]",
+                            help="Test set percentage (default: 33)")
         parser.add_argument("--use-output", type=lambda x: x.lower() == "true", default=False,
                             help="Reuse dataset from CSV files (true/false)")
         parser.add_argument("--impute", action="store_true",
@@ -54,10 +59,11 @@ class Args:
         parser.add_argument("--dataset", type=str, choices=["Iris", "Income"], default="Iris",
                             help="Dataset to use (default: Iris)")
         parser.add_argument("--model-config", type=str, default=None,
-                            help="JSON string with model config overrides (camelCase keys)")
+                            help="JSON string with model config overrides (snake_case keys)")
         args = parser.parse_args()
 
-        # Add computed mask_rate
+        # Add computed rates
         args.mask_rate = args.mask / 100.0
+        args.test_size = args.split / 100.0
 
         return args

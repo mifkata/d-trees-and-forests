@@ -24,30 +24,34 @@ class Iris:
         return X, y
 
     @staticmethod
-    def load():
+    def load(test_size=0.33):
         """Load Iris dataset and return train/test splits.
 
+        Args:
+            test_size: Fraction of data for test set (default 0.33)
+
         Returns:
-            tuple: (X_train, X_test, y_train, y_test) with 2/3 train, 1/3 test split
+            tuple: (X_train, X_test, y_train, y_test)
         """
         X, y = Iris._load_raw()
 
         X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=1/3, random_state=42
+            X, y, test_size=test_size, random_state=42
         )
 
         return X_train, X_test, y_train, y_test
 
     @staticmethod
-    def load_masked(mask_rate=0.1, random_state=42):
+    def load_masked(mask_rate=0.1, test_size=0.33, random_state=42):
         """Load Iris dataset with missing data.
 
         Args:
             mask_rate: Fraction of values to set as missing (default 0.1)
+            test_size: Fraction of data for test set (default 0.33)
             random_state: Random seed for reproducibility
 
         Returns:
-            tuple: (X_train, X_test, y_train, y_test) with 2/3 train, 1/3 test split
+            tuple: (X_train, X_test, y_train, y_test)
         """
         X, y = Iris._load_raw()
 
@@ -57,7 +61,7 @@ class Iris:
         X = X.mask(mask)
 
         X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=1/3, random_state=42
+            X, y, test_size=test_size, random_state=42
         )
 
         return X_train, X_test, y_train, y_test
@@ -122,23 +126,24 @@ class Iris:
         return X_train_imputed, X_test
 
     @staticmethod
-    def input(mask_rate=0.0, reuse_dataset=False, impute=False):
+    def input(mask_rate=0.0, test_size=0.33, reuse_dataset=False, impute=False):
         """Load Iris dataset based on input parameters.
 
         Args:
             mask_rate: Fraction of values to mask (0.0 = no masking)
+            test_size: Fraction of data for test set (default 0.33)
             reuse_dataset: If True, load from previously exported CSV files
             impute: If True, impute missing values in training set only
 
         Returns:
-            tuple: (X_train, X_test, y_train, y_test) with 2/3 train, 1/3 test split
+            tuple: (X_train, X_test, y_train, y_test)
         """
         if reuse_dataset:
             X_train, X_test, y_train, y_test = Iris.load_from_csv(mask_rate)
         elif mask_rate > 0:
-            X_train, X_test, y_train, y_test = Iris.load_masked(mask_rate=mask_rate)
+            X_train, X_test, y_train, y_test = Iris.load_masked(mask_rate=mask_rate, test_size=test_size)
         else:
-            return Iris.load()
+            return Iris.load(test_size=test_size)
 
         # Impute missing values in training set if impute is enabled
         if impute:

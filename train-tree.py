@@ -19,6 +19,7 @@ Render.set_mask(args.mask_rate)
 # Load dataset
 X_train, X_test, y_train, y_test = DataSource.input(
     mask_rate=args.mask_rate,
+    test_size=args.test_size,
     reuse_dataset=args.use_output,
     impute=args.impute
 )
