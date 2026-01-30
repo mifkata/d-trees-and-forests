@@ -12,7 +12,7 @@
 * Create specs in `specs/` directory following the Spec Editor skill guidelines.
 
 ## Git
-* Do not commit author/co-author footer
+* Do not commit author/co-author information
 * Use conventional commit messages (e.g., `feat: add random forest training script`)
 
 ## Training scripts
