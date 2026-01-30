@@ -24,6 +24,7 @@ When `run_id` query param is present:
 - Fetches `/output/<run_id>/runtime.json` to restore form state (dataset, model, params)
 - Fetches `/output/<run_id>/result.json` to display results
 - Form is pre-populated with saved run data
+- If loading fails (run not found), automatically redirects to `/` (new run)
 
 After training completes, navigates to `/?run_id=<new_run_id>`.
 

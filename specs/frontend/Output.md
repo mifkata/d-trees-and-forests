@@ -31,9 +31,14 @@ Components for displaying training results, datasets, and errors.
   - Bar opacity/intensity determined by importance value (e.g., 0.90 importance = 0.9 alpha)
   - Feature name on left, importance value on right
   - Bars sorted by importance descending
-- **Generated Images section**: Grid of PNG images from the run
+- **Visuals section**: Grid of PNG images from the run
   - Fetches list of `.png` files from `/output/<runId>/`
   - Displays as thumbnail grid (responsive: 2 cols mobile, 3 cols tablet, 4 cols desktop)
+  - Each image has a beautified label below it (full name, not truncated):
+    - Remove file extension (`.png`)
+    - Replace dashes (`-`) and underscores (`_`) with spaces
+    - Capitalize each word (Title Case)
+    - Example: `feature_importance-chart.png` → "Feature Importance Chart"
   - Clicking image opens fullscreen zoomable modal
   - **Zoomable Image Modal**:
     - Dark overlay with image centered

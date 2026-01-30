@@ -291,7 +291,14 @@ function HomeContent() {
     [isCompareMode, runCompare, train, dataset, model, datasetParams, modelParams],
   );
 
-  if (!isHydrated || isLoadingRun) {
+  // Redirect to home when run fails to load
+  useEffect(() => {
+    if (loadError) {
+      router.replace('/');
+    }
+  }, [loadError, router]);
+
+  if (!isHydrated || isLoadingRun || loadError) {
     return (
       <main className="min-h-screen p-4 sm:p-8">
         <div className="mx-auto">
@@ -308,30 +315,6 @@ function HomeContent() {
               <div className="h-64 bg-gray-200 rounded"></div>
             </div>
           </div>
-        </div>
-      </main>
-    );
-  }
-
-  if (loadError) {
-    return (
-      <main className="min-h-screen p-4 sm:p-8">
-        <div className="mx-auto">
-          <h1 className="text-2xl font-bold text-gray-900 mb-8">
-            Model Trainer
-          </h1>
-          <Card>
-            <div className="text-center py-12">
-              <p className="text-red-600 font-medium">Error loading run</p>
-              <p className="text-gray-500 mt-2">{loadError}</p>
-              <a
-                href="/"
-                className="text-blue-600 hover:underline mt-4 inline-block"
-              >
-                Start new run
-              </a>
-            </div>
-          </Card>
         </div>
       </main>
     );
