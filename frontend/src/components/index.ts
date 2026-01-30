@@ -4,5 +4,5 @@ export { ModelSelector } from './ModelSelector';
 export { DatasetParams } from './DatasetParams';
 export { ModelParams } from './ModelParams';
 export { TrainButton } from './TrainButton';
-export { ResultsDisplay } from './ResultsDisplay';
+export { ResultsDisplay, ImagesDisplay } from './ResultsDisplay';
 export { ErrorDisplay } from './ErrorDisplay';

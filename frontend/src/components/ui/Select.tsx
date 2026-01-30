@@ -1,11 +1,12 @@
 import { tv } from 'tailwind-variants';
+import { InfoIcon } from './Tooltip';
 
 const selectWrapper = tv({
   base: 'flex flex-col gap-1.5',
 });
 
 const selectLabel = tv({
-  base: 'text-sm font-medium text-gray-700',
+  base: 'text-sm font-medium text-gray-700 flex items-center gap-1',
 });
 
 const selectElement = tv({
@@ -24,6 +25,7 @@ interface SelectOption {
 
 interface SelectProps {
   label?: string;
+  tooltip?: string;
   value: string;
   onChange: (value: string) => void;
   options: SelectOption[];
@@ -33,6 +35,7 @@ interface SelectProps {
 
 export function Select({
   label,
+  tooltip,
   value,
   onChange,
   options,
@@ -41,7 +44,12 @@ export function Select({
 }: SelectProps) {
   return (
     <div className={selectWrapper({ className })}>
-      {label && <label className={selectLabel()}>{label}</label>}
+      {label && (
+        <label className={selectLabel()}>
+          {label}
+          {tooltip && <InfoIcon tooltip={tooltip} />}
+        </label>
+      )}
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}

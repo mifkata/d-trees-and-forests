@@ -56,6 +56,14 @@ export function DatasetParams({ params, dataset, onChange, onReset, disabled }: 
           step={5}
           unit="%"
           disabled={disabled}
+          action={
+            <Checkbox
+              label="Impute"
+              checked={params.impute}
+              onChange={(impute) => onChange({ impute })}
+              disabled={disabled || params.mask === 0}
+            />
+          }
         />
 
         <Slider
@@ -92,27 +100,6 @@ export function DatasetParams({ params, dataset, onChange, onReset, disabled }: 
               />
             ))}
           </div>
-        </div>
-
-        <div className="flex flex-wrap gap-4">
-          <Checkbox
-            label="Impute missing values"
-            checked={params.impute}
-            onChange={(impute) => onChange({ impute })}
-            disabled={disabled}
-          />
-          <Checkbox
-            label="Generate images"
-            checked={params.images}
-            onChange={(images) => onChange({ images })}
-            disabled={disabled}
-          />
-          <Checkbox
-            label="Use cached dataset"
-            checked={params.use_output}
-            onChange={(use_output) => onChange({ use_output })}
-            disabled={disabled}
-          />
         </div>
       </div>
     </div>

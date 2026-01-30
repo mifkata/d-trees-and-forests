@@ -31,6 +31,19 @@ Components for displaying training results, datasets, and errors.
   - Bar opacity/intensity determined by importance value (e.g., 0.90 importance = 0.9 alpha)
   - Feature name on left, importance value on right
   - Bars sorted by importance descending
+- **Generated Images section**: Grid of PNG images from the run
+  - Fetches list of `.png` files from `/output/<runId>/`
+  - Displays as thumbnail grid (responsive: 2 cols mobile, 3 cols tablet, 4 cols desktop)
+  - Clicking image opens fullscreen zoomable modal
+  - **Zoomable Image Modal**:
+    - Dark overlay with image centered
+    - Zoom controls in header: zoom out (-), reset, zoom in (+), close (X)
+    - Shows current zoom percentage
+    - Keyboard shortcuts: +/- to zoom, 0 to reset, Esc to close
+    - Ctrl+Scroll to zoom in/out
+    - Scroll to pan when zoomed in
+    - Footer shows keyboard hints
+    - Zoom range: 10% to 500%, step 10%
 - Execution time footer
 
 #### Dataset Tab

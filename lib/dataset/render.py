@@ -179,6 +179,8 @@ class Render:
         feature_pairs = list(combinations(range(len(feature_names)), 2))
         n_pairs = len(feature_pairs)
         cols = min(3, n_pairs)
+        if n_pairs == 0:
+            cols = 1
         rows = (n_pairs + cols - 1) // cols
 
         fig, axes = cls.header(figsize=(5 * cols, 4 * rows), subplots=(rows, cols))
@@ -244,7 +246,11 @@ class Render:
         if grid_sizes is None:
             grid_sizes = [(2, 2), (3, 3), (4, 4)]
 
+        n_estimators = len(clf.estimators_)
         for rows, cols in grid_sizes:
+            grid_size = rows * cols
+            if grid_size > n_estimators:
+                continue  # Skip grid sizes larger than available estimators
             fig, axes = cls.header(
                 figsize=(cols * 5, rows * 4),
                 subplots=(rows, cols)
@@ -257,12 +263,13 @@ class Render:
                     filled=True,
                     rounded=True,
                     ax=ax,
-                    fontsize=max(2, 8 - rows)
+                    fontsize=max(4, 8 - rows)
                 )
-                ax.set_title(f"Tree {idx + 1}", fontsize=max(6, 12 - rows))
+                ax.set_title(f"Tree {idx + 1}", fontsize=max(6, 10 - rows))
             cls.footer(
                 f"{filename_prefix}_{rows}x{cols}.png",
-                title=f"Random Forest Sample Trees ({rows}x{cols})"
+                title=f"Random Forest Sample Trees ({rows}x{cols})",
+                dpi=150
             )
 
     @classmethod

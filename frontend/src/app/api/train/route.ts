@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { spawn } from "child_process";
 import path from "path";
+import fs from "fs/promises";
 import type {
   TrainRequest,
   TrainResponse,
@@ -13,6 +14,7 @@ import { MODELS } from "@/types/model";
 const SCRIPTS_DIR =
   process.env.SCRIPTS_DIR || path.resolve(process.cwd(), "..");
 const SCRIPT_TIMEOUT = 300000; // 5 minutes
+const OUTPUT_DIR = path.join(process.cwd(), "public", "output");
 
 class ScriptError extends Error {
   constructor(
@@ -56,13 +58,8 @@ function buildArgs(request: TrainRequest, runId: string): string[] {
     args.push("--impute");
   }
 
-  if (datasetParams.use_output) {
-    args.push("--use-output", "true");
-  }
-
-  if (datasetParams.images) {
-    args.push("--images");
-  }
+  // Always generate images
+  args.push("--images");
 
   if (datasetParams.ignore_columns && datasetParams.ignore_columns.length > 0) {
     args.push("--dataset-ignore-columns", datasetParams.ignore_columns.join(","));
@@ -131,6 +128,21 @@ function extractStackTrace(stderr: string): string | undefined {
   const traceStart = lines.findIndex((line) => line.includes("Traceback"));
   if (traceStart === -1) return undefined;
   return lines.slice(traceStart).join("\n");
+}
+
+async function updateResultWithExecutionTime(
+  runId: string,
+  executionTime: number,
+): Promise<void> {
+  const resultPath = path.join(OUTPUT_DIR, runId, "result.json");
+  try {
+    const content = await fs.readFile(resultPath, "utf-8");
+    const result = JSON.parse(content);
+    result.execution_time = executionTime;
+    await fs.writeFile(resultPath, JSON.stringify(result, null, 2));
+  } catch {
+    // Ignore errors - result.json may not exist yet
+  }
 }
 
 interface PythonClassificationReport {
@@ -335,12 +347,17 @@ export async function POST(
       );
     }
 
+    const executionTime = Date.now() - startTime;
+
+    // Save execution time to result.json
+    await updateResultWithExecutionTime(runId, executionTime);
+
     return NextResponse.json({
       success: true,
       data: {
         ...jsonOutput,
         runId,
-        executionTime: Date.now() - startTime,
+        executionTime,
       },
     });
   } catch (error) {

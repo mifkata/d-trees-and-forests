@@ -81,7 +81,7 @@ export function useParamsCache(): UseParamsCacheReturn {
 
   const setModelParams = useCallback((params: Partial<ModelParams>) => {
     setModelParamsState((prev) => {
-      const newParams = { ...prev, ...params };
+      const newParams = { ...prev, ...params } as ModelParams;
       storage.setModelParams(dataset, model, newParams);
       return newParams;
     });

@@ -57,6 +57,7 @@ Visualization utilities for model analysis. Generates matplotlib plots for featu
   - Legacy (no run_id): `./output/{base}_{mask_pct}.{ext}`
 - **Path function**: `get_output_path(filename)` returns the full path based on current run_id or legacy mode
 - **Default DPI**: 150
+- **Tree grids**: `forest_trees` uses 5x4 inches per cell, 150 DPI for all grid sizes
 
 ## Related specs
 - [train/DecisionTree](../train/DecisionTree.md) - Uses tree visualization methods

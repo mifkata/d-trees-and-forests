@@ -12,7 +12,7 @@ Page structure and component composition for the training interface.
 
 ## Root Layout
 - HTML document with Inter font
-- Metadata title: "D-Trees & Random Forests"
+- Metadata title: "Model Trainer"
 - Body renders page children directly
 
 ## Routes
@@ -29,13 +29,13 @@ After training completes, navigates to `/?run_id=<new_run_id>`.
 
 ## Page Composition
 
-**Header**: Page title "D-Trees & Random Forests"
+**Header**: Page title "Model Trainer"
 
 **Main Content**: Two-column layout on desktop, stacked on mobile.
 
 **Left Column (Form)**:
 - DatasetSelector and ModelSelector in a row
-- DatasetParams with mask slider, impute checkbox, use cached checkbox, generate images checkbox, and reset button
+- DatasetParams with mask slider (with impute checkbox), split slider, column selection, and reset button
 - ModelParams renders the appropriate form based on selected model type, with reset button
 - TrainButton, disabled during training with loading indicator
 

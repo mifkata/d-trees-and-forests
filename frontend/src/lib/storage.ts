@@ -51,7 +51,7 @@ export const storage = {
   getModelParams(dataset: DatasetId, model: ModelId): ModelParams {
     const cached = safeGetItem<Partial<ModelParams>>(getModelParamsKey(dataset, model));
     // Merge with defaults to ensure new fields are present
-    return { ...getDefaultModelParams(model, dataset), ...cached };
+    return { ...getDefaultModelParams(model, dataset), ...cached } as ModelParams;
   },
 
   getLastSelection(): LastSelection | null {

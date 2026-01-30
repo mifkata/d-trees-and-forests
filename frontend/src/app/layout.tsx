@@ -1,12 +1,12 @@
-import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-import './globals.css';
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'D-Trees & Random Forests',
-  description: 'Train and evaluate decision tree and ensemble classifiers',
+  title: "Model Trainer",
+  description: "Train and evaluate decision tree and ensemble classifiers",
 };
 
 export default function RootLayout({

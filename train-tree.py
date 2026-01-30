@@ -92,8 +92,6 @@ Model.report(
 )
 
 if args.images:
-    # Export heatmap of feature correlations
-    Render.heatmap(pd.concat([X_train, X_test]))
 
     # Export tree visualization
     Render.tree(
@@ -102,9 +100,14 @@ if args.images:
         class_names=clf.classes_.tolist()
     )
 
-    # Export feature importance
-    Render.tree_importance(clf, X_train.columns.tolist())
+    features = X_train.shape[1]
+    if features >= 2:
+        # Export heatmap of feature correlations
+        Render.heatmap(pd.concat([X_train, X_test]))
 
-    # Export decision boundaries (only for small feature sets)
-    if len(X_train.columns) <= 6:
-        Render.tree_boundaries(clf, X_train, y_train, X_train.columns.tolist())
+        # Export feature importance
+        Render.tree_importance(clf, X_train.columns.tolist())
+
+        # Export decision boundaries (only for small feature sets)
+        if len(X_train.columns) <= 6:
+            Render.tree_boundaries(clf, X_train, y_train, X_train.columns.tolist())

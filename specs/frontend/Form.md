@@ -23,6 +23,12 @@ Form components for selecting dataset, model, and configuring training parameter
 
 ### ModelSelector
 - Dropdown with model options
+- **History button**: Next to the "Model" label, displays "History" text button
+  - Opens modal showing previous training runs for the selected model
+  - Scans `frontend/public/output/<timestamp>/<model>_<dataset>_<score>.id` files
+  - Each run displays as: "Timestamp - Accuracy% - timeago" (e.g., "1706540123 - 98.00% - 2 hours ago")
+  - Clicking a run navigates to `/?run_id=<timestamp>`
+  - Shows "No history found" when no runs exist
 - Props: `value`, `onChange`, `disabled`
 
 ### ParamsTabs
@@ -34,21 +40,38 @@ Form components for selecting dataset, model, and configuring training parameter
 
 ### DatasetParams
 - Card with header "Dataset Parameters" and Reset button
-- Mask rate slider (0-100%, step 5)
+- Mask rate slider (0-100%, step 5) with "Impute" checkbox next to label
+  - Impute checkbox is disabled when mask rate is 0
 - Split slider for train/test split (10-90%, step 5, default 30) - defines test set percentage
 - Column selection: list of available columns with checkboxes to include/exclude
   - Columns fetched based on selected dataset
   - Deselected columns are passed as `ignore_columns` array
   - All columns selected by default
-- Checkboxes: Impute missing values, Generate images, Use cached dataset
+- Note: Images are always generated (--images flag always passed to scripts)
 - Props: `params`, `columns`, `onChange`, `onReset`, `disabled`
 
 ### ModelParams
 - Card with header showing model name and Reset button
 - Renders model-specific form based on `model` prop:
-  - **TreeParamsForm**: criterion, splitter, max_depth, min_samples_split, min_samples_leaf, max_features
-  - **ForestParamsForm**: n_estimators, criterion, max_depth, min_samples_split, min_samples_leaf, max_features, max_samples, bootstrap, oob_score
-  - **GradientParamsForm**: learning_rate, max_iter, max_depth, max_leaf_nodes, min_samples_leaf, max_bins, early_stopping
+  - **TreeParamsForm** (DecisionTreeClassifier):
+    - criterion (gini/entropy/log_loss)
+    - splitter (best/random)
+    - max_features (auto/sqrt/log2)
+    - max_depth, max_leaf_nodes
+    - min_samples_split, min_samples_leaf
+    - min_impurity_decrease, ccp_alpha
+  - **ForestParamsForm** (RandomForestClassifier):
+    - n_estimators, criterion, max_features
+    - max_depth, max_leaf_nodes, max_samples
+    - min_samples_split, min_samples_leaf
+    - min_impurity_decrease, ccp_alpha, n_jobs
+    - bootstrap, oob_score (disabled if bootstrap=false), warm_start
+  - **GradientParamsForm** (HistGradientBoostingClassifier):
+    - learning_rate, max_iter
+    - max_depth, max_leaf_nodes, min_samples_leaf, max_bins
+    - l2_regularization
+    - early_stopping (off/on/auto)
+    - validation_fraction, n_iter_no_change, tol (disabled if early_stopping=off)
 - Props: `model`, `params`, `onChange`, `onReset`, `disabled`
 
 ### TrainButton

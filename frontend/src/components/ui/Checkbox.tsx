@@ -1,4 +1,5 @@
 import { tv } from 'tailwind-variants';
+import { InfoIcon } from './Tooltip';
 
 const checkboxWrapper = tv({
   base: 'flex items-center gap-2',
@@ -13,11 +14,12 @@ const checkboxElement = tv({
 });
 
 const checkboxLabel = tv({
-  base: 'text-sm text-gray-700',
+  base: 'text-sm text-gray-700 flex items-center gap-1',
 });
 
 interface CheckboxProps {
   label: string;
+  tooltip?: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
   disabled?: boolean;
@@ -26,6 +28,7 @@ interface CheckboxProps {
 
 export function Checkbox({
   label,
+  tooltip,
   checked,
   onChange,
   disabled,
@@ -40,7 +43,10 @@ export function Checkbox({
         disabled={disabled}
         className={checkboxElement()}
       />
-      <span className={checkboxLabel()}>{label}</span>
+      <span className={checkboxLabel()}>
+        {label}
+        {tooltip && <InfoIcon tooltip={tooltip} />}
+      </span>
     </label>
   );
 }

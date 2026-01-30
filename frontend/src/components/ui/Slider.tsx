@@ -37,6 +37,7 @@ interface SliderProps {
   unit?: string;
   disabled?: boolean;
   className?: string;
+  action?: React.ReactNode;
 }
 
 export function Slider({
@@ -49,11 +50,15 @@ export function Slider({
   unit = '',
   disabled,
   className,
+  action,
 }: SliderProps) {
   return (
     <div className={sliderWrapper({ className })}>
       <div className={sliderHeader()}>
-        <span className={sliderLabel()}>{label}</span>
+        <div className="flex items-center gap-3">
+          <span className={sliderLabel()}>{label}</span>
+          {action}
+        </div>
         <span className={sliderValue()}>
           {value}{unit}
         </span>

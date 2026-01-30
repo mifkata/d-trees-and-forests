@@ -11,6 +11,7 @@ import {
   ModelParams,
   TrainButton,
   ResultsDisplay,
+  ImagesDisplay,
   ErrorDisplay,
 } from "@/components";
 import { ControlledTabs } from "@/components/ui";
@@ -27,8 +28,6 @@ interface RuntimeJson {
     split: number;
     impute: boolean;
     ignore_columns: number[];
-    use_output: boolean;
-    images: boolean;
   };
   modelParams: Record<string, unknown>;
 }
@@ -58,12 +57,14 @@ function HomeContent() {
   const [isLoadingRun, setIsLoadingRun] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const hasNavigatedForResult = useRef<string | null>(null);
+  const loadedRunId = useRef<string | null>(null);
 
-  // Load run data when run_id query param is present
+  // Load run data when run_id query param is present or changes
   useEffect(() => {
-    if (!runId || isHydrated) return;
+    if (!runId || !isHydrated || loadedRunId.current === runId) return;
 
     async function loadRunData() {
+      loadedRunId.current = runId;
       setIsLoadingRun(true);
       setLoadError(null);
 
@@ -83,8 +84,6 @@ function HomeContent() {
           split: runtime.datasetParams.split,
           impute: runtime.datasetParams.impute,
           ignore_columns: runtime.datasetParams.ignore_columns || [],
-          use_output: runtime.datasetParams.use_output,
-          images: runtime.datasetParams.images,
         });
         setModelParams(runtime.modelParams);
 
@@ -138,7 +137,7 @@ function HomeContent() {
                   resultData.classification_report["weighted avg"].support,
               },
             },
-            executionTime: 0,
+            executionTime: resultData.execution_time || 0,
             runId: runId || undefined,
           };
 
@@ -231,9 +230,9 @@ function HomeContent() {
   if (!isHydrated || isLoadingRun) {
     return (
       <main className="min-h-screen p-4 sm:p-8">
-        <div className="max-w-7xl mx-auto">
+        <div className="mx-auto">
           <h1 className="text-2xl font-bold text-gray-900 mb-8">
-            D-Trees & Random Forests
+            Model Trainer
           </h1>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="animate-pulse space-y-4">
@@ -253,9 +252,9 @@ function HomeContent() {
   if (loadError) {
     return (
       <main className="min-h-screen p-4 sm:p-8">
-        <div className="max-w-7xl mx-auto">
+        <div className="mx-auto">
           <h1 className="text-2xl font-bold text-gray-900 mb-8">
-            D-Trees & Random Forests
+            Model Trainer
           </h1>
           <Card>
             <div className="text-center py-12">
@@ -276,11 +275,9 @@ function HomeContent() {
 
   return (
     <main className="min-h-screen p-4 sm:p-8">
-      <div className="max-w-7xl mx-auto">
+      <div className="mx-auto">
         <div className="flex items-center gap-4 mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">
-            D-Trees & Random Forests
-          </h1>
+          <h1 className="text-2xl font-bold text-gray-900">Model Trainer</h1>
           {runId && (
             <span className="text-sm text-gray-500 font-mono">
               Run: {runId}
@@ -288,15 +285,19 @@ function HomeContent() {
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="flex gap-6">
           {/* Left Column - Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6 w-[920px]">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Card>
                 <DatasetSelector value={dataset} onChange={setDataset} />
               </Card>
               <Card>
-                <ModelSelector value={model} onChange={setModel} />
+                <ModelSelector
+                  value={model}
+                  onChange={setModel}
+                  dataset={dataset}
+                />
               </Card>
             </div>
 
@@ -334,10 +335,15 @@ function HomeContent() {
           </form>
 
           {/* Right Column - Output */}
-          <div className="space-y-6">
+          <div className="space-y-6 w-full">
             {error && <ErrorDisplay error={error} onDismiss={clearError} />}
 
-            {result && <ResultsDisplay result={result} isLoading={isLoading} />}
+            {result && (
+              <div className="grid grid-cols-2 xl:grid-cols-2 gap-6">
+                <ResultsDisplay result={result} isLoading={isLoading} />
+                {result.runId && <ImagesDisplay runId={result.runId} />}
+              </div>
+            )}
 
             {!error && !result && (
               <Card>
@@ -356,10 +362,8 @@ function HomeContent() {
 function LoadingFallback() {
   return (
     <main className="min-h-screen p-4 sm:p-8">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-8">
-          D-Trees & Random Forests
-        </h1>
+      <div className="mx-auto">
+        <h1 className="text-2xl font-bold text-gray-900 mb-8">Model Trainer</h1>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="animate-pulse space-y-4">
             <div className="h-10 bg-gray-200 rounded"></div>

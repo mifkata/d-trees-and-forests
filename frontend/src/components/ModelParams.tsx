@@ -46,9 +46,10 @@ interface TreeParamsFormProps {
 
 function TreeParamsForm({ params, onChange, disabled }: TreeParamsFormProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       <Select
         label="Criterion"
+        tooltip="Function to measure split quality. Gini is faster, entropy may give slightly better results."
         value={params.criterion}
         onChange={(v) => onChange({ criterion: v as TreeParams['criterion'] })}
         options={[
@@ -61,6 +62,7 @@ function TreeParamsForm({ params, onChange, disabled }: TreeParamsFormProps) {
 
       <Select
         label="Splitter"
+        tooltip="Strategy to choose the split. Best chooses optimal split, random is faster but less accurate."
         value={params.splitter}
         onChange={(v) => onChange({ splitter: v as TreeParams['splitter'] })}
         options={[
@@ -70,8 +72,22 @@ function TreeParamsForm({ params, onChange, disabled }: TreeParamsFormProps) {
         disabled={disabled}
       />
 
+      <Select
+        label="Max Features"
+        tooltip="Number of features to consider for best split. Fewer features = faster but potentially less accurate."
+        value={params.max_features ?? 'auto'}
+        onChange={(v) => onChange({ max_features: v === 'auto' ? null : v as 'sqrt' | 'log2' })}
+        options={[
+          { value: 'auto', label: 'Auto (all)' },
+          { value: 'sqrt', label: 'Square Root' },
+          { value: 'log2', label: 'Log2' },
+        ]}
+        disabled={disabled}
+      />
+
       <Input
         label="Max Depth"
+        tooltip="Maximum depth of tree. Deeper trees can overfit. Leave empty for unlimited."
         type="number"
         value={params.max_depth ?? ''}
         onChange={(v) => onChange({ max_depth: v === '' ? null : Number(v) })}
@@ -81,7 +97,19 @@ function TreeParamsForm({ params, onChange, disabled }: TreeParamsFormProps) {
       />
 
       <Input
+        label="Max Leaf Nodes"
+        tooltip="Maximum number of leaf nodes. Limits tree complexity. Leave empty for unlimited."
+        type="number"
+        value={params.max_leaf_nodes ?? ''}
+        onChange={(v) => onChange({ max_leaf_nodes: v === '' ? null : Number(v) })}
+        placeholder="Unlimited"
+        min={2}
+        disabled={disabled}
+      />
+
+      <Input
         label="Min Samples Split"
+        tooltip="Minimum samples required to split a node. Higher values prevent overfitting."
         type="number"
         value={params.min_samples_split}
         onChange={(v) => onChange({ min_samples_split: Number(v) || 2 })}
@@ -91,6 +119,7 @@ function TreeParamsForm({ params, onChange, disabled }: TreeParamsFormProps) {
 
       <Input
         label="Min Samples Leaf"
+        tooltip="Minimum samples required at a leaf node. Higher values create smoother models."
         type="number"
         value={params.min_samples_leaf}
         onChange={(v) => onChange({ min_samples_leaf: Number(v) || 1 })}
@@ -98,14 +127,36 @@ function TreeParamsForm({ params, onChange, disabled }: TreeParamsFormProps) {
         disabled={disabled}
       />
 
+      <Input
+        label="Min Impurity Decrease"
+        tooltip="Minimum impurity decrease required for a split. Acts as early stopping criterion."
+        type="number"
+        value={params.min_impurity_decrease}
+        onChange={(v) => onChange({ min_impurity_decrease: Number(v) || 0 })}
+        min={0}
+        step={0.001}
+        disabled={disabled}
+      />
+
+      <Input
+        label="CCP Alpha"
+        tooltip="Complexity parameter for cost-complexity pruning. Higher values create simpler trees."
+        type="number"
+        value={params.ccp_alpha}
+        onChange={(v) => onChange({ ccp_alpha: Number(v) || 0 })}
+        min={0}
+        step={0.001}
+        disabled={disabled}
+      />
+
       <Select
-        label="Max Features"
-        value={params.max_features ?? 'auto'}
-        onChange={(v) => onChange({ max_features: v === 'auto' ? null : v as 'sqrt' | 'log2' })}
+        label="Class Weight"
+        tooltip="Weight classes inversely proportional to frequency. Useful for imbalanced datasets."
+        value={params.class_weight ?? 'none'}
+        onChange={(v) => onChange({ class_weight: v === 'none' ? null : v as 'balanced' })}
         options={[
-          { value: 'auto', label: 'Auto (all)' },
-          { value: 'sqrt', label: 'Square Root' },
-          { value: 'log2', label: 'Log2' },
+          { value: 'none', label: 'None' },
+          { value: 'balanced', label: 'Balanced' },
         ]}
         disabled={disabled}
       />
@@ -125,6 +176,7 @@ function ForestParamsForm({ params, onChange, disabled }: ForestParamsFormProps)
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         <Input
           label="N Estimators"
+          tooltip="Number of trees in the forest. More trees = better accuracy but slower training."
           type="number"
           value={params.n_estimators}
           onChange={(v) => onChange({ n_estimators: Number(v) || 10 })}
@@ -134,6 +186,7 @@ function ForestParamsForm({ params, onChange, disabled }: ForestParamsFormProps)
 
         <Select
           label="Criterion"
+          tooltip="Function to measure split quality. Gini is faster, entropy may give slightly better results."
           value={params.criterion}
           onChange={(v) => onChange({ criterion: v as ForestParams['criterion'] })}
           options={[
@@ -144,36 +197,9 @@ function ForestParamsForm({ params, onChange, disabled }: ForestParamsFormProps)
           disabled={disabled}
         />
 
-        <Input
-          label="Max Depth"
-          type="number"
-          value={params.max_depth ?? ''}
-          onChange={(v) => onChange({ max_depth: v === '' ? null : Number(v) })}
-          placeholder="Unlimited"
-          min={1}
-          disabled={disabled}
-        />
-
-        <Input
-          label="Min Samples Split"
-          type="number"
-          value={params.min_samples_split}
-          onChange={(v) => onChange({ min_samples_split: Number(v) || 2 })}
-          min={2}
-          disabled={disabled}
-        />
-
-        <Input
-          label="Min Samples Leaf"
-          type="number"
-          value={params.min_samples_leaf}
-          onChange={(v) => onChange({ min_samples_leaf: Number(v) || 1 })}
-          min={1}
-          disabled={disabled}
-        />
-
         <Select
           label="Max Features"
+          tooltip="Features to consider per split. sqrt is recommended for classification."
           value={params.max_features ?? 'auto'}
           onChange={(v) => onChange({ max_features: v === 'auto' ? null : v as 'sqrt' | 'log2' })}
           options={[
@@ -185,7 +211,30 @@ function ForestParamsForm({ params, onChange, disabled }: ForestParamsFormProps)
         />
 
         <Input
+          label="Max Depth"
+          tooltip="Maximum depth of each tree. Shallower trees prevent overfitting."
+          type="number"
+          value={params.max_depth ?? ''}
+          onChange={(v) => onChange({ max_depth: v === '' ? null : Number(v) })}
+          placeholder="Unlimited"
+          min={1}
+          disabled={disabled}
+        />
+
+        <Input
+          label="Max Leaf Nodes"
+          tooltip="Maximum leaf nodes per tree. Limits complexity."
+          type="number"
+          value={params.max_leaf_nodes ?? ''}
+          onChange={(v) => onChange({ max_leaf_nodes: v === '' ? null : Number(v) })}
+          placeholder="Unlimited"
+          min={2}
+          disabled={disabled}
+        />
+
+        <Input
           label="Max Samples"
+          tooltip="Samples to draw for training each tree. Lower values increase diversity."
           type="number"
           value={params.max_samples ?? ''}
           onChange={(v) => onChange({ max_samples: v === '' ? null : Number(v) })}
@@ -193,19 +242,94 @@ function ForestParamsForm({ params, onChange, disabled }: ForestParamsFormProps)
           min={1}
           disabled={disabled}
         />
+
+        <Input
+          label="Min Samples Split"
+          tooltip="Minimum samples to split a node. Higher = less overfitting."
+          type="number"
+          value={params.min_samples_split}
+          onChange={(v) => onChange({ min_samples_split: Number(v) || 2 })}
+          min={2}
+          disabled={disabled}
+        />
+
+        <Input
+          label="Min Samples Leaf"
+          tooltip="Minimum samples at leaf nodes. Higher = smoother predictions."
+          type="number"
+          value={params.min_samples_leaf}
+          onChange={(v) => onChange({ min_samples_leaf: Number(v) || 1 })}
+          min={1}
+          disabled={disabled}
+        />
+
+        <Input
+          label="Min Impurity Decrease"
+          tooltip="Minimum impurity decrease for a split. Acts as regularization."
+          type="number"
+          value={params.min_impurity_decrease}
+          onChange={(v) => onChange({ min_impurity_decrease: Number(v) || 0 })}
+          min={0}
+          step={0.001}
+          disabled={disabled}
+        />
+
+        <Input
+          label="CCP Alpha"
+          tooltip="Cost-complexity pruning parameter. Higher = simpler trees."
+          type="number"
+          value={params.ccp_alpha}
+          onChange={(v) => onChange({ ccp_alpha: Number(v) || 0 })}
+          min={0}
+          step={0.001}
+          disabled={disabled}
+        />
+
+        <Input
+          label="N Jobs"
+          tooltip="Parallel jobs for fitting. -1 uses all CPU cores."
+          type="number"
+          value={params.n_jobs ?? ''}
+          onChange={(v) => onChange({ n_jobs: v === '' ? null : Number(v) })}
+          placeholder="1 (-1 for all)"
+          min={-1}
+          disabled={disabled}
+        />
+
+        <Select
+          label="Class Weight"
+          tooltip="Weight classes inversely proportional to frequency. balanced_subsample uses bootstrap sample weights."
+          value={params.class_weight ?? 'none'}
+          onChange={(v) => onChange({ class_weight: v === 'none' ? null : v as 'balanced' | 'balanced_subsample' })}
+          options={[
+            { value: 'none', label: 'None' },
+            { value: 'balanced', label: 'Balanced' },
+            { value: 'balanced_subsample', label: 'Balanced Subsample' },
+          ]}
+          disabled={disabled}
+        />
       </div>
 
       <div className="flex flex-wrap gap-4">
         <Checkbox
           label="Bootstrap"
+          tooltip="Whether to use bootstrap samples. Enables out-of-bag scoring."
           checked={params.bootstrap}
           onChange={(bootstrap) => onChange({ bootstrap })}
           disabled={disabled}
         />
         <Checkbox
           label="OOB Score"
+          tooltip="Use out-of-bag samples to estimate generalization score."
           checked={params.oob_score}
           onChange={(oob_score) => onChange({ oob_score })}
+          disabled={disabled || !params.bootstrap}
+        />
+        <Checkbox
+          label="Warm Start"
+          tooltip="Reuse previous fit and add more estimators."
+          checked={params.warm_start}
+          onChange={(warm_start) => onChange({ warm_start })}
           disabled={disabled}
         />
       </div>
@@ -220,14 +344,17 @@ interface GradientParamsFormProps {
 }
 
 function GradientParamsForm({ params, onChange, disabled }: GradientParamsFormProps) {
+  const earlyStoppingEnabled = params.early_stopping === true || params.early_stopping === 'auto';
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       <Input
         label="Learning Rate"
+        tooltip="Step size for gradient descent. Lower = slower but more stable training."
         type="number"
         value={params.learning_rate}
         onChange={(v) => onChange({ learning_rate: Number(v) || 0.1 })}
-        min={0.01}
+        min={0.001}
         max={1}
         step={0.01}
         disabled={disabled}
@@ -235,6 +362,7 @@ function GradientParamsForm({ params, onChange, disabled }: GradientParamsFormPr
 
       <Input
         label="Max Iterations"
+        tooltip="Maximum number of boosting iterations. More iterations can improve accuracy."
         type="number"
         value={params.max_iter}
         onChange={(v) => onChange({ max_iter: Number(v) || 100 })}
@@ -244,6 +372,7 @@ function GradientParamsForm({ params, onChange, disabled }: GradientParamsFormPr
 
       <Input
         label="Max Depth"
+        tooltip="Maximum depth of each tree. Controls model complexity."
         type="number"
         value={params.max_depth ?? ''}
         onChange={(v) => onChange({ max_depth: v === '' ? null : Number(v) })}
@@ -254,6 +383,7 @@ function GradientParamsForm({ params, onChange, disabled }: GradientParamsFormPr
 
       <Input
         label="Max Leaf Nodes"
+        tooltip="Maximum leaf nodes per tree. 31 is a common default."
         type="number"
         value={params.max_leaf_nodes ?? ''}
         onChange={(v) => onChange({ max_leaf_nodes: v === '' ? null : Number(v) })}
@@ -264,6 +394,7 @@ function GradientParamsForm({ params, onChange, disabled }: GradientParamsFormPr
 
       <Input
         label="Min Samples Leaf"
+        tooltip="Minimum samples at leaf nodes. Higher = more regularization."
         type="number"
         value={params.min_samples_leaf}
         onChange={(v) => onChange({ min_samples_leaf: Number(v) || 1 })}
@@ -273,6 +404,7 @@ function GradientParamsForm({ params, onChange, disabled }: GradientParamsFormPr
 
       <Input
         label="Max Bins"
+        tooltip="Max bins for histogram-based splitting. Higher = more precise but slower."
         type="number"
         value={params.max_bins}
         onChange={(v) => onChange({ max_bins: Number(v) || 255 })}
@@ -281,8 +413,20 @@ function GradientParamsForm({ params, onChange, disabled }: GradientParamsFormPr
         disabled={disabled}
       />
 
+      <Input
+        label="L2 Regularization"
+        tooltip="L2 penalty on leaf weights. Higher values reduce overfitting."
+        type="number"
+        value={params.l2_regularization}
+        onChange={(v) => onChange({ l2_regularization: Number(v) || 0 })}
+        min={0}
+        step={0.01}
+        disabled={disabled}
+      />
+
       <Select
         label="Early Stopping"
+        tooltip="Stop training when validation score stops improving. Auto enables for large datasets."
         value={String(params.early_stopping)}
         onChange={(v) => {
           const value = v === 'auto' ? 'auto' : v === 'true';
@@ -293,6 +437,72 @@ function GradientParamsForm({ params, onChange, disabled }: GradientParamsFormPr
           { value: 'true', label: 'On' },
           { value: 'auto', label: 'Auto' },
         ]}
+        disabled={disabled}
+      />
+
+      <Input
+        label="Validation Fraction"
+        tooltip="Fraction of data for early stopping validation."
+        type="number"
+        value={params.validation_fraction}
+        onChange={(v) => onChange({ validation_fraction: Number(v) || 0.1 })}
+        min={0.01}
+        max={0.5}
+        step={0.01}
+        disabled={disabled || !earlyStoppingEnabled}
+      />
+
+      <Input
+        label="N Iter No Change"
+        tooltip="Iterations without improvement before stopping."
+        type="number"
+        value={params.n_iter_no_change}
+        onChange={(v) => onChange({ n_iter_no_change: Number(v) || 10 })}
+        min={1}
+        disabled={disabled || !earlyStoppingEnabled}
+      />
+
+      <Input
+        label="Tolerance"
+        tooltip="Minimum improvement to qualify as an improvement."
+        type="number"
+        value={params.tol}
+        onChange={(v) => onChange({ tol: Number(v) || 1e-7 })}
+        min={0}
+        step={1e-8}
+        disabled={disabled || !earlyStoppingEnabled}
+      />
+
+      <Select
+        label="Scoring"
+        tooltip="Scoring method for early stopping. Loss uses the loss function, accuracy uses classification accuracy."
+        value={params.scoring ?? 'auto'}
+        onChange={(v) => onChange({ scoring: v === 'auto' ? null : v as 'accuracy' | 'loss' })}
+        options={[
+          { value: 'auto', label: 'Auto (loss)' },
+          { value: 'loss', label: 'Loss' },
+          { value: 'accuracy', label: 'Accuracy' },
+        ]}
+        disabled={disabled || !earlyStoppingEnabled}
+      />
+
+      <Select
+        label="Class Weight"
+        tooltip="Weight classes inversely proportional to frequency. Useful for imbalanced datasets."
+        value={params.class_weight ?? 'none'}
+        onChange={(v) => onChange({ class_weight: v === 'none' ? null : v as 'balanced' })}
+        options={[
+          { value: 'none', label: 'None' },
+          { value: 'balanced', label: 'Balanced' },
+        ]}
+        disabled={disabled}
+      />
+
+      <Checkbox
+        label="Warm Start"
+        tooltip="Reuse previous solution and add more boosting iterations."
+        checked={params.warm_start}
+        onChange={(warm_start) => onChange({ warm_start })}
         disabled={disabled}
       />
     </div>
