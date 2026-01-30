@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Compare accuracy across training scripts with varying mask rates."""
 
+import argparse
 import json
 import subprocess
 from lib import Render
@@ -14,9 +15,12 @@ COLORS = {
 }
 
 
-def run_script(script, mask, impute=False, use_output=False):
+def run_script(script, mask, impute=False, use_output=False, run_id=None):
     """Run a training script and return accuracy from JSON output."""
     cmd = ["python", "-W", "ignore", script, "--json"]
+
+    if run_id:
+        cmd.extend(["--run-id", run_id])
 
     if mask > 0:
         cmd.extend(["--mask", str(mask)])

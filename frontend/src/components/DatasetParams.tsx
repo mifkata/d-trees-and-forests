@@ -25,6 +25,18 @@ export function DatasetParams({ params, dataset, onChange, onReset, disabled }: 
     }
   };
 
+  const allSelected = !params.ignore_columns || params.ignore_columns.length === 0;
+
+  const handleSelectAll = () => {
+    if (allSelected) {
+      // Deselect all - add all column indices to ignore_columns
+      onChange({ ignore_columns: columns.map((_, i) => i) });
+    } else {
+      // Select all - clear ignore_columns
+      onChange({ ignore_columns: [] });
+    }
+  };
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
@@ -58,9 +70,17 @@ export function DatasetParams({ params, dataset, onChange, onReset, disabled }: 
         />
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Feature Columns
-          </label>
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-sm font-medium text-gray-700">
+              Feature Columns
+            </label>
+            <Checkbox
+              label="Select All"
+              checked={allSelected}
+              onChange={handleSelectAll}
+              disabled={disabled}
+            />
+          </div>
           <div className="flex flex-wrap gap-2">
             {columns.map((col, index) => (
               <Checkbox

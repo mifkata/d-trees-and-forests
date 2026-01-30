@@ -5,13 +5,16 @@ Visualization utilities for model analysis. Generates matplotlib plots for featu
 
 ## Requirements
 - Manage plot lifecycle with `header()` and `footer()` methods
-- Support mask-rate-prefixed output filenames
+- Support mask-rate-prefixed output filenames (legacy)
+- Support run_id-based output to `frontend/public/output/<run_id>/`
 - Generate the following visualizations:
 
 ### Common
 | Method | Description |
 |--------|-------------|
 | `set_mask(mask_rate)` | Set mask percentage for filename prefixes |
+| `set_run_id(run_id)` | Set run ID for output directory (overrides legacy path) |
+| `get_output_path(filename)` | Get full output path based on run_id or legacy mode |
 | `header(figsize, subplots)` | Initialize figure/axes |
 | `footer(filename, title, dpi)` | Save and close figure |
 | `heatmap(X, filename)` | Feature correlation heatmap |
@@ -49,8 +52,10 @@ Visualization utilities for model analysis. Generates matplotlib plots for featu
 ## Implementation Details
 - **Libraries**: matplotlib, seaborn, sklearn.tree.plot_tree, sklearn.inspection (PartialDependenceDisplay, DecisionBoundaryDisplay)
 - **Location**: `lib/dataset/render.py`
-- **Output directory**: `./output/`
-- **Filename format**: `{base}_{mask_pct}.{ext}`
+- **Output paths**:
+  - With `run_id`: `frontend/public/output/{run_id}/{filename}` (no mask prefix)
+  - Legacy (no run_id): `./output/{base}_{mask_pct}.{ext}`
+- **Path function**: `get_output_path(filename)` returns the full path based on current run_id or legacy mode
 - **Default DPI**: 150
 
 ## Related specs

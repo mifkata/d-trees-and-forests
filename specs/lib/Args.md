@@ -13,6 +13,7 @@ Centralized argument parsing for all training scripts. Provides consistent CLI i
 - Parse `--dataset` as choice (Iris|Income), default "Iris"
 - Parse `--model-config` as JSON string for model hyperparameter overrides
 - Parse `--dataset-ignore-columns` as comma-separated list of column indices to drop (e.g., "0,2" drops first and third columns)
+- Parse `--run-id` as string identifier for the training run (used for output directory)
 - Compute `mask_rate` as float (mask / 100.0)
 - Compute `test_size` as float (split / 100.0)
 - Compute `ignore_columns` as list of integers from comma-separated string

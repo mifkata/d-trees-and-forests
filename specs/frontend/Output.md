@@ -13,9 +13,9 @@ Components for displaying training results, datasets, and errors.
 ## Components
 
 ### ResultsDisplay
-- Elevated card variant with `position: relative` for loading overlay positioning
+- Elevated card variant
 - Tabbed interface with two tabs: "Results" and "Dataset"
-- Loading spinner in bottom-right corner when `isLoading` is true
+- Loading spinner displayed to the left of the accuracy badge when `isLoading` is true
 - Props: `result: TrainResult`, `isLoading?: boolean`
 
 #### Results Tab
@@ -41,6 +41,13 @@ Components for displaying training results, datasets, and errors.
 - Maximum 100 rows shown at once with pagination or "showing X of Y" indicator
 - If impute was used, train data shows imputed values
 - Visual indicator for which dataset is shown (Train/Test) and row count
+- **Horizontal scrolling**: Table container has `overflow-x-auto` for wide datasets
+- **Fullscreen mode**: Button (expand icon) opens table in a fullscreen modal
+  - Modal covers viewport with semi-transparent backdrop
+  - Contains the same sortable table with Train/Test toggle
+  - Open via expand button click or pressing F key (when Dataset tab is active)
+  - Close via ESC key or X button in modal header
+  - Modal header shows "Dataset - Train" or "Dataset - Test"
 
 ### ErrorDisplay
 - Card with red/error styling
@@ -104,8 +111,16 @@ Components for displaying training results, datasets, and errors.
 - **Sortable Table**: Click header to toggle sort, display sort indicator (arrow)
 - **Pagination**: Show max 100 rows, display "Showing 1-100 of X rows"
 - **Error Details**: Collapsible section using disclosure pattern
-- **Loading Spinner**: Positioned absolutely in bottom-right corner of ResultsDisplay card, shown when `isLoading` prop is true
+- **Loading Spinner**: Displayed inline to the left of the accuracy badge in the header, shown when `isLoading` prop is true
 - **Tabs**: Use same tab component pattern as Form params tabs
+- **Fullscreen Modal**:
+  - Fixed position overlay with `inset-0`, `z-50`, semi-transparent black backdrop
+  - White modal container with padding, max-width for large screens
+  - Header with title and X close button
+  - useEffect hook to handle keyboard shortcuts:
+    - F key opens fullscreen (when Dataset tab active and modal closed)
+    - ESC key closes modal
+  - Body scroll locked when modal is open
 
 ## Related specs
 - [frontend/Layout](Layout.md) - Page structure

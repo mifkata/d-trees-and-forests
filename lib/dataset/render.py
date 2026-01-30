@@ -15,6 +15,7 @@ class Render:
     _fig = None
     _axes = None
     _mask_pct = 0
+    _run_id = None
 
     @classmethod
     def set_mask(cls, mask_rate):
@@ -26,6 +27,39 @@ class Render:
         cls._mask_pct = int(mask_rate * 100)
 
     @classmethod
+    def set_run_id(cls, run_id):
+        """Set the run ID for output directory.
+
+        Args:
+            run_id: Run identifier (outputs to frontend/public/output/<run_id>/)
+        """
+        cls._run_id = run_id
+
+    @classmethod
+    def get_output_path(cls, filename):
+        """Get full output path based on run_id or legacy mode.
+
+        Args:
+            filename: Base filename
+
+        Returns:
+            Full path to output file
+        """
+        if cls._run_id:
+            # Output to frontend public directory
+            output_dir = os.path.realpath(os.path.join(
+                os.path.dirname(__file__), '..', '..', 'frontend', 'public', 'output', cls._run_id
+            ))
+            os.makedirs(output_dir, exist_ok=True)
+            return os.path.join(output_dir, filename)
+        else:
+            # Legacy output path with mask prefix
+            os.makedirs(OUTPUT_DIR, exist_ok=True)
+            base, ext = os.path.splitext(filename)
+            prefixed_name = f"{base}_{cls._mask_pct}{ext}"
+            return os.path.join(OUTPUT_DIR, prefixed_name)
+
+    @classmethod
     def _filename(cls, name):
         """Build output path and ensure directory exists.
 
@@ -33,13 +67,9 @@ class Render:
             name: Base filename
 
         Returns:
-            Full path to output file with mask prefix
+            Full path to output file
         """
-        os.makedirs(OUTPUT_DIR, exist_ok=True)
-        # Insert mask percentage into filename before extension
-        base, ext = os.path.splitext(name)
-        prefixed_name = f"{base}_{cls._mask_pct}{ext}"
-        return os.path.join(OUTPUT_DIR, prefixed_name)
+        return cls.get_output_path(name)
 
     @classmethod
     def header(cls, figsize=(10, 8), subplots=None):

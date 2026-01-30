@@ -169,22 +169,39 @@ class Income:
         return X_train, X_test, y_train, y_test
 
     @staticmethod
-    def export(X_train, X_test, y_train, y_test, mask_rate=0.0):
+    def export(X_train, X_test, y_train, y_test, mask_rate=0.0, run_id=None):
         """Export dataset to CSV files.
 
         Args:
             X_train, X_test: Feature DataFrames
             y_train, y_test: Target Series
             mask_rate: Mask rate for filename (0.0-1.0)
+            run_id: Run identifier. If provided, outputs to frontend/public/output/<run_id>/
         """
-        os.makedirs(OUTPUT_DIR, exist_ok=True)
-        mask_pct = int(mask_rate * 100)
-        prefix = f"income_masked_{mask_pct}"
+        if run_id:
+            # Output to frontend public directory
+            output_dir = os.path.realpath(os.path.join(
+                os.path.dirname(__file__), '..', '..', 'frontend', 'public', 'output', run_id
+            ))
+            os.makedirs(output_dir, exist_ok=True)
 
-        train_df = X_train.copy()
-        train_df["income"] = y_train.values
-        train_df.to_csv(f"{OUTPUT_DIR}/{prefix}_train.csv", index=False)
+            train_df = X_train.copy()
+            train_df["income"] = y_train.values
+            train_df.to_csv(f"{output_dir}/train.csv", index=False)
 
-        test_df = X_test.copy()
-        test_df["income"] = y_test.values
-        test_df.to_csv(f"{OUTPUT_DIR}/{prefix}_test.csv", index=False)
+            test_df = X_test.copy()
+            test_df["income"] = y_test.values
+            test_df.to_csv(f"{output_dir}/test.csv", index=False)
+        else:
+            # Legacy output path
+            os.makedirs(OUTPUT_DIR, exist_ok=True)
+            mask_pct = int(mask_rate * 100)
+            prefix = f"income_masked_{mask_pct}"
+
+            train_df = X_train.copy()
+            train_df["income"] = y_train.values
+            train_df.to_csv(f"{OUTPUT_DIR}/{prefix}_train.csv", index=False)
+
+            test_df = X_test.copy()
+            test_df["income"] = y_test.values
+            test_df.to_csv(f"{OUTPUT_DIR}/{prefix}_test.csv", index=False)

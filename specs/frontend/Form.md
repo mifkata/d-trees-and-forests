@@ -61,6 +61,21 @@ Form components for selecting dataset, model, and configuring training parameter
 ### Available Columns by Dataset
 Columns displayed as a list of checkboxes. User can deselect columns to exclude them from training.
 
+- **Select All toggle**: Checkbox at the top of the column list to select/deselect all columns at once
+  - Checked when all columns are selected
+  - Unchecked when any column is deselected
+  - Clicking toggles all columns on/off
+
+- **Copy/Paste Selection**: Buttons to copy column selection and paste to other models
+  - **Copy Selection** button: Copies current `ignore_columns` for the current dataset to clipboard state
+    - Stored in memory (not localStorage) as `{ dataset: DatasetId, ignore_columns: number[] }`
+    - Button shows copy icon
+  - **Paste Selection** button: Applies copied selection to current model
+    - Only visible when clipboard has selection for the same dataset
+    - Button shows paste icon
+    - Disabled if clipboard dataset doesn't match current dataset
+  - Use case: Configure columns for one model, copy, switch to another model, paste to use same columns
+
 **Iris Dataset:**
 - SepalLengthCm (index 0)
 - SepalWidthCm (index 1)
@@ -88,6 +103,13 @@ Columns displayed as a list of checkboxes. User can deselect columns to exclude 
 - Stored in DatasetParams alongside other parameters
 - Passed to API as comma-separated string for `--dataset-ignore-columns`
 
+### Clipboard State
+- `columnClipboard: { dataset: DatasetId, ignore_columns: number[] } | null`
+- Stored in React state (memory only, not persisted)
+- Set when user clicks "Copy Selection"
+- Cleared on page refresh
+- Used to determine if "Paste Selection" button should be visible
+
 ## Implementation Details
 - **UI Components**: Button, Select, Input, Checkbox, Slider, Card, Tabs from `components/ui`
 - **State Management**: `useParamsCache` hook manages all form state with localStorage persistence
@@ -95,6 +117,8 @@ Columns displayed as a list of checkboxes. User can deselect columns to exclude 
 - **Grid Layout**: Responsive grid (`grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`) for model params
 - **Form Submission**: Left column wrapped in `<form onSubmit={handleTrain}>` with `e.preventDefault()`. TrainButton is `type="submit"`. Allows Enter key in any input to trigger training.
 - **Tabs**: Dataset and Model tabs switch visibility of respective parameter cards
+- **Run ID**: Each training run is assigned a unique `--run-id` parameter (10-digit Unix timestamp in seconds, e.g., `1706540123`). This ID is used to organize output files in `frontend/public/output/<run_id>/`
+- **Navigation**: After training completes successfully, navigate to `/?run_id=<run_id>` to display results
 
 ## Related specs
 - [frontend/Layout](Layout.md) - Page structure

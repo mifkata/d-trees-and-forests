@@ -62,6 +62,8 @@ class Args:
                             help="JSON string with model config overrides (snake_case keys)")
         parser.add_argument("--dataset-ignore-columns", type=str, default=None,
                             help="Comma-separated list of column indices to drop (e.g., '0,2')")
+        parser.add_argument("--run-id", type=str, default=None,
+                            help="Run identifier for output directory (outputs to frontend/public/output/<run-id>/)")
         args = parser.parse_args()
 
         # Add computed rates

@@ -32,11 +32,18 @@ interface ScriptResult {
   code: number;
 }
 
-function buildArgs(request: TrainRequest): string[] {
+function generateRunId(): string {
+  // 10-digit Unix timestamp in seconds
+  return Math.floor(Date.now() / 1000).toString();
+}
+
+function buildArgs(request: TrainRequest, runId: string): string[] {
   const { dataset, datasetParams, modelParams } = request;
 
   const args: string[] = [
     "--json",
+    "--run-id",
+    runId,
     "--dataset",
     dataset,
     "--mask",
@@ -307,7 +314,8 @@ export async function POST(
     }
 
     const script = modelConfig.script;
-    const args = buildArgs(body);
+    const runId = generateRunId();
+    const args = buildArgs(body, runId);
 
     const result = await executeScript(script, args);
 
@@ -331,6 +339,7 @@ export async function POST(
       success: true,
       data: {
         ...jsonOutput,
+        runId,
         executionTime: Date.now() - startTime,
       },
     });

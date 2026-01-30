@@ -15,6 +15,18 @@ Page structure and component composition for the training interface.
 - Metadata title: "D-Trees & Random Forests"
 - Body renders page children directly
 
+## Routes
+
+### `/` (Home)
+Main training interface. Supports `?run_id=<run_id>` query parameter.
+
+When `run_id` query param is present:
+- Fetches `/output/<run_id>/runtime.json` to restore form state (dataset, model, params)
+- Fetches `/output/<run_id>/result.json` to display results
+- Form is pre-populated with saved run data
+
+After training completes, navigates to `/?run_id=<new_run_id>`.
+
 ## Page Composition
 
 **Header**: Page title "D-Trees & Random Forests"

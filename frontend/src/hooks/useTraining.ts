@@ -9,6 +9,7 @@ export interface UseTrainingReturn {
   result: TrainResult | null;
   error: TrainError | null;
   train: (request: TrainRequest) => Promise<void>;
+  setResult: (result: TrainResult | null) => void;
   clearResult: () => void;
   clearError: () => void;
 }
@@ -52,6 +53,7 @@ export function useTraining(): UseTrainingReturn {
     result,
     error,
     train,
+    setResult,
     clearResult,
     clearError,
   };

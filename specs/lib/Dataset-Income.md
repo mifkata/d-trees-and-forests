@@ -19,7 +19,7 @@ Loader for the Adult Income (Census) dataset with support for masking, imputatio
 - **Features**: age, workclass, fnlwgt, education, education_num, marital_status, occupation, relationship, race, sex, capital_gain, capital_loss, hours_per_week, native_country
 - **Target**: income (<=50K, >50K)
 - **Imputer**: KNNImputer(n_neighbors=5, weights="distance")
-- **Output files**: `./output/income_masked_{pct}_train.csv`, `./output/income_masked_{pct}_test.csv`
+- **Output files**: When `run_id` provided: `frontend/public/output/{run_id}/train.csv` and `test.csv`. Legacy: `./output/income_masked_{pct}_train.csv`
 
 ### Methods
 | Method | Description |
@@ -30,7 +30,7 @@ Loader for the Adult Income (Census) dataset with support for masking, imputatio
 | `load_from_csv(mask_rate)` | Load from cached CSV files |
 | `_impute(X_train, X_test)` | KNN impute training set |
 | `input(mask_rate, reuse_dataset, impute)` | Unified entry point |
-| `export(X_train, X_test, y_train, y_test, mask_rate)` | Save to CSV |
+| `export(X_train, X_test, y_train, y_test, mask_rate, run_id)` | Save to CSV. If `run_id` provided, saves to `frontend/public/output/{run_id}/` |
 
 ## Related specs
 - [lib/Dataset](Dataset.md) - Parent container

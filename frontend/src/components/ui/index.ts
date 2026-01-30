@@ -6,3 +6,4 @@ export { Slider } from './Slider';
 export { Card, CardHeader, CardTitle } from './Card';
 export { Badge } from './Badge';
 export { Tabs, ControlledTabs } from './Tabs';
+export { Modal } from './Modal';

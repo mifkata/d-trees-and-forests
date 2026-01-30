@@ -46,6 +46,7 @@ export interface TrainParams {
   split: number;
   impute: boolean;
   ignore_columns: number[];
+  run_id?: string | null;
 }
 
 export interface TrainResult {
@@ -61,6 +62,7 @@ export interface TrainResult {
   testLabels?: string[];
   featureNames?: string[];
   executionTime: number;
+  runId?: string;
 }
 
 export type ErrorCode =
