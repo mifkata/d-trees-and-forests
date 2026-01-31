@@ -8,6 +8,7 @@ export interface HistoryRun {
   dataset: string;
   accuracy: number;
   timestamp: number;
+  name?: string;
 }
 
 export interface HistoryResponse {
@@ -45,11 +46,12 @@ export async function GET(
       for (const file of files) {
         if (!file.endsWith(".id")) continue;
 
-        const match = file.match(/^([^_]+)_([^_]+)_(\d+)\.id$/);
+        // Match pattern: <model>_<dataset>_<score>[_<name>].id
+        // Score is stored as accuracy * 1000000 (e.g., 0.98 -> 980000)
+        const match = file.match(/^([^_]+)_([^_]+)_(\d+)(?:_(.+))?\.id$/);
         if (!match) continue;
 
-        const [, model, dataset, scoreStr] = match;
-        // Score is stored as accuracy * 1000000 (e.g., 0.98 -> 980000)
+        const [, model, dataset, scoreStr, name] = match;
         const accuracy = parseInt(scoreStr, 10) / 1000000;
         const timestamp = parseInt(dir, 10);
 
@@ -63,6 +65,7 @@ export async function GET(
           dataset,
           accuracy,
           timestamp,
+          name,
         });
       }
     }

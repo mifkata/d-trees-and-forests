@@ -117,6 +117,11 @@ function HomeContent() {
 
   const [isLoadingRun, setIsLoadingRun] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [runName, setRunName] = useState<string | undefined>(undefined);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editingNameValue, setEditingNameValue] = useState("");
+  const [isRenamingLoading, setIsRenamingLoading] = useState(false);
+  const [renameError, setRenameError] = useState<string | null>(null);
   const hasNavigatedForResult = useRef<string | null>(null);
   const loadedRunId = useRef<string | null>(null);
 
@@ -128,8 +133,21 @@ function HomeContent() {
       loadedRunId.current = runId;
       setIsLoadingRun(true);
       setLoadError(null);
+      setRunName(undefined);
 
       try {
+        // Fetch run name from history API
+        const historyRes = await fetch("/api/history");
+        if (historyRes.ok) {
+          const historyData = await historyRes.json();
+          const run = historyData.runs.find(
+            (r: { runId: string }) => r.runId === runId
+          );
+          if (run?.name) {
+            setRunName(run.name);
+          }
+        }
+
         // Load runtime.json
         const runtimeRes = await fetch(`/output/${runId}/runtime.json`);
         if (!runtimeRes.ok) {
@@ -274,6 +292,40 @@ function HomeContent() {
     }
   }, [result?.runId, runId, router]);
 
+  const handleRenameSubmit = useCallback(async () => {
+    if (!runId || !editingNameValue.trim()) {
+      setIsEditingName(false);
+      setEditingNameValue("");
+      setRenameError(null);
+      return;
+    }
+
+    const sanitizedName = editingNameValue.trim().replace(/ /g, "_");
+    setIsRenamingLoading(true);
+    setRenameError(null);
+
+    try {
+      const response = await fetch("/api/rename", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ runId, name: sanitizedName }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to rename");
+      }
+
+      setRunName(sanitizedName);
+      setIsEditingName(false);
+      setEditingNameValue("");
+    } catch (err) {
+      setRenameError(err instanceof Error ? err.message : "Failed to rename");
+    } finally {
+      setIsRenamingLoading(false);
+    }
+  }, [runId, editingNameValue]);
+
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
@@ -326,9 +378,58 @@ function HomeContent() {
         <div className="flex items-center gap-4 mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Model Trainer</h1>
           {runId && !isCompareMode && (
-            <span className="text-sm text-gray-500 font-mono">
-              Run: {runId}
-            </span>
+            <div className="text-sm text-gray-500 font-mono">
+              <span>
+                Run:{" "}
+                {isEditingName ? (
+                  <span className="inline-flex flex-col">
+                    <input
+                      type="text"
+                      value={editingNameValue}
+                      onChange={(e) => {
+                        setEditingNameValue(e.target.value);
+                        setRenameError(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleRenameSubmit();
+                        } else if (e.key === "Escape") {
+                          setIsEditingName(false);
+                          setEditingNameValue("");
+                          setRenameError(null);
+                        }
+                      }}
+                      onBlur={() => {
+                        if (!renameError) {
+                          setIsEditingName(false);
+                          setEditingNameValue("");
+                        }
+                      }}
+                      placeholder={runId}
+                      className={`bg-transparent border-b focus:outline-none px-1 w-40 ${
+                        renameError
+                          ? "border-red-500 focus:border-red-500"
+                          : "border-gray-400 focus:border-blue-500"
+                      }`}
+                      autoFocus
+                      disabled={isRenamingLoading}
+                    />
+                    {renameError && (
+                      <span className="text-xs text-red-500 mt-1">{renameError}</span>
+                    )}
+                  </span>
+                ) : (
+                  <span
+                    onClick={() => setIsEditingName(true)}
+                    className="cursor-pointer hover:text-gray-700 hover:underline"
+                    title="Click to rename"
+                  >
+                    {runName ? runName.replace(/_/g, " ") : runId}
+                  </span>
+                )}
+              </span>
+            </div>
           )}
         </div>
 
@@ -476,6 +577,7 @@ function HomeContent() {
           </div>
         </div>
       </div>
+
     </main>
   );
 }
