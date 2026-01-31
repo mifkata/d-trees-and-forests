@@ -12,6 +12,8 @@
 * Create specs in `specs/` directory following the Spec Editor skill guidelines.
 
 ## Git
+* Never commit or push without being explicitly asked
+* When asked to commit, push automatically unless told not to
 * Do not commit author/co-author information
 * Use conventional commit messages (e.g., `feat: add random forest training script`)
 
