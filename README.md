@@ -28,7 +28,13 @@ make devcontainer.start
 make devcontainer
 ```
 
-### 4. Run commands inside the container
+### 4. Install dependencies
+
+```bash
+make setup
+```
+
+### 5. Run commands inside the container
 
 ```bash
 # Train a decision tree model
@@ -65,6 +71,13 @@ claude
 | `make devcontainer.start` | Start the devcontainer in background |
 | `make devcontainer.stop` | Stop the devcontainer |
 | `make devcontainer.restart` | Restart the devcontainer |
+
+### Setup
+
+| Command | Description |
+|---------|-------------|
+| `make setup` | Install Python and frontend dependencies |
+| `make link` | Symlink worktree branch to dependencies from root/main branch |
 
 ### Model Training
 

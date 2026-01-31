@@ -1,4 +1,4 @@
-.PHONY: tree forest gradient compare ui devcontainer.start devcontainer.stop devcontainer.restart devcontainer.build devcontainer.rebuild devcontainer.shell
+.PHONY: setup link tree forest gradient compare ui devcontainer.start devcontainer.stop devcontainer.restart devcontainer.build devcontainer.rebuild devcontainer.shell
 
 define pyrun
 	python $(1) $(if $(MASK),--mask $(MASK)) $(if $(SPLIT),--split $(SPLIT)) $(if $(USE_OUTPUT),--use-output $(USE_OUTPUT)) $(if $(IMPUTE),--impute) $(if $(IMAGES),--images) $(if $(JSON),--json) $(if $(DATASET),--dataset $(DATASET))
@@ -16,8 +16,15 @@ gradient:
 compare:
 	python compare.py
 
+setup:
+	pip install -r requirements.txt
+	cd frontend && pnpm install
+
+link:
+	ln -s ../../frontend/node_modules ./frontend/node_modules
+
 dev:
-	cd frontend && npm run dev
+	cd frontend && pnpm run dev
 
 devcontainer.start:
 	docker compose -f .devcontainer/docker-compose.yml up -d --remove-orphans
