@@ -1,0 +1,19 @@
+{
+    "permissions": {
+        "allow": [
+            "Bash(npm:*)",
+            "Bash(pnpm:*)",
+            "Bash(git:*)"
+        ],
+        "deny": [
+            "Bash(git reset:*)",
+            "Bash(git push -f:*)",
+            "Bash(git push --force:*)",
+            "Bash(git push * -f:*)",
+            "Bash(git push * --force:*)"
+        ],
+        "ask": [
+            "Bash(rm:*)"
+        ]
+    }
+}
