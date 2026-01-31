@@ -14,6 +14,7 @@ interface CompareRequest {
   tree: string;
   forest: string;
   gradient: string;
+  'hist-gradient': string;
   mask?: number;
   impute?: boolean;
   // ignore_columns is not used - determined from model's runtime.json
@@ -36,6 +37,7 @@ interface CompareResponse {
       tree: ModelResult | null;
       forest: ModelResult | null;
       gradient: ModelResult | null;
+      'hist-gradient': ModelResult | null;
     };
   };
   error?: {
@@ -135,14 +137,15 @@ export async function POST(
   try {
     const body: CompareRequest = await request.json();
     const { dataset, tree, forest, gradient, mask, impute } = body;
+    const histGradient = body['hist-gradient'];
 
     // Validate required fields
-    if (!dataset || !tree || !forest || !gradient) {
+    if (!dataset || !tree || !forest || !gradient || !histGradient) {
       return NextResponse.json(
         {
           success: false,
           error: {
-            message: "All model IDs (tree, forest, gradient) are required",
+            message: "All model IDs (tree, forest, gradient, hist-gradient) are required",
             code: "INVALID_PARAMS",
           },
         },
@@ -160,6 +163,8 @@ export async function POST(
       forest,
       "--gradient",
       gradient,
+      "--hist-gradient",
+      histGradient,
     ];
 
     // Add optional mask parameter
@@ -276,6 +281,11 @@ export async function POST(
             trainAccuracy: models.gradient.trainAccuracy,
             compareAccuracy: models.gradient.compareAccuracy,
             imputed: models.gradient.imputed,
+          } : null,
+          'hist-gradient': models['hist-gradient'] ? {
+            runId: models['hist-gradient'].runId,
+            trainAccuracy: models['hist-gradient'].trainAccuracy,
+            compareAccuracy: models['hist-gradient'].compareAccuracy,
           } : null,
         },
       },

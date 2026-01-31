@@ -119,6 +119,7 @@ function HomeContent() {
     historyTree,
     historyForest,
     historyGradient,
+    historyHistGradient,
     isLoadingHistory,
   } = useCompare({ dataset, isCompareMode, isModelsTabActive });
 
@@ -601,6 +602,7 @@ function HomeContent() {
                       historyTree={historyTree}
                       historyForest={historyForest}
                       historyGradient={historyGradient}
+                      historyHistGradient={historyHistGradient}
                       isLoadingHistory={isLoadingHistory}
                     />
                   )}

@@ -1,9 +1,20 @@
 import type { DatasetId } from '@/types/dataset';
 import type { ModelId } from '@/types/model';
-import type { DatasetParams, ModelParams } from '@/types/params';
+import type { DatasetParams, ModelParams, GradientParams } from '@/types/params';
 import { DEFAULT_DATASET_PARAMS, getDefaultModelParams } from '@/types/params';
 
 const STORAGE_PREFIX = 'd-trees';
+
+// Old HistGradientBoostingClassifier params to remove when loading gradient model params
+const DEPRECATED_GRADIENT_PARAMS = [
+  'max_iter',
+  'max_bins',
+  'early_stopping',
+  'l2_regularization',
+  'warm_start',
+  'class_weight',
+  'scoring',
+] as const;
 
 function getDatasetParamsKey(dataset: DatasetId, model: ModelId): string {
   return `${STORAGE_PREFIX}:dataset-params:${dataset}:${model}`;
@@ -50,6 +61,16 @@ export const storage = {
 
   getModelParams(dataset: DatasetId, model: ModelId): ModelParams {
     const cached = safeGetItem<Partial<ModelParams>>(getModelParamsKey(dataset, model));
+
+    // For gradient model, remove deprecated HistGradientBoosting params
+    if (model === 'gradient' && cached) {
+      const cleanedCache = { ...cached } as Record<string, unknown>;
+      for (const param of DEPRECATED_GRADIENT_PARAMS) {
+        delete cleanedCache[param];
+      }
+      return { ...getDefaultModelParams(model, dataset), ...cleanedCache } as GradientParams;
+    }
+
     // Merge with defaults to ensure new fields are present
     return { ...getDefaultModelParams(model, dataset), ...cached } as ModelParams;
   },

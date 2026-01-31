@@ -5,7 +5,7 @@ Form components for selecting dataset, model, and configuring training parameter
 
 ## Requirements
 - Dataset selector dropdown (Iris, Income)
-- Model selector dropdown (Decision Tree, Random Forest, Gradient Boosted Trees)
+- Model selector dropdown (Decision Tree, Random Forest, Gradient Boosting, Hist Gradient Boosting)
 - Dataset and Model parameters displayed in separate tabs (only one visible at a time)
 - Dataset parameters: mask slider, split slider, column selection, checkboxes
 - Model-specific parameters card that changes based on selected model
@@ -62,12 +62,21 @@ Form components for selecting dataset, model, and configuring training parameter
     - min_samples_split, min_samples_leaf
     - min_impurity_decrease, ccp_alpha, n_jobs
     - bootstrap, oob_score (disabled if bootstrap=false), warm_start
-  - **GradientParamsForm** (HistGradientBoostingClassifier):
+  - **GradientParamsForm** (GradientBoostingClassifier):
+    - loss (log_loss/exponential)
+    - learning_rate, n_estimators, subsample
+    - criterion (friedman_mse/squared_error)
+    - max_depth, max_leaf_nodes, max_features (None/sqrt/log2)
+    - min_samples_split, min_samples_leaf
+    - min_impurity_decrease, min_weight_fraction_leaf, ccp_alpha
+    - n_iter_no_change (None or int), validation_fraction, tol (disabled if n_iter_no_change is None)
+  - **HistGradientParamsForm** (HistGradientBoostingClassifier):
     - learning_rate, max_iter
     - max_depth, max_leaf_nodes, min_samples_leaf, max_bins
     - l2_regularization
     - early_stopping (off/on/auto)
     - validation_fraction, n_iter_no_change, tol (disabled if early_stopping=off)
+    - scoring (auto/loss/accuracy), class_weight, warm_start
 - Props: `model`, `params`, `onChange`, `onReset`, `disabled`
 
 ### TrainButton

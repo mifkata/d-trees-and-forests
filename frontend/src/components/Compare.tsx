@@ -63,6 +63,7 @@ interface CompareModelsTabProps {
   historyTree: HistoryRun[];
   historyForest: HistoryRun[];
   historyGradient: HistoryRun[];
+  historyHistGradient: HistoryRun[];
   isLoadingHistory: boolean;
 }
 
@@ -72,6 +73,7 @@ export function CompareModelsTab({
   historyTree,
   historyForest,
   historyGradient,
+  historyHistGradient,
   isLoadingHistory,
 }: CompareModelsTabProps) {
   return (
@@ -97,14 +99,22 @@ export function CompareModelsTab({
       />
 
       <ModelHistorySelect
-        label="Gradient Boosted"
+        label="Gradient Boosting"
         runs={historyGradient}
         value={selection.gradient}
         onChange={(val) => onSelectionChange('gradient', val)}
         isLoading={isLoadingHistory}
       />
 
-      {!isLoadingHistory && historyTree.length === 0 && historyForest.length === 0 && historyGradient.length === 0 && (
+      <ModelHistorySelect
+        label="Hist Gradient Boosting"
+        runs={historyHistGradient}
+        value={selection['hist-gradient']}
+        onChange={(val) => onSelectionChange('hist-gradient', val)}
+        isLoading={isLoadingHistory}
+      />
+
+      {!isLoadingHistory && historyTree.length === 0 && historyForest.length === 0 && historyGradient.length === 0 && historyHistGradient.length === 0 && (
         <p className="text-sm text-amber-600 mt-4">
           No training history found for this dataset. Train some models first.
         </p>
@@ -212,15 +222,42 @@ export function CompareResults({ result }: CompareResultsProps) {
         <CardTitle>Comparison Results</CardTitle>
       </CardHeader>
 
-      <div className="space-y-4">
-        {result.models.tree && (
-          <ModelAccuracyCard label="Decision Tree" model={result.models.tree} />
-        )}
-        {result.models.forest && (
-          <ModelAccuracyCard label="Random Forest" model={result.models.forest} />
-        )}
-        {result.models.gradient && (
-          <ModelAccuracyCard label="Gradient Boosted" model={result.models.gradient} />
+      <div className="space-y-6">
+        {/* Model accuracy summary */}
+        <div>
+          <h4 className="text-sm font-medium text-gray-700 mb-3">Model Accuracies</h4>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {result.models.tree && (
+              <ModelAccuracyCard label="Decision Tree" model={result.models.tree} />
+            )}
+            {result.models.forest && (
+              <ModelAccuracyCard label="Random Forest" model={result.models.forest} />
+            )}
+            {result.models.gradient && (
+              <ModelAccuracyCard label="Gradient Boosting" model={result.models.gradient} />
+            )}
+            {result.models['hist-gradient'] && (
+              <ModelAccuracyCard label="Hist Gradient" model={result.models['hist-gradient']} />
+            )}
+          </div>
+        </div>
+
+        {/* Comparison images */}
+        {result.images.length > 0 && (
+          <div>
+            <h4 className="text-sm font-medium text-gray-700 mb-3">Comparison Charts</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {result.images.map((src, i) => (
+                <div key={i} className="border border-gray-200 rounded-lg overflow-hidden">
+                  <img
+                    src={src}
+                    alt={`Comparison chart ${i + 1}`}
+                    className="w-full h-auto"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     </Card>

@@ -2,7 +2,7 @@
 
 import { Select, Input, Checkbox, Button } from './ui';
 import type { ModelId } from '@/types/model';
-import type { TreeParams, ForestParams, GradientParams, ModelParams as ModelParamsType } from '@/types/params';
+import type { TreeParams, ForestParams, GradientParams, HistGradientParams, ModelParams as ModelParamsType } from '@/types/params';
 import { MODELS } from '@/types/model';
 
 interface ModelParamsProps {
@@ -33,6 +33,9 @@ export function ModelParams({ model, params, onChange, onReset, disabled }: Mode
       )}
       {model === 'gradient' && (
         <GradientParamsForm params={params as GradientParams} onChange={onChange} disabled={disabled} />
+      )}
+      {model === 'hist-gradient' && (
+        <HistGradientParamsForm params={params as HistGradientParams} onChange={onChange} disabled={disabled} />
       )}
     </div>
   );
@@ -344,6 +347,200 @@ interface GradientParamsFormProps {
 }
 
 function GradientParamsForm({ params, onChange, disabled }: GradientParamsFormProps) {
+  const earlyStoppingEnabled = params.n_iter_no_change !== null;
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <Select
+        label="Loss"
+        tooltip="Loss function. log_loss for multi-class, exponential for AdaBoost-like algorithm (binary only)."
+        value={params.loss}
+        onChange={(v) => onChange({ loss: v as GradientParams['loss'] })}
+        options={[
+          { value: 'log_loss', label: 'Log Loss' },
+          { value: 'exponential', label: 'Exponential' },
+        ]}
+        disabled={disabled}
+      />
+
+      <Input
+        label="Learning Rate"
+        tooltip="Shrinkage factor. Lower values require more estimators but often give better results."
+        type="number"
+        value={params.learning_rate}
+        onChange={(v) => onChange({ learning_rate: Number(v) || 0.1 })}
+        min={0.001}
+        max={1}
+        step={0.01}
+        disabled={disabled}
+      />
+
+      <Input
+        label="N Estimators"
+        tooltip="Number of boosting stages. More stages can improve accuracy but increase training time."
+        type="number"
+        value={params.n_estimators}
+        onChange={(v) => onChange({ n_estimators: Number(v) || 100 })}
+        min={1}
+        disabled={disabled}
+      />
+
+      <Input
+        label="Subsample"
+        tooltip="Fraction of samples for fitting each base learner. Values < 1.0 enable stochastic gradient boosting."
+        type="number"
+        value={params.subsample}
+        onChange={(v) => onChange({ subsample: Number(v) || 1.0 })}
+        min={0.01}
+        max={1}
+        step={0.05}
+        disabled={disabled}
+      />
+
+      <Select
+        label="Criterion"
+        tooltip="Function to measure split quality. friedman_mse is generally preferred."
+        value={params.criterion}
+        onChange={(v) => onChange({ criterion: v as GradientParams['criterion'] })}
+        options={[
+          { value: 'friedman_mse', label: 'Friedman MSE' },
+          { value: 'squared_error', label: 'Squared Error' },
+        ]}
+        disabled={disabled}
+      />
+
+      <Input
+        label="Max Depth"
+        tooltip="Maximum depth of individual trees. Controls model complexity."
+        type="number"
+        value={params.max_depth}
+        onChange={(v) => onChange({ max_depth: Number(v) || 3 })}
+        min={1}
+        disabled={disabled}
+      />
+
+      <Select
+        label="Max Features"
+        tooltip="Number of features to consider for best split. Fewer features = faster but potentially less accurate."
+        value={params.max_features ?? 'auto'}
+        onChange={(v) => onChange({ max_features: v === 'auto' ? null : v as 'sqrt' | 'log2' })}
+        options={[
+          { value: 'auto', label: 'Auto (all)' },
+          { value: 'sqrt', label: 'Square Root' },
+          { value: 'log2', label: 'Log2' },
+        ]}
+        disabled={disabled}
+      />
+
+      <Input
+        label="Max Leaf Nodes"
+        tooltip="Maximum number of leaf nodes per tree. Limits tree complexity."
+        type="number"
+        value={params.max_leaf_nodes ?? ''}
+        onChange={(v) => onChange({ max_leaf_nodes: v === '' ? null : Number(v) })}
+        placeholder="Unlimited"
+        min={2}
+        disabled={disabled}
+      />
+
+      <Input
+        label="Min Samples Split"
+        tooltip="Minimum samples required to split a node. Higher values prevent overfitting."
+        type="number"
+        value={params.min_samples_split}
+        onChange={(v) => onChange({ min_samples_split: Number(v) || 2 })}
+        min={2}
+        disabled={disabled}
+      />
+
+      <Input
+        label="Min Samples Leaf"
+        tooltip="Minimum samples at a leaf node. Higher values create smoother models."
+        type="number"
+        value={params.min_samples_leaf}
+        onChange={(v) => onChange({ min_samples_leaf: Number(v) || 1 })}
+        min={1}
+        disabled={disabled}
+      />
+
+      <Input
+        label="Min Weight Fraction Leaf"
+        tooltip="Minimum weighted fraction of total weights at a leaf. Use for weighted samples."
+        type="number"
+        value={params.min_weight_fraction_leaf}
+        onChange={(v) => onChange({ min_weight_fraction_leaf: Number(v) || 0 })}
+        min={0}
+        max={0.5}
+        step={0.01}
+        disabled={disabled}
+      />
+
+      <Input
+        label="Min Impurity Decrease"
+        tooltip="Minimum impurity decrease required for a split. Acts as early stopping criterion."
+        type="number"
+        value={params.min_impurity_decrease}
+        onChange={(v) => onChange({ min_impurity_decrease: Number(v) || 0 })}
+        min={0}
+        step={0.001}
+        disabled={disabled}
+      />
+
+      <Input
+        label="CCP Alpha"
+        tooltip="Complexity parameter for cost-complexity pruning. Higher values create simpler trees."
+        type="number"
+        value={params.ccp_alpha}
+        onChange={(v) => onChange({ ccp_alpha: Number(v) || 0 })}
+        min={0}
+        step={0.001}
+        disabled={disabled}
+      />
+
+      <Input
+        label="N Iter No Change"
+        tooltip="Iterations without improvement before stopping. Leave empty to disable early stopping."
+        type="number"
+        value={params.n_iter_no_change ?? ''}
+        onChange={(v) => onChange({ n_iter_no_change: v === '' ? null : Number(v) })}
+        placeholder="Disabled"
+        min={1}
+        disabled={disabled}
+      />
+
+      <Input
+        label="Validation Fraction"
+        tooltip="Fraction of training data for early stopping validation."
+        type="number"
+        value={params.validation_fraction}
+        onChange={(v) => onChange({ validation_fraction: Number(v) || 0.1 })}
+        min={0.01}
+        max={0.5}
+        step={0.01}
+        disabled={disabled || !earlyStoppingEnabled}
+      />
+
+      <Input
+        label="Tolerance"
+        tooltip="Minimum improvement to qualify as progress for early stopping."
+        type="number"
+        value={params.tol}
+        onChange={(v) => onChange({ tol: Number(v) || 1e-4 })}
+        min={0}
+        step={1e-5}
+        disabled={disabled || !earlyStoppingEnabled}
+      />
+    </div>
+  );
+}
+
+interface HistGradientParamsFormProps {
+  params: HistGradientParams;
+  onChange: (params: Partial<HistGradientParams>) => void;
+  disabled?: boolean;
+}
+
+function HistGradientParamsForm({ params, onChange, disabled }: HistGradientParamsFormProps) {
   const earlyStoppingEnabled = params.early_stopping === true || params.early_stopping === 'auto';
 
   return (

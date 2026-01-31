@@ -34,7 +34,8 @@ All parameters used for the training run:
 Model-specific information:
 - Tree: `type`, `tree_depth`, `n_leaves`
 - Forest: `type`, `n_estimators`, `oob_score`
-- Gradient: `type`, `n_iterations`
+- Gradient: `type`, `n_estimators`
+- Hist-Gradient: `type`, `n_iterations`
 
 ### Feature Importance
 - `feature_importance`: Dict mapping feature names to importance scores
