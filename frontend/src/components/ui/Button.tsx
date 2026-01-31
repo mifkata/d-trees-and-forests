@@ -40,7 +40,7 @@ const button = tv({
   },
 });
 
-function Spinner({ className }: { className?: string }) {
+export function Spinner({ className }: { className?: string }) {
   return (
     <svg
       className={`animate-spin h-4 w-4 ${className}`}

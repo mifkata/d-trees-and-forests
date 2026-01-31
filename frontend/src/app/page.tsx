@@ -18,7 +18,7 @@ import {
   CompareButton,
   CompareResults,
 } from "@/components";
-import { ControlledTabs } from "@/components/ui";
+import { ControlledTabs, Spinner } from "@/components/ui";
 import type { TrainResult } from "@/types/api";
 import type { DatasetId } from "@/types/dataset";
 import type { ModelId } from "@/types/model";
@@ -116,6 +116,7 @@ function HomeContent() {
   } = useCompare({ dataset, isCompareMode, isModelsTabActive });
 
   const [isLoadingRun, setIsLoadingRun] = useState(false);
+  const [isLoadingLatest, setIsLoadingLatest] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [runName, setRunName] = useState<string | undefined>(undefined);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -124,13 +125,16 @@ function HomeContent() {
   const [renameError, setRenameError] = useState<string | null>(null);
   const hasNavigatedForResult = useRef<string | null>(null);
   const loadedRunId = useRef<string | null>(null);
+  const lastAutoLoadCombo = useRef<string | null>(null);
 
   // Load run data when run_id query param is present or changes
   useEffect(() => {
     if (!runId || !isHydrated || loadedRunId.current === runId) return;
 
+    const abortController = new AbortController();
+    const targetRunId = runId; // Capture for async closure
+
     async function loadRunData() {
-      loadedRunId.current = runId;
       setIsLoadingRun(true);
       setLoadError(null);
       setRunName(undefined);
@@ -149,7 +153,9 @@ function HomeContent() {
         }
 
         // Load runtime.json
-        const runtimeRes = await fetch(`/output/${runId}/runtime.json`);
+        const runtimeRes = await fetch(`/output/${targetRunId}/runtime.json`, {
+          signal: abortController.signal,
+        });
         if (!runtimeRes.ok) {
           throw new Error("Run not found");
         }
@@ -168,8 +174,13 @@ function HomeContent() {
           modelParams: runtime.modelParams as unknown as ModelParamsType,
         });
 
+        // Mark this combo as loaded to prevent auto-load from overriding
+        lastAutoLoadCombo.current = `${runtime.dataset}_${runtime.model}`;
+
         // Load result.json
-        const resultRes = await fetch(`/output/${runId}/result.json`);
+        const resultRes = await fetch(`/output/${targetRunId}/result.json`, {
+          signal: abortController.signal,
+        });
         if (resultRes.ok) {
           const resultData = await resultRes.json();
           // Transform to TrainResult format
@@ -219,7 +230,7 @@ function HomeContent() {
               },
             },
             executionTime: resultData.execution_time || 0,
-            runId: runId || undefined,
+            runId: targetRunId || undefined,
           };
 
           if (resultData.model_info) {
@@ -261,18 +272,27 @@ function HomeContent() {
             trainResult.featureNames = resultData.feature_names;
           }
 
-          // Mark as already navigated to prevent navigation effect from triggering
-          hasNavigatedForResult.current = runId;
+          // Mark as successfully loaded and navigated
+          loadedRunId.current = targetRunId;
+          hasNavigatedForResult.current = targetRunId;
           setResult(trainResult);
         }
       } catch (err) {
+        // Ignore abort errors
+        if (err instanceof Error && err.name === 'AbortError') return;
         setLoadError(err instanceof Error ? err.message : "Failed to load run");
       } finally {
-        setIsLoadingRun(false);
+        if (!abortController.signal.aborted) {
+          setIsLoadingRun(false);
+        }
       }
     }
 
     loadRunData();
+
+    return () => {
+      abortController.abort();
+    };
   }, [
     runId,
     isHydrated,
@@ -291,6 +311,63 @@ function HomeContent() {
       router.replace(`/?run_id=${result.runId}`);
     }
   }, [result?.runId, runId, router]);
+
+  // Auto-load latest run when in Train mode and:
+  // 1. Initial load with no run_id
+  // 2. Switching from Compare to Train mode
+  // 3. Changing dataset or model
+  useEffect(() => {
+    // Only auto-load in Train mode when hydrated
+    if (!isHydrated || isCompareMode) return;
+
+    const combo = `${dataset}_${model}`;
+
+    // Skip if we already loaded this combo (prevents re-fetching when only runId changes)
+    if (lastAutoLoadCombo.current === combo) return;
+
+    const abortController = new AbortController();
+
+    async function loadLatestRun() {
+      setIsLoadingLatest(true);
+      try {
+        const res = await fetch(`/api/history?model=${model}&dataset=${dataset}`, {
+          signal: abortController.signal,
+        });
+        const data = await res.json();
+        const runs = data.runs || [];
+
+        if (runs.length > 0) {
+          // Navigate to the latest run
+          const latestRunId = runs[0].runId;
+          lastAutoLoadCombo.current = combo;
+          hasNavigatedForResult.current = latestRunId;
+          // Clear old state to prevent stale data and effect conflicts
+          loadedRunId.current = null;
+          setResult(null);
+          setIsLoadingLatest(false);
+          router.replace(`/?run_id=${latestRunId}`);
+        } else {
+          // No history, just mark as loaded and clear any existing result
+          lastAutoLoadCombo.current = combo;
+          loadedRunId.current = null;
+          setResult(null);
+          router.replace('/');
+          setIsLoadingLatest(false);
+        }
+      } catch (err) {
+        // Ignore abort errors
+        if (err instanceof Error && err.name === 'AbortError') return;
+        lastAutoLoadCombo.current = combo;
+        setIsLoadingLatest(false);
+      }
+    }
+
+    loadLatestRun();
+
+    return () => {
+      abortController.abort();
+    };
+  }, [isHydrated, isCompareMode, dataset, model, router, setResult]);
 
   const handleRenameSubmit = useCallback(async () => {
     if (!runId || !editingNameValue.trim()) {
@@ -350,7 +427,7 @@ function HomeContent() {
     }
   }, [loadError, router]);
 
-  if (!isHydrated || isLoadingRun || loadError) {
+  if (!isHydrated || isLoadingRun || isLoadingLatest || loadError) {
     return (
       <main className="min-h-screen p-4 sm:p-8">
         <div className="mx-auto">
@@ -577,8 +654,18 @@ function HomeContent() {
               </div>
             )}
 
-            {/* Empty state */}
-            {!isCompareMode && !error && !result && (
+            {/* Loading state for Train */}
+            {!isCompareMode && isLoading && !result && (
+              <Card>
+                <div className="flex items-center justify-center gap-3 py-12 text-gray-500">
+                  <Spinner className="h-5 w-5" />
+                  <p>Loading...</p>
+                </div>
+              </Card>
+            )}
+
+            {/* Empty state for Train */}
+            {!isCompareMode && !isLoading && !error && !result && (
               <Card>
                 <div className="text-center py-12 text-gray-500">
                   <p>Configure parameters and click Train to see results</p>
@@ -586,7 +673,18 @@ function HomeContent() {
               </Card>
             )}
 
-            {isCompareMode && !compareError && !compareResult && (
+            {/* Loading state for Compare */}
+            {isCompareMode && isComparing && !compareResult && (
+              <Card>
+                <div className="flex items-center justify-center gap-3 py-12 text-gray-500">
+                  <Spinner className="h-5 w-5" />
+                  <p>Loading...</p>
+                </div>
+              </Card>
+            )}
+
+            {/* Empty state for Compare */}
+            {isCompareMode && !isComparing && !compareError && !compareResult && (
               <Card>
                 <div className="text-center py-12 text-gray-500">
                   <p>Select three models from history and click Compare</p>
