@@ -6,9 +6,7 @@
             "Bash(pnpm:*)",
             "Bash(python:*)",
             "Bash(pip:*)",
-            "Bash(gh pr create:*)",
-            "Bash(gh pr edit:*)",
-            "Bash(gh pr view:*)"
+            "Bash(gh pr:*)"
         ],
         "deny": [
             "Bash(npm:*)"
@@ -19,7 +17,12 @@
             "Bash(git push -f:*)",
             "Bash(git push --force:*)",
             "Bash(git push * -f:*)",
-            "Bash(git push * --force:*)"
+            "Bash(git push * --force:*)",
+            "Bash(gh pr reopen:*)",
+            "Bash(gh pr revert:*)",
+            "Bash(gh pr close:*)",
+            "Bash(gh pr lock:*)",
+            "Bash(gh pr unlock:*)"
         ]
     }
 }
