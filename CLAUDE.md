@@ -17,6 +17,7 @@
 * When asked to commit, push automatically unless told not to
 * Do not commit author/co-author information
 * Use conventional commit messages (e.g., `feat: add random forest training script`)
+* Pushing a branch for the first time, should open a Draft PR automatically. Use `gh` CLI tool for GitHub operations.
 
 ## Training scripts
 Use 2/3 of the data for training and 1/3 for testing. Dataset should be Iris dataset via kagglehub `saurabh00007/iriscsv`.
