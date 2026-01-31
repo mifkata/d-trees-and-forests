@@ -25,7 +25,7 @@ make devcontainer.start
 ### 3. Enter the container
 
 ```bash
-make devcontainer.shell
+make devcontainer
 ```
 
 ### 4. Run commands inside the container
@@ -55,6 +55,17 @@ claude
 
 ## Make Commands
 
+### Devcontainer
+
+| Command | Description |
+|---------|-------------|
+| `make devcontainer` | Open a shell in the running devcontainer |
+| `make devcontainer.build` | Build the devcontainer image |
+| `make devcontainer.rebuild` | Rebuild the devcontainer image (no cache) |
+| `make devcontainer.start` | Start the devcontainer in background |
+| `make devcontainer.stop` | Stop the devcontainer |
+| `make devcontainer.restart` | Restart the devcontainer |
+
 ### Model Training
 
 | Command | Description |
@@ -63,9 +74,9 @@ claude
 | `make forest` | Train a random forest model |
 | `make gradient` | Train a gradient boosted trees model |
 | `make compare` | Run accuracy comparison across all models and mask rates |
-| `make ui` | Start the frontend app in development mode |
+| `make dev` | Start the frontend app in development mode |
 
-### Parameters
+### Training Parameters
 
 All training commands support these parameters:
 
@@ -100,7 +111,7 @@ make tree MASK=30 USE_OUTPUT=true
 make tree JSON=true
 
 # Start the web UI
-make ui
+make dev
 ```
 
 ### Output Files
@@ -110,14 +121,3 @@ Output files are saved to `./output/` and include the mask percentage in their n
 - `forest_trees_30_2x2.png` - 30% mask rate
 - `iris_masked_30_train.csv` - Cached training data with 30% mask
 - `gradient_forest_feature_importance_30.png` - Gradient boosted trees importance with 30% mask
-
-### Devcontainer Management
-
-| Command | Description |
-|---------|-------------|
-| `make devcontainer.start` | Start the devcontainer |
-| `make devcontainer.stop` | Stop the devcontainer |
-| `make devcontainer.restart` | Restart the devcontainer |
-| `make devcontainer.build` | Build the devcontainer image |
-| `make devcontainer.rebuild` | Rebuild the devcontainer image (no cache) |
-| `make devcontainer.shell` | Start a shell session in the devcontainer |
