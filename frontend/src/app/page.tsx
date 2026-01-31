@@ -421,7 +421,10 @@ function HomeContent() {
                   </span>
                 ) : (
                   <span
-                    onClick={() => setIsEditingName(true)}
+                    onClick={() => {
+                      setEditingNameValue(runName ?? "");
+                      setIsEditingName(true);
+                    }}
                     className="cursor-pointer hover:text-gray-700 hover:underline"
                     title="Click to rename"
                   >

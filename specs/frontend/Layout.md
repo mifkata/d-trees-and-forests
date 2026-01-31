@@ -88,7 +88,7 @@ Inline editing for renaming a training run with a custom name.
 **Edit Mode**:
 - Text input replaces the name/ID display
 - Placeholder: run ID (so user knows which run they're editing)
-- Input is empty by default (not pre-filled with current name)
+- Input pre-filled with current name if one exists, empty otherwise
 - Auto-focused when entering edit mode
 
 **Behavior**:
@@ -107,6 +107,8 @@ Inline editing for renaming a training run with a custom name.
 - Stored with underscores (valid filename characters)
 - Displayed to user with underscores converted to spaces
 - User can type spaces; they become underscores when saved
+- Allowed characters: alphanumeric, hyphens, underscores, dots, and slashes
+- Slashes are stored as `--` in the filename for filesystem safety
 
 **API Call**: `POST /api/rename` with `{ runId, name }`
 
