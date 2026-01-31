@@ -51,7 +51,9 @@ export async function GET(
         const match = file.match(/^([^_]+)_([^_]+)_(\d+)(?:_(.+))?\.id$/);
         if (!match) continue;
 
-        const [, model, dataset, scoreStr, name] = match;
+        const [, model, dataset, scoreStr, rawName] = match;
+        // Convert -- back to / (was escaped for filesystem safety)
+        const name = rawName?.replace(/--/g, "/");
         const accuracy = parseInt(scoreStr, 10) / 1000000;
         const timestamp = parseInt(dir, 10);
 

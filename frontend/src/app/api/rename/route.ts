@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 
 const OUTPUT_DIR = path.join(process.cwd(), "public", "output");
-const NAME_PATTERN = /^[a-zA-Z0-9_-]*$/;
+const NAME_PATTERN = /^[a-zA-Z0-9_./-]*$/;
 const MAX_LENGTH = 50;
 
 interface RenameRequest {
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     if (!NAME_PATTERN.test(name)) {
       return NextResponse.json(
-        { error: "Name must contain only alphanumeric characters, hyphens, and underscores" },
+        { error: "Name must contain only alphanumeric characters, hyphens, underscores, dots, and slashes" },
         { status: 400 }
       );
     }
@@ -58,10 +58,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     const [, model, dataset, score] = match;
 
-    // Build new filename
+    // Build new filename (convert / to -- for filesystem safety)
     let newFilename: string;
     if (name) {
-      newFilename = `${model}_${dataset}_${score}_${name}.id`;
+      const safeName = name.replace(/\//g, "--");
+      newFilename = `${model}_${dataset}_${score}_${safeName}.id`;
     } else {
       // Empty name removes the custom name
       newFilename = `${model}_${dataset}_${score}.id`;
