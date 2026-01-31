@@ -23,6 +23,13 @@ import type { TrainResult } from "@/types/api";
 import type { DatasetId } from "@/types/dataset";
 import type { ModelId } from "@/types/model";
 import type { ModelParams as ModelParamsType } from "@/types/params";
+import type { DatasetId as DatasetIdType } from "@/types/dataset";
+
+// Clipboard state for copying column selection between models
+interface ColumnClipboard {
+  dataset: DatasetIdType;
+  ignore_columns: number[];
+}
 
 interface RuntimeJson {
   run_id: string;
@@ -114,6 +121,9 @@ function HomeContent() {
     historyGradient,
     isLoadingHistory,
   } = useCompare({ dataset, isCompareMode, isModelsTabActive });
+
+  // Column selection clipboard (memory only, not persisted)
+  const [columnClipboard, setColumnClipboard] = useState<ColumnClipboard | null>(null);
 
   const [isLoadingRun, setIsLoadingRun] = useState(false);
   const [isLoadingLatest, setIsLoadingLatest] = useState(false);
@@ -578,6 +588,9 @@ function HomeContent() {
                       dataset={dataset}
                       onChange={setCompareDatasetParams}
                       onReset={resetCompareDatasetParams}
+                      clipboard={columnClipboard}
+                      onCopy={(clipboard) => setColumnClipboard(clipboard)}
+                      onPaste={(ignore_columns) => setCompareDatasetParams({ ignore_columns })}
                     />
                   )}
                   {compareTab === "models" && (
@@ -606,6 +619,9 @@ function HomeContent() {
                       dataset={dataset}
                       onChange={setDatasetParams}
                       onReset={resetDatasetParams}
+                      clipboard={columnClipboard}
+                      onCopy={(clipboard) => setColumnClipboard(clipboard)}
+                      onPaste={(ignore_columns) => setDatasetParams({ ignore_columns })}
                     />
                   )}
                   {trainTab === "model" && (

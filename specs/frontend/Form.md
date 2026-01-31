@@ -86,14 +86,17 @@ Columns displayed as a list of checkboxes. User can deselect columns to exclude 
   - Clicking toggles all columns on/off
 
 - **Copy/Paste Selection**: Buttons to copy column selection and paste to other models
-  - **Copy Selection** button: Copies current `ignore_columns` for the current dataset to clipboard state
+  - **Copy** button: Always visible, copies current `ignore_columns` for the current dataset to clipboard state
     - Stored in memory (not localStorage) as `{ dataset: DatasetId, ignore_columns: number[] }`
-    - Button shows copy icon
-  - **Paste Selection** button: Applies copied selection to current model
-    - Only visible when clipboard has selection for the same dataset
-    - Button shows paste icon
-    - Disabled if clipboard dataset doesn't match current dataset
+    - Button shows copy icon with "Copy" text
+    - Copies selection tagged with current dataset type (Iris or Income)
+  - **Paste** button: Applies copied selection to current model
+    - Only visible when clipboard contains selection for the **same dataset type**
+    - If clipboard is empty or contains selection for a different dataset, button is hidden
+    - Button shows paste icon with "Paste" text
+    - Pasting does NOT clear the clipboard - selection can be pasted multiple times
   - Use case: Configure columns for one model, copy, switch to another model, paste to use same columns
+  - Note: Clipboard is cleared only on page refresh, not when pasting
 
 **Iris Dataset:**
 - SepalLengthCm (index 0)
@@ -124,10 +127,13 @@ Columns displayed as a list of checkboxes. User can deselect columns to exclude 
 
 ### Clipboard State
 - `columnClipboard: { dataset: DatasetId, ignore_columns: number[] } | null`
-- Stored in React state (memory only, not persisted)
-- Set when user clicks "Copy Selection"
-- Cleared on page refresh
-- Used to determine if "Paste Selection" button should be visible
+- Stored in React state (memory only, not persisted to localStorage)
+- Set when user clicks "Copy" button
+- **NOT cleared when pasting** - allows multiple paste operations with same selection
+- Cleared only on page refresh
+- Used to determine if "Paste" button should be visible:
+  - Visible only when `columnClipboard !== null` AND `columnClipboard.dataset === currentDataset`
+  - Hidden when clipboard is empty or dataset doesn't match
 
 ## Implementation Details
 - **UI Components**: Button, Select, Input, Checkbox, Slider, Card, Tabs from `components/ui`
