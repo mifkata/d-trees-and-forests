@@ -606,15 +606,15 @@ class Render:
         """Render bar chart comparing train vs compare accuracy for each model.
 
         Args:
-            models: Dict with keys 'tree', 'forest', 'gradient', each containing
+            models: Dict with keys 'tree', 'forest', 'gradient', 'hist-gradient', each containing
                     'trainAccuracy' and 'compareAccuracy'
             filename: Output filename
         """
-        cls.header(figsize=(10, 6))
+        cls.header(figsize=(12, 6))
 
-        model_names = ['Decision Tree', 'Random Forest', 'Gradient Boosted']
-        model_keys = ['tree', 'forest', 'gradient']
-        colors = {'tree': 'forestgreen', 'forest': 'royalblue', 'gradient': 'darkorange'}
+        model_names = ['Decision Tree', 'Random Forest', 'Gradient Boosting', 'Hist Gradient']
+        model_keys = ['tree', 'forest', 'gradient', 'hist-gradient']
+        colors = {'tree': 'forestgreen', 'forest': 'royalblue', 'gradient': 'darkorange', 'hist-gradient': 'purple'}
 
         x = np.arange(len(model_names))
         width = 0.35
@@ -671,15 +671,15 @@ class Render:
         """Render visual representation of accuracy differences (ratio chart).
 
         Args:
-            models: Dict with keys 'tree', 'forest', 'gradient', each containing
+            models: Dict with keys 'tree', 'forest', 'gradient', 'hist-gradient', each containing
                     'trainAccuracy' and 'compareAccuracy'
             filename: Output filename
         """
-        cls.header(figsize=(10, 6))
+        cls.header(figsize=(12, 6))
 
-        model_names = ['Decision Tree', 'Random Forest', 'Gradient Boosted']
-        model_keys = ['tree', 'forest', 'gradient']
-        colors = {'tree': 'forestgreen', 'forest': 'royalblue', 'gradient': 'darkorange'}
+        model_names = ['Decision Tree', 'Random Forest', 'Gradient Boosting', 'Hist Gradient']
+        model_keys = ['tree', 'forest', 'gradient', 'hist-gradient']
+        colors = {'tree': 'forestgreen', 'forest': 'royalblue', 'gradient': 'darkorange', 'hist-gradient': 'purple'}
 
         ratios = []
         bar_colors = []

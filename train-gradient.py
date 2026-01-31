@@ -1,6 +1,5 @@
 import yaml
-from sklearn.ensemble import HistGradientBoostingClassifier
-from sklearn.inspection import permutation_importance
+from sklearn.ensemble import GradientBoostingClassifier
 from lib import Args, Dataset, Model, Render
 from lib.args import merge_config
 
@@ -19,7 +18,7 @@ if args.run_id:
     Render.set_run_id(args.run_id)
 
 # Load dataset
-# HistGradientBoostingClassifier natively supports missing values
+# GradientBoostingClassifier does not support missing values natively, imputation is required
 X_train, X_test, y_train, y_test = DataSource.input(
     mask_rate=args.mask_rate,
     test_size=args.test_size,
@@ -34,9 +33,8 @@ if args.run_id:
 elif args.mask_rate > 0 and not args.use_output:
     DataSource.export(X_train, X_test, y_train, y_test, mask_rate=args.mask_rate)
 
-# Train histogram-based gradient boosting (decision tree ensemble with gradient boosting)
-# HistGradientBoostingClassifier natively supports missing values
-clf = HistGradientBoostingClassifier(**config)
+# Train gradient boosting classifier
+clf = GradientBoostingClassifier(**config)
 clf.fit(X_train, y_train)
 
 # Predictions and evaluation
@@ -63,12 +61,11 @@ if args.run_id:
     Model.save_id(args.run_id, "gradient", args.dataset, accuracy)
 model_info = {
     "type": "gradient",
-    "n_iterations": clf.n_iter_
+    "n_estimators": clf.n_estimators
 }
 
-# Feature importance using permutation importance
-perm_importance = permutation_importance(clf, X_test, y_test, n_repeats=10, random_state=42)
-feature_importance = dict(zip(X_train.columns.tolist(), perm_importance.importances_mean.tolist()))
+# Feature importance using built-in feature_importances_
+feature_importance = dict(zip(X_train.columns.tolist(), clf.feature_importances_.tolist()))
 
 # Build params for JSON output
 params = {

@@ -8,6 +8,7 @@ export interface CompareSelection {
   tree: string | null;
   forest: string | null;
   gradient: string | null;
+  'hist-gradient': string | null;
 }
 
 export interface CompareDatasetParams {
@@ -27,6 +28,7 @@ export interface HistoryRun {
 
 export interface CompareModelResult {
   runId: string;
+  name?: string;
   trainAccuracy: number;
   compareAccuracy: number;
   imputed?: boolean;
@@ -40,6 +42,7 @@ export interface CompareResult {
     tree: CompareModelResult | null;
     forest: CompareModelResult | null;
     gradient: CompareModelResult | null;
+    'hist-gradient': CompareModelResult | null;
   };
 }
 
@@ -65,6 +68,7 @@ interface UseCompareReturn {
   historyTree: HistoryRun[];
   historyForest: HistoryRun[];
   historyGradient: HistoryRun[];
+  historyHistGradient: HistoryRun[];
   isLoadingHistory: boolean;
 }
 
@@ -86,7 +90,7 @@ function getStoredSelection(dataset: DatasetId): CompareSelection {
   } catch {
     // ignore
   }
-  return { tree: null, forest: null, gradient: null };
+  return { tree: null, forest: null, gradient: null, 'hist-gradient': null };
 }
 
 function storeSelection(dataset: DatasetId, selection: CompareSelection) {
@@ -116,6 +120,7 @@ export function useCompare(options: UseCompareOptions): UseCompareReturn {
     tree: null,
     forest: null,
     gradient: null,
+    'hist-gradient': null,
   });
   const [datasetParams, setDatasetParamsState] = useState<CompareDatasetParams>(DEFAULT_COMPARE_PARAMS);
   const [isComparing, setIsComparing] = useState(false);
@@ -125,6 +130,7 @@ export function useCompare(options: UseCompareOptions): UseCompareReturn {
   const [historyTree, setHistoryTree] = useState<HistoryRun[]>([]);
   const [historyForest, setHistoryForest] = useState<HistoryRun[]>([]);
   const [historyGradient, setHistoryGradient] = useState<HistoryRun[]>([]);
+  const [historyHistGradient, setHistoryHistGradient] = useState<HistoryRun[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
   // Load stored selection and params when dataset changes
@@ -135,39 +141,43 @@ export function useCompare(options: UseCompareOptions): UseCompareReturn {
     setDatasetParamsState(storedParams);
   }, [dataset]);
 
-  // Fetch history when Compare mode Models tab becomes active
+  // Fetch history when Compare mode is active (needed for model selection and name lookup in results)
   useEffect(() => {
-    if (!isCompareMode || !isModelsTabActive) return;
+    if (!isCompareMode) return;
 
     async function fetchHistory() {
       setIsLoadingHistory(true);
       try {
-        const [treeRes, forestRes, gradientRes] = await Promise.all([
+        const [treeRes, forestRes, gradientRes, histGradientRes] = await Promise.all([
           fetch(`/api/history?model=tree&dataset=${dataset}`),
           fetch(`/api/history?model=forest&dataset=${dataset}`),
           fetch(`/api/history?model=gradient&dataset=${dataset}`),
+          fetch(`/api/history?model=hist-gradient&dataset=${dataset}`),
         ]);
 
-        const [treeData, forestData, gradientData] = await Promise.all([
+        const [treeData, forestData, gradientData, histGradientData] = await Promise.all([
           treeRes.json(),
           forestRes.json(),
           gradientRes.json(),
+          histGradientRes.json(),
         ]);
 
         setHistoryTree(treeData.runs || []);
         setHistoryForest(forestData.runs || []);
         setHistoryGradient(gradientData.runs || []);
+        setHistoryHistGradient(histGradientData.runs || []);
       } catch {
         setHistoryTree([]);
         setHistoryForest([]);
         setHistoryGradient([]);
+        setHistoryHistGradient([]);
       } finally {
         setIsLoadingHistory(false);
       }
     }
 
     fetchHistory();
-  }, [dataset, isCompareMode, isModelsTabActive]);
+  }, [dataset, isCompareMode]);
 
   const setSelection = useCallback((newSelection: CompareSelection) => {
     setSelectionState(newSelection);
@@ -196,7 +206,7 @@ export function useCompare(options: UseCompareOptions): UseCompareReturn {
   }, [dataset]);
 
   const isSelectionComplete = Boolean(
-    selection.tree && selection.forest && selection.gradient
+    selection.tree && selection.forest && selection.gradient && selection['hist-gradient']
   );
 
   const runCompare = useCallback(async () => {
@@ -214,6 +224,7 @@ export function useCompare(options: UseCompareOptions): UseCompareReturn {
           tree: selection.tree,
           forest: selection.forest,
           gradient: selection.gradient,
+          'hist-gradient': selection['hist-gradient'],
           mask: datasetParams.mask,
           impute: datasetParams.mask > 0 && datasetParams.impute,
           // ignore_columns not sent - determined from model's runtime.json
@@ -264,6 +275,7 @@ export function useCompare(options: UseCompareOptions): UseCompareReturn {
     historyTree,
     historyForest,
     historyGradient,
+    historyHistGradient,
     isLoadingHistory,
   };
 }

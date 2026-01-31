@@ -29,9 +29,24 @@ export function ModelHistorySelect({
   onChange,
   isLoading,
 }: ModelHistorySelectProps) {
+  // Sort runs: named first (alphabetically with numeric), then unnamed (alphabetically by ID)
+  const sortedRuns = [...runs].sort((a, b) => {
+    const aHasName = Boolean(a.name);
+    const bHasName = Boolean(b.name);
+
+    // Named runs come first
+    if (aHasName && !bHasName) return -1;
+    if (!aHasName && bHasName) return 1;
+
+    // Within same group, sort alphabetically with numeric comparison
+    const aLabel = a.name ? a.name.replace(/_/g, ' ') : a.runId;
+    const bLabel = b.name ? b.name.replace(/_/g, ' ') : b.runId;
+    return aLabel.localeCompare(bLabel, undefined, { numeric: true, sensitivity: 'base' });
+  });
+
   const options = [
     { value: '', label: 'Select run...' },
-    ...runs.map((run) => ({
+    ...sortedRuns.map((run) => ({
       value: run.runId,
       label: `${run.name ? run.name.replace(/_/g, ' ') : run.runId} - ${(run.accuracy * 100).toFixed(2)}% - ${formatTimeAgo(run.timestamp)}`,
     })),
@@ -63,6 +78,7 @@ interface CompareModelsTabProps {
   historyTree: HistoryRun[];
   historyForest: HistoryRun[];
   historyGradient: HistoryRun[];
+  historyHistGradient: HistoryRun[];
   isLoadingHistory: boolean;
 }
 
@@ -72,6 +88,7 @@ export function CompareModelsTab({
   historyTree,
   historyForest,
   historyGradient,
+  historyHistGradient,
   isLoadingHistory,
 }: CompareModelsTabProps) {
   return (
@@ -97,14 +114,22 @@ export function CompareModelsTab({
       />
 
       <ModelHistorySelect
-        label="Gradient Boosted"
+        label="Gradient Boosting"
         runs={historyGradient}
         value={selection.gradient}
         onChange={(val) => onSelectionChange('gradient', val)}
         isLoading={isLoadingHistory}
       />
 
-      {!isLoadingHistory && historyTree.length === 0 && historyForest.length === 0 && historyGradient.length === 0 && (
+      <ModelHistorySelect
+        label="Hist Gradient Boosting"
+        runs={historyHistGradient}
+        value={selection['hist-gradient']}
+        onChange={(val) => onSelectionChange('hist-gradient', val)}
+        isLoading={isLoadingHistory}
+      />
+
+      {!isLoadingHistory && historyTree.length === 0 && historyForest.length === 0 && historyGradient.length === 0 && historyHistGradient.length === 0 && (
         <p className="text-sm text-amber-600 mt-4">
           No training history found for this dataset. Train some models first.
         </p>
@@ -178,12 +203,18 @@ function ModelAccuracyCard({
   model
 }: {
   label: string;
-  model: { trainAccuracy: number; compareAccuracy: number; runId: string }
+  model: { trainAccuracy: number; compareAccuracy: number; runId: string; name?: string }
 }) {
   const ratio = model.compareAccuracy / model.trainAccuracy;
+  const displayName = model.name ? model.name.replace(/_/g, ' ') : null;
   return (
     <div className={`p-3 rounded-lg border ${getBoxBackground(ratio)} ${getBorderColor(ratio)}`}>
-      <p className="text-xs text-gray-500 text-center mb-2">{label}</p>
+      <div className="text-center mb-2">
+        <p className="text-sm font-medium text-gray-700">{label}</p>
+        <p className="text-xs text-gray-500 font-mono">
+          {displayName || model.runId}
+        </p>
+      </div>
       <div className="space-y-1 text-sm">
         <div className="flex justify-between">
           <span className="text-gray-500">Train:</span>
@@ -200,7 +231,6 @@ function ModelAccuracyCard({
           </span>
         </div>
       </div>
-      <p className="text-xs text-gray-400 font-mono text-center mt-2">{model.runId}</p>
     </div>
   );
 }
@@ -212,16 +242,22 @@ export function CompareResults({ result }: CompareResultsProps) {
         <CardTitle>Comparison Results</CardTitle>
       </CardHeader>
 
-      <div className="space-y-4">
-        {result.models.tree && (
-          <ModelAccuracyCard label="Decision Tree" model={result.models.tree} />
-        )}
-        {result.models.forest && (
-          <ModelAccuracyCard label="Random Forest" model={result.models.forest} />
-        )}
-        {result.models.gradient && (
-          <ModelAccuracyCard label="Gradient Boosted" model={result.models.gradient} />
-        )}
+      <div>
+        <h4 className="text-sm font-medium text-gray-700 mb-3">Model Accuracies</h4>
+        <div className="space-y-4">
+          {result.models.tree && (
+            <ModelAccuracyCard label="Decision Tree" model={result.models.tree} />
+          )}
+          {result.models.forest && (
+            <ModelAccuracyCard label="Random Forest" model={result.models.forest} />
+          )}
+          {result.models.gradient && (
+            <ModelAccuracyCard label="Gradient Boosting" model={result.models.gradient} />
+          )}
+          {result.models['hist-gradient'] && (
+            <ModelAccuracyCard label="Hist Gradient" model={result.models['hist-gradient']} />
+          )}
+        </div>
       </div>
     </Card>
   );

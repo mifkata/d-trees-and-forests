@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, Suspense } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useParamsCache, useTraining, useCompare } from "@/hooks";
 import {
@@ -119,8 +119,39 @@ function HomeContent() {
     historyTree,
     historyForest,
     historyGradient,
+    historyHistGradient,
     isLoadingHistory,
   } = useCompare({ dataset, isCompareMode, isModelsTabActive });
+
+  // Enrich compare result with names from history
+  const enrichedCompareResult = useMemo(() => {
+    if (!compareResult) return null;
+
+    const findName = (runId: string, history: typeof historyTree) =>
+      history.find(h => h.runId === runId)?.name;
+
+    return {
+      ...compareResult,
+      models: {
+        tree: compareResult.models.tree ? {
+          ...compareResult.models.tree,
+          name: findName(compareResult.models.tree.runId, historyTree),
+        } : null,
+        forest: compareResult.models.forest ? {
+          ...compareResult.models.forest,
+          name: findName(compareResult.models.forest.runId, historyForest),
+        } : null,
+        gradient: compareResult.models.gradient ? {
+          ...compareResult.models.gradient,
+          name: findName(compareResult.models.gradient.runId, historyGradient),
+        } : null,
+        'hist-gradient': compareResult.models['hist-gradient'] ? {
+          ...compareResult.models['hist-gradient'],
+          name: findName(compareResult.models['hist-gradient'].runId, historyHistGradient),
+        } : null,
+      },
+    };
+  }, [compareResult, historyTree, historyForest, historyGradient, historyHistGradient]);
 
   // Column selection clipboard (memory only, not persisted)
   const [columnClipboard, setColumnClipboard] = useState<ColumnClipboard | null>(null);
@@ -601,6 +632,7 @@ function HomeContent() {
                       historyTree={historyTree}
                       historyForest={historyForest}
                       historyGradient={historyGradient}
+                      historyHistGradient={historyHistGradient}
                       isLoadingHistory={isLoadingHistory}
                     />
                   )}
@@ -663,10 +695,10 @@ function HomeContent() {
             )}
 
             {/* Compare results */}
-            {isCompareMode && compareResult && (
+            {isCompareMode && enrichedCompareResult && (
               <div className="grid grid-cols-2 xl:grid-cols-2 gap-6">
-                <CompareResults result={compareResult} />
-                {compareResult.compareId && <ImagesDisplay compareId={compareResult.compareId} />}
+                <CompareResults result={enrichedCompareResult} />
+                {enrichedCompareResult.compareId && <ImagesDisplay compareId={enrichedCompareResult.compareId} />}
               </div>
             )}
 
@@ -711,7 +743,7 @@ function HomeContent() {
             {isCompareMode && !isComparing && !compareError && !compareResult && (
               <Card>
                 <div className="text-center py-12 text-gray-500">
-                  <p>Select three models from history and click Compare</p>
+                  <p>Select four models from history and click Compare</p>
                 </div>
               </Card>
             )}

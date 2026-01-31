@@ -47,6 +47,25 @@ export interface ForestParams {
 }
 
 export interface GradientParams {
+  loss: 'log_loss' | 'exponential';
+  learning_rate: number;
+  n_estimators: number;
+  subsample: number;
+  criterion: 'friedman_mse' | 'squared_error';
+  max_depth: number;
+  min_samples_split: number;
+  min_samples_leaf: number;
+  min_weight_fraction_leaf: number;
+  max_features: 'sqrt' | 'log2' | null;
+  max_leaf_nodes: number | null;
+  min_impurity_decrease: number;
+  ccp_alpha: number;
+  n_iter_no_change: number | null;
+  validation_fraction: number;
+  tol: number;
+}
+
+export interface HistGradientParams {
   loss: 'log_loss';
   learning_rate: number;
   max_iter: number;
@@ -64,7 +83,7 @@ export interface GradientParams {
   scoring: 'accuracy' | 'loss' | null;
 }
 
-export type ModelParams = TreeParams | ForestParams | GradientParams;
+export type ModelParams = TreeParams | ForestParams | GradientParams | HistGradientParams;
 
 export const DEFAULT_TREE_PARAMS: Record<DatasetId, TreeParams> = {
   Iris: {
@@ -133,27 +152,49 @@ export const DEFAULT_FOREST_PARAMS: Record<DatasetId, ForestParams> = {
 export const DEFAULT_GRADIENT_PARAMS: Record<DatasetId, GradientParams> = {
   Iris: {
     loss: 'log_loss',
-    learning_rate: 0.2,
-    max_iter: 200,
-    max_leaf_nodes: 31,
-    max_depth: 4,
+    learning_rate: 0.1,
+    n_estimators: 100,
+    subsample: 1.0,
+    criterion: 'friedman_mse',
+    max_depth: 3,
+    min_samples_split: 2,
     min_samples_leaf: 1,
-    max_bins: 255,
-    early_stopping: false,
-    l2_regularization: 0,
+    min_weight_fraction_leaf: 0,
+    max_features: null,
+    max_leaf_nodes: null,
+    min_impurity_decrease: 0,
+    ccp_alpha: 0,
+    n_iter_no_change: null,
     validation_fraction: 0.1,
-    n_iter_no_change: 10,
-    tol: 1e-7,
-    warm_start: false,
-    class_weight: null,
-    scoring: null,
+    tol: 1e-4,
   },
   Income: {
     loss: 'log_loss',
     learning_rate: 0.1,
-    max_iter: 200,
+    n_estimators: 100,
+    subsample: 1.0,
+    criterion: 'friedman_mse',
+    max_depth: 3,
+    min_samples_split: 2,
+    min_samples_leaf: 1,
+    min_weight_fraction_leaf: 0,
+    max_features: null,
+    max_leaf_nodes: null,
+    min_impurity_decrease: 0,
+    ccp_alpha: 0,
+    n_iter_no_change: null,
+    validation_fraction: 0.1,
+    tol: 1e-4,
+  },
+};
+
+export const DEFAULT_HIST_GRADIENT_PARAMS: Record<DatasetId, HistGradientParams> = {
+  Iris: {
+    loss: 'log_loss',
+    learning_rate: 0.1,
+    max_iter: 100,
     max_leaf_nodes: 31,
-    max_depth: 6,
+    max_depth: null,
     min_samples_leaf: 20,
     max_bins: 255,
     early_stopping: 'auto',
@@ -162,7 +203,24 @@ export const DEFAULT_GRADIENT_PARAMS: Record<DatasetId, GradientParams> = {
     n_iter_no_change: 10,
     tol: 1e-7,
     warm_start: false,
-    class_weight: 'balanced',
+    class_weight: null,
+    scoring: 'loss',
+  },
+  Income: {
+    loss: 'log_loss',
+    learning_rate: 0.1,
+    max_iter: 200,
+    max_leaf_nodes: 31,
+    max_depth: null,
+    min_samples_leaf: 20,
+    max_bins: 255,
+    early_stopping: 'auto',
+    l2_regularization: 0,
+    validation_fraction: 0.1,
+    n_iter_no_change: 10,
+    tol: 1e-7,
+    warm_start: false,
+    class_weight: null,
     scoring: 'loss',
   },
 };
@@ -175,5 +233,7 @@ export function getDefaultModelParams(model: ModelId, dataset: DatasetId): Model
       return { ...DEFAULT_FOREST_PARAMS[dataset] };
     case 'gradient':
       return { ...DEFAULT_GRADIENT_PARAMS[dataset] };
+    case 'hist-gradient':
+      return { ...DEFAULT_HIST_GRADIENT_PARAMS[dataset] };
   }
 }

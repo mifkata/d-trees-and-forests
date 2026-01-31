@@ -1,4 +1,4 @@
-.PHONY: setup link worktree worktree.rm tree forest gradient compare ui devcontainer.start devcontainer.stop devcontainer.restart devcontainer.build devcontainer.rebuild devcontainer.shell
+.PHONY: setup link worktree worktree.rm tree forest gradient hist-gradient compare ui devcontainer.start devcontainer.stop devcontainer.restart devcontainer.build devcontainer.rebuild devcontainer.shell
 
 ROOT := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
 
@@ -13,7 +13,10 @@ forest:
 	$(call pyrun,train-forest.py)
 
 gradient:
-	$(call pyrun,train-gradient-forest.py)
+	$(call pyrun,train-gradient.py)
+
+hist-gradient:
+	$(call pyrun,train-hist-gradient.py)
 
 compare:
 	python compare.py

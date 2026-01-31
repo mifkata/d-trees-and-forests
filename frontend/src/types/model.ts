@@ -1,4 +1,4 @@
-export type ModelId = 'tree' | 'forest' | 'gradient';
+export type ModelId = 'tree' | 'forest' | 'gradient' | 'hist-gradient';
 
 export interface Model {
   id: ModelId;
@@ -22,8 +22,14 @@ export const MODELS: Record<ModelId, Model> = {
   },
   gradient: {
     id: 'gradient',
-    name: 'Gradient Boosted Trees',
-    description: 'Ensemble with gradient boosting (HistGradientBoostingClassifier)',
-    script: 'train-gradient-forest.py',
+    name: 'Gradient Boosting',
+    description: 'Classic gradient boosting (GradientBoostingClassifier)',
+    script: 'train-gradient.py',
+  },
+  'hist-gradient': {
+    id: 'hist-gradient',
+    name: 'Hist Gradient Boosting',
+    description: 'Histogram-based gradient boosting (HistGradientBoostingClassifier)',
+    script: 'train-hist-gradient.py',
   },
 };

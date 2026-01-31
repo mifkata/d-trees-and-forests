@@ -29,7 +29,7 @@
 * `make dev` - Start the frontend development server
 * `make worktree <name>` - Create a git worktree at `./worktrees/<name>` with symlinks to `frontend/public/output` and `frontend/node_modules`
 * `make worktree.rm <name>` - Remove worktree at `./worktrees/<name>`
-* `make tree` / `make forest` / `make gradient` - Run training scripts
+* `make tree` / `make forest` / `make gradient` / `make hist-gradient` - Run training scripts
 * `make compare` - Run comparison script
 
 ## Training scripts
@@ -52,4 +52,5 @@ Files are named with mask percentage: `{name}_{mask_pct}.{ext}` (e.g., `forest_t
 
 * `train-tree.py` - Train a decision tree model. Outputs accuracy and classification report. With `--images`: exports heatmap, tree visualization, feature importance, and decision boundaries.
 * `train-forest.py` - Train a random forest model. Outputs accuracy and classification report. With `--images`: exports feature importance, sample trees, PDP/ICE plots, OOB errors, and proximity matrix.
-* `train-gradient-forest.py` - Train a gradient boosted trees model using HistGradientBoostingClassifier (decision tree ensemble with gradient boosting, natively supports missing values). Outputs accuracy, classification report, and model info. With `--images`: exports feature importance.
+* `train-gradient.py` - Train a gradient boosted trees model using GradientBoostingClassifier (classic gradient boosting algorithm, requires imputation for missing values). Outputs accuracy, classification report, and model info. With `--images`: exports heatmap and clustering visualization.
+* `train-hist-gradient.py` - Train a histogram-based gradient boosted trees model using HistGradientBoostingClassifier (XGBoost-style, natively supports missing values). Outputs accuracy, classification report, and model info. With `--images`: exports heatmap and clustering visualization.

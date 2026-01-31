@@ -15,19 +15,21 @@ from sklearn.impute import KNNImputer
 
 from lib import Dataset, Render
 
-SCRIPTS = ["train-tree.py", "train-forest.py", "train-gradient-forest.py"]
+SCRIPTS = ["train-tree.py", "train-forest.py", "train-gradient.py", "train-hist-gradient.py"]
 MASK_VALUES = list(range(0, 95, 5))  # 0, 5, 10, ..., 90
 COLORS = {
     "tree": "forestgreen",
     "forest": "royalblue",
-    "gradient-forest": "darkorange"
+    "gradient": "darkorange",
+    "hist-gradient": "purple"
 }
 
 # Mapping from CLI arg to expected model type in runtime.json
 MODEL_TYPE_MAP = {
     "tree": "tree",
     "forest": "forest",
-    "gradient": "gradient"
+    "gradient": "gradient",
+    "hist-gradient": "hist-gradient"
 }
 
 
@@ -224,6 +226,8 @@ def parse_args():
                         help="Run ID for random forest model")
     parser.add_argument("--gradient", type=str, default=None,
                         help="Run ID for gradient boosted model")
+    parser.add_argument("--hist-gradient", type=str, default=None,
+                        help="Run ID for hist gradient boosted model")
     parser.add_argument("--mask", type=int, default=0,
                         help="Mask percentage for comparison (0-100)")
     parser.add_argument("--impute", action="store_true",
@@ -241,18 +245,20 @@ def main():
     args = parse_args()
 
     # Check if any model IDs provided
+    hist_gradient = getattr(args, 'hist_gradient', None)
     model_ids = {
         "tree": args.tree,
         "forest": args.forest,
-        "gradient": args.gradient
+        "gradient": args.gradient,
+        "hist-gradient": hist_gradient
     }
     has_model_ids = any(v is not None for v in model_ids.values())
 
     # If model IDs provided, validate and run comparison
     if has_model_ids:
-        # All three model IDs are required for comparison mode
+        # All four model IDs are required for comparison mode
         if not all(v is not None for v in model_ids.values()):
-            print("Error: All three model IDs (--tree, --forest, --gradient) are required")
+            print("Error: All four model IDs (--tree, --forest, --gradient, --hist-gradient) are required")
             sys.exit(1)
 
         # Generate or use provided compare_id

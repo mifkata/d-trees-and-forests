@@ -4,7 +4,7 @@
 Benchmark script that runs all training models across varying mask rates and generates comparison visualizations. Supports two modes: run fresh training or load pre-trained models from run IDs.
 
 ## Requirements
-- Run each training script (tree, forest, gradient-forest) with `--json` flag
+- Run each training script (tree, forest, gradient, hist-gradient) with `--json` flag
 - Parse accuracy from JSON output
 - Test mask rates from 0% to 90% in 5% increments
 - For each mask rate, test both with and without `--impute` flag
@@ -19,7 +19,7 @@ Benchmark script that runs all training models across varying mask rates and gen
 ## Implementation Details
 - **Location**: `compare.py`
 - **Dependencies**: subprocess for running training scripts, json for parsing output, lib.Render for visualization
-- **Scripts tested**: `train-tree.py`, `train-forest.py`, `train-gradient-forest.py`
+- **Scripts tested**: `train-tree.py`, `train-forest.py`, `train-gradient.py`, `train-hist-gradient.py`
 - **Mask values**: 0, 5, 10, 15, ..., 90
 - **Output files (fresh mode)**: `./output/accuracy_comparison.png`, `./output/accuracy_comparison_impute.png`
 - **Output files (model ID mode)**: `frontend/public/output/compare/<compare_id>/*.png`
@@ -32,6 +32,7 @@ Load pre-trained models from existing run directories instead of training fresh:
 | `--tree <ID>` | Run ID for decision tree model |
 | `--forest <ID>` | Run ID for random forest model |
 | `--gradient <ID>` | Run ID for gradient boosted model |
+| `--hist-gradient <ID>` | Run ID for hist gradient boosted model |
 | `--mask <PERCENT>` | Mask percentage for comparison (0-100) |
 | `--impute` | Impute missing values during comparison |
 | `--compare-id <ID>` | Optional: Use provided compare ID instead of generating new one |
@@ -40,7 +41,7 @@ Load pre-trained models from existing run directories instead of training fresh:
 **Note:** `--ignore-columns` is NOT used in Model ID mode. Feature columns are automatically determined from the models' `runtime.json`.
 
 **Requirements:**
-- All three ID parameters must be provided when using this mode
+- All four ID parameters must be provided when using this mode
 - Each ID maps to directory: `frontend/public/output/<ID>/`
 - Each directory must contain `model.pkl`
 - Each directory must contain `runtime.json` for validation (includes `datasetParams.ignore_columns`)
@@ -54,6 +55,7 @@ Load pre-trained models from existing run directories instead of training fresh:
   - `--tree` ID must have `model: "tree"`
   - `--forest` ID must have `model: "forest"`
   - `--gradient` ID must have `model: "gradient"`
+  - `--hist-gradient` ID must have `model: "hist-gradient"`
 - Exit with error if validation fails
 
 ### Compare ID Generation
@@ -122,6 +124,11 @@ When running with model IDs, outputs JSON with both training and comparison accu
       "trainAccuracy": 0.97,
       "compareAccuracy": 0.94,
       "imputed": true
+    },
+    "hist-gradient": {
+      "runId": "1706541000",
+      "trainAccuracy": 0.97,
+      "compareAccuracy": 0.93
     }
   }
 }
@@ -158,7 +165,8 @@ When `--images` flag is provided in model ID mode:
 |-------|-------|
 | tree | forestgreen |
 | forest | royalblue |
-| gradient-forest | darkorange |
+| gradient | darkorange |
+| hist-gradient | purple |
 
 ## Frontend Requirements
 
@@ -180,5 +188,6 @@ The `featureColumns` from the compare result can be displayed as read-only info 
 - [train/DecisionTree](train/DecisionTree.md) - Tree model being compared
 - [train/RandomForest](train/RandomForest.md) - Forest model being compared
 - [train/GradientBoostedTrees](train/GradientBoostedTrees.md) - Gradient model being compared
+- [train/HistGradientBoostedTrees](train/HistGradientBoostedTrees.md) - Hist gradient model being compared
 - [lib/Render](lib/Render.md) - Visualization utilities
 - [lib/Model](lib/Model.md) - Model persistence including runtime.json format

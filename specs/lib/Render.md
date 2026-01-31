@@ -49,8 +49,8 @@ Visualization utilities for model analysis. Generates matplotlib plots for featu
 |--------|-------------|
 | `compare_accuracy(mask_values, results, colors, filename)` | Accuracy comparison line plot |
 | `compare_accuracy_impute(mask_values, results, colors, filename)` | Accuracy comparison with impute variants |
-| `compare_accuracy_bars(models, filename)` | Bar chart comparing train vs compare accuracy for each model |
-| `compare_accuracy_diff(models, filename)` | Visual representation of accuracy differences (ratio chart) |
+| `compare_accuracy_bars(models, filename)` | Bar chart comparing train vs compare accuracy for all 4 models (tree, forest, gradient, hist-gradient) |
+| `compare_accuracy_diff(models, filename)` | Accuracy ratio chart for all 4 models |
 
 ## Implementation Details
 - **Libraries**: matplotlib, seaborn, sklearn.tree.plot_tree, sklearn.inspection (PartialDependenceDisplay, DecisionBoundaryDisplay)
@@ -68,4 +68,5 @@ Visualization utilities for model analysis. Generates matplotlib plots for featu
 - [train/DecisionTree](../train/DecisionTree.md) - Uses tree visualization methods
 - [train/RandomForest](../train/RandomForest.md) - Uses forest visualization methods
 - [train/GradientBoostedTrees](../train/GradientBoostedTrees.md) - Uses gradient visualization methods
+- [train/HistGradientBoostedTrees](../train/HistGradientBoostedTrees.md) - Uses gradient visualization methods
 - [Compare](../Compare.md) - Uses comparison visualization methods
