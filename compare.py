@@ -374,6 +374,37 @@ def main():
             Render.compare_accuracy_diff(results, "accuracy_diff.png")
             print(f"  Images saved to frontend/public/output/compare/{compare_id}/", file=sys.stderr)
 
+        # Save results.json and runtime.json for compare history
+        compare_dir = os.path.realpath(os.path.join(
+            os.path.dirname(__file__), 'frontend', 'public', 'output', 'compare', compare_id
+        ))
+        os.makedirs(compare_dir, exist_ok=True)
+
+        # Save results.json with accuracy statistics
+        results_data = {
+            "compareId": compare_id,
+            "mask": args.mask,
+            "impute": args.impute,
+            "dataset": args.dataset,
+            "models": results
+        }
+        with open(os.path.join(compare_dir, 'results.json'), 'w') as f:
+            json.dump(results_data, f, indent=2)
+
+        # Save runtime.json with runtime parameters
+        runtime_data = {
+            "compare_id": compare_id,
+            "dataset": args.dataset,
+            "mask": args.mask,
+            "impute": args.impute,
+            "name": None,
+            "models": [{"runId": run_id, "model": model_type} for run_id, model_type, _ in runtimes]
+        }
+        with open(os.path.join(compare_dir, 'runtime.json'), 'w') as f:
+            json.dump(runtime_data, f, indent=2)
+
+        print(f"  Saved results.json and runtime.json to compare/{compare_id}/", file=sys.stderr)
+
         # Output results as JSON (array format)
         print(json.dumps({
             "success": True,

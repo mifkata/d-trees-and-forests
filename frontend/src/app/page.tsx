@@ -17,6 +17,8 @@ import {
   CompareModelsList,
   CompareButton,
   CompareResults,
+  CompareHistoryModal,
+  TrainHistoryModal,
 } from "@/components";
 import { ControlledTabs, Spinner } from "@/components/ui";
 import type { TrainResult } from "@/types/api";
@@ -91,8 +93,13 @@ function HomeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const runId = searchParams.get("run_id");
+  const compareId = searchParams.get("compare_id");
 
   const isCompareMode = mode === "compare";
+
+  // History modal state
+  const [isTrainHistoryOpen, setIsTrainHistoryOpen] = useState(false);
+  const [isCompareHistoryOpen, setIsCompareHistoryOpen] = useState(false);
 
   const {
     models: compareModels,
@@ -111,6 +118,12 @@ function HomeContent() {
     canCompare,
     history: compareHistory,
     isLoadingHistory,
+    compareHistory: compareHistoryRuns,
+    isLoadingCompareHistory,
+    fetchCompareHistory,
+    deleteCompareRun,
+    renameCompareRun,
+    setCompareResult,
   } = useCompare({ dataset, isCompareMode });
 
   // Column selection clipboard (memory only, not persisted)
@@ -370,6 +383,85 @@ function HomeContent() {
     };
   }, [isHydrated, isCompareMode, dataset, model, router, setResult]);
 
+  // Compare run name state
+  const [compareRunName, setCompareRunName] = useState<string | undefined>(undefined);
+  const [isEditingCompareName, setIsEditingCompareName] = useState(false);
+  const [editingCompareNameValue, setEditingCompareNameValue] = useState("");
+  const [isRenamingCompareLoading, setIsRenamingCompareLoading] = useState(false);
+  const [compareRenameError, setCompareRenameError] = useState<string | null>(null);
+  const loadedCompareId = useRef<string | null>(null);
+
+  // Load compare run when compare_id is in URL
+  useEffect(() => {
+    if (!compareId || !isHydrated || !isCompareMode || loadedCompareId.current === compareId) return;
+
+    const targetCompareId = compareId; // Capture for TypeScript narrowing
+    const abortController = new AbortController();
+
+    async function loadCompareRun() {
+      try {
+        // Load results.json
+        const resultsRes = await fetch(`/output/compare/${targetCompareId}/results.json`, {
+          signal: abortController.signal,
+        });
+        if (!resultsRes.ok) return;
+        const resultsData = await resultsRes.json();
+
+        // Load runtime.json for name
+        const runtimeRes = await fetch(`/output/compare/${targetCompareId}/runtime.json`, {
+          signal: abortController.signal,
+        });
+        if (runtimeRes.ok) {
+          const runtimeData = await runtimeRes.json();
+          setCompareRunName(runtimeData.name || undefined);
+        }
+
+        // Check for images
+        const images: string[] = [];
+        const possibleImages = ['accuracy_bars.png', 'accuracy_diff.png'];
+        for (const img of possibleImages) {
+          try {
+            const imgRes = await fetch(`/output/compare/${targetCompareId}/${img}`, {
+              method: 'HEAD',
+              signal: abortController.signal,
+            });
+            if (imgRes.ok) {
+              images.push(`/output/compare/${targetCompareId}/${img}`);
+            }
+          } catch {
+            // Ignore
+          }
+        }
+
+        loadedCompareId.current = targetCompareId;
+        setCompareResult({
+          compareId: targetCompareId,
+          images,
+          models: resultsData.models || [],
+        });
+      } catch (err) {
+        if (err instanceof Error && err.name === 'AbortError') return;
+      }
+    }
+
+    loadCompareRun();
+
+    return () => {
+      abortController.abort();
+    };
+  }, [compareId, isHydrated, isCompareMode, setCompareResult]);
+
+  // Navigate to compare page when comparison completes
+  useEffect(() => {
+    if (
+      compareResult?.compareId &&
+      compareResult.compareId !== compareId &&
+      isCompareMode
+    ) {
+      router.replace(`/?compare_id=${compareResult.compareId}`);
+    }
+  }, [compareResult?.compareId, compareId, router, isCompareMode]);
+
   const handleRenameSubmit = useCallback(async () => {
     if (!runId || !editingNameValue.trim()) {
       setIsEditingName(false);
@@ -403,6 +495,79 @@ function HomeContent() {
       setIsRenamingLoading(false);
     }
   }, [runId, editingNameValue]);
+
+  const handleCompareRenameSubmit = useCallback(async () => {
+    if (!compareId || !editingCompareNameValue.trim()) {
+      setIsEditingCompareName(false);
+      setEditingCompareNameValue("");
+      setCompareRenameError(null);
+      return;
+    }
+
+    setIsRenamingCompareLoading(true);
+    setCompareRenameError(null);
+
+    try {
+      const success = await renameCompareRun(compareId, editingCompareNameValue.trim());
+      if (!success) {
+        throw new Error("Failed to rename");
+      }
+
+      setCompareRunName(editingCompareNameValue.trim().replace(/ /g, "_"));
+      setIsEditingCompareName(false);
+      setEditingCompareNameValue("");
+    } catch (err) {
+      setCompareRenameError(err instanceof Error ? err.message : "Failed to rename");
+    } finally {
+      setIsRenamingCompareLoading(false);
+    }
+  }, [compareId, editingCompareNameValue, renameCompareRun]);
+
+  // Handle selecting a compare run from history
+  const handleCompareHistorySelect = useCallback(async (selectedCompareId: string) => {
+    // Load the compare data directly instead of just navigating
+    try {
+      const resultsRes = await fetch(`/output/compare/${selectedCompareId}/results.json`);
+      if (!resultsRes.ok) return;
+      const resultsData = await resultsRes.json();
+
+      const runtimeRes = await fetch(`/output/compare/${selectedCompareId}/runtime.json`);
+      if (runtimeRes.ok) {
+        const runtimeData = await runtimeRes.json();
+        setCompareRunName(runtimeData.name || undefined);
+      }
+
+      const images: string[] = [];
+      const possibleImages = ['accuracy_bars.png', 'accuracy_diff.png'];
+      for (const img of possibleImages) {
+        try {
+          const imgRes = await fetch(`/output/compare/${selectedCompareId}/${img}`, { method: 'HEAD' });
+          if (imgRes.ok) {
+            images.push(`/output/compare/${selectedCompareId}/${img}`);
+          }
+        } catch {
+          // Ignore
+        }
+      }
+
+      loadedCompareId.current = selectedCompareId;
+      setCompareResult({
+        compareId: selectedCompareId,
+        images,
+        models: resultsData.models || [],
+      });
+      router.replace(`/?compare_id=${selectedCompareId}`);
+    } catch {
+      // Ignore errors
+    }
+  }, [setCompareResult, router]);
+
+  // Handle selecting a train run from history
+  const handleTrainHistorySelect = useCallback((selectedRunId: string) => {
+    loadedRunId.current = null;
+    hasNavigatedForResult.current = selectedRunId;
+    router.replace(`/?run_id=${selectedRunId}`);
+  }, [router]);
 
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
@@ -532,6 +697,80 @@ function HomeContent() {
               </span>
             </div>
           )}
+          {compareId && isCompareMode && (
+            <div className="text-sm text-gray-500 font-mono">
+              <span>
+                Compare:{" "}
+                {isEditingCompareName ? (
+                  <span className="inline-flex flex-col">
+                    <input
+                      type="text"
+                      value={editingCompareNameValue}
+                      onChange={(e) => {
+                        setEditingCompareNameValue(e.target.value);
+                        setCompareRenameError(null);
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          handleCompareRenameSubmit();
+                        } else if (e.key === "Escape") {
+                          setIsEditingCompareName(false);
+                          setEditingCompareNameValue("");
+                          setCompareRenameError(null);
+                        }
+                      }}
+                      onBlur={() => {
+                        if (!compareRenameError) {
+                          setIsEditingCompareName(false);
+                          setEditingCompareNameValue("");
+                        }
+                      }}
+                      placeholder={compareId}
+                      maxLength={50}
+                      className={`bg-transparent border-b focus:outline-none px-1 min-w-40 ${
+                        compareRenameError
+                          ? "border-red-500 focus:border-red-500"
+                          : "border-gray-400 focus:border-blue-500"
+                      }`}
+                      style={{ width: `${Math.max(editingCompareNameValue.length, compareId.length) + 2}ch` }}
+                      autoFocus
+                      disabled={isRenamingCompareLoading}
+                    />
+                    {compareRenameError && (
+                      <span className="text-xs text-red-500 mt-1">{compareRenameError}</span>
+                    )}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1">
+                    <span
+                      onClick={() => {
+                        setEditingCompareNameValue(compareRunName?.replace(/_/g, " ") ?? "");
+                        setIsEditingCompareName(true);
+                      }}
+                      className="cursor-pointer hover:text-gray-700 hover:underline"
+                      title="Click to rename"
+                    >
+                      {compareRunName ? compareRunName.replace(/_/g, " ") : compareId}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingCompareNameValue(compareRunName?.replace(/_/g, " ") ?? "");
+                        setIsEditingCompareName(true);
+                      }}
+                      className="p-0.5 text-gray-400 hover:text-gray-600"
+                      title="Rename compare run"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    </button>
+                  </span>
+                )}
+              </span>
+            </div>
+          )}
         </div>
 
         <div className="flex gap-6">
@@ -546,6 +785,22 @@ function HomeContent() {
                 ]}
                 activeTab={mode}
                 onTabChange={(tab) => setMode(tab as Mode)}
+                rightContent={
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (isCompareMode) {
+                        fetchCompareHistory();
+                        setIsCompareHistoryOpen(true);
+                      } else {
+                        setIsTrainHistoryOpen(true);
+                      }
+                    }}
+                    className="text-sm text-gray-500 hover:text-gray-700 hover:underline"
+                  >
+                    History
+                  </button>
+                }
               >
                 {isCompareMode ? (
                   <DatasetSelector value={dataset} onChange={setDataset} />
@@ -701,6 +956,24 @@ function HomeContent() {
         </div>
       </div>
 
+      {/* History Modals */}
+      <TrainHistoryModal
+        isOpen={isTrainHistoryOpen}
+        onClose={() => setIsTrainHistoryOpen(false)}
+        dataset={dataset}
+        model={model}
+        onSelect={handleTrainHistorySelect}
+      />
+
+      <CompareHistoryModal
+        isOpen={isCompareHistoryOpen}
+        onClose={() => setIsCompareHistoryOpen(false)}
+        runs={compareHistoryRuns}
+        isLoading={isLoadingCompareHistory}
+        onSelect={handleCompareHistorySelect}
+        onDelete={deleteCompareRun}
+        onRefresh={fetchCompareHistory}
+      />
     </main>
   );
 }
