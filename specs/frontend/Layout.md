@@ -30,7 +30,12 @@ After training completes, navigates to `/?run_id=<new_run_id>`.
 
 ## Page Composition
 
-**Header**: Page title "Model Trainer"
+**Header**: Page title "Model Trainer" with run ID display and inline rename
+
+When viewing a run (`?run_id=<run_id>`):
+- Display "Run: {name or runId}" in monospace font next to the title
+- Clicking the name/ID toggles inline edit mode
+- If run has a custom name, display it with underscores converted to spaces
 
 **Main Content**: Two-column layout on desktop, stacked on mobile.
 
@@ -67,6 +72,63 @@ Skeleton placeholder shown until client hydration completes, preventing flash of
   - `tab_mode`: Current mode (train/compare)
   - `tab_train`: Current Train mode sub-tab (dataset/model)
   - `tab_compare`: Current Compare mode sub-tab (dataset/models)
+
+## Components
+
+### Inline Run Name Editor
+Inline editing for renaming a training run with a custom name.
+
+**Trigger**: Clicking on the run name/ID in the header
+
+**Display Mode**:
+- Shows run name (with underscores displayed as spaces) or run ID if no name
+- Styled as clickable with hover underline
+- Tooltip: "Click to rename"
+- Edit icon button (pencil) next to the name for better discoverability
+  - Both clicking the name and clicking the icon trigger edit mode
+
+**Edit Mode**:
+- Text input replaces the name/ID display
+- Placeholder: run ID (so user knows which run they're editing)
+- Input pre-filled with current name (underscores shown as spaces) if one exists, empty otherwise
+- Input width expands dynamically based on text length (minimum width based on run ID length)
+- Auto-focused when entering edit mode
+
+**Behavior**:
+- Enter key saves the name (spaces converted to underscores in filename)
+- ESC key or blur cancels edit mode (unless error is showing)
+- Empty submission cancels without saving
+- Typing clears any existing error
+
+**Error State**:
+- Red border on input when rename API fails
+- Error message displayed below input
+- Input stays open on error so user can retry
+- Error clears when user types or presses ESC
+
+**Name Display Rules**:
+- Stored with underscores (valid filename characters)
+- Displayed to user with underscores converted to spaces
+- User can type spaces; they become underscores when saved
+- Allowed characters: alphanumeric, hyphens, underscores, dots, slashes, and commas
+- Slashes are stored as `--` in the filename for filesystem safety
+
+**API Call**: `POST /api/rename` with `{ runId, name }`
+
+**File Rename Logic**:
+The `.id` file in the run directory is renamed to include the custom name.
+
+Current format: `<model>_<dataset>_<score>.id`
+Example: `tree_Iris_100000.id`
+
+New format: `<model>_<dataset>_<score>_<name>.id`
+Example: `tree_Iris_100000_my_experiment.id`
+
+When renaming again, the existing name portion is replaced:
+- `tree_Iris_100000_old_name.id` → `tree_Iris_100000_new_name.id`
+
+To remove a name, submit with empty string:
+- `tree_Iris_100000_some_name.id` → `tree_Iris_100000.id`
 
 ## Related specs
 - [frontend/Form](Form.md) - Form input components

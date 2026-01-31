@@ -13,6 +13,7 @@ interface HistoryRun {
   dataset: string;
   accuracy: number;
   timestamp: number;
+  name?: string;
 }
 
 interface ModelSelectorProps {
@@ -119,7 +120,9 @@ export function ModelSelector({ value, onChange, dataset, disabled }: ModelSelec
                   onClick={() => handleRunClick(run.runId)}
                   className="w-full flex items-center justify-between px-3 py-2 rounded hover:bg-gray-50 transition-colors"
                 >
-                  <span className="font-mono text-sm text-gray-500">{run.runId}</span>
+                  <span className="font-mono text-sm text-gray-700">
+                    {run.name ? run.name.replace(/_/g, " ") : run.runId}
+                  </span>
                   <span className={`font-semibold ${accuracyColor}`}>{(run.accuracy * 100).toFixed(2)}%</span>
                   <span className="text-sm text-gray-400">{formatTimeAgo(run.timestamp)}</span>
                 </button>
