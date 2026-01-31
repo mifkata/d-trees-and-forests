@@ -14,6 +14,7 @@ interface CompareRequest {
   models: string[];  // Array of run IDs
   mask?: number;
   impute?: boolean;
+  sequence?: boolean;  // When true, runs full sequence comparison
   // ignore_columns is not used - determined from model's runtime.json
 }
 
@@ -26,12 +27,18 @@ interface ModelResult {
   imputed?: boolean;
 }
 
+interface SequenceResult {
+  models: Array<{ runId: string; model: string; accuracy: number; imputed?: boolean }>;
+}
+
 interface CompareResponse {
   success: boolean;
   data?: {
     compareId: string;
     images: string[];
-    models: ModelResult[];  // Array format
+    models?: ModelResult[];  // Standard mode
+    sequence?: boolean;       // Sequence mode flag
+    results?: Record<string, SequenceResult>;  // Sequence mode results
   };
   error?: {
     message: string;
@@ -118,7 +125,7 @@ export async function POST(
 ): Promise<NextResponse<CompareResponse>> {
   try {
     const body: CompareRequest = await request.json();
-    const { dataset, models: modelIds, mask, impute } = body;
+    const { dataset, models: modelIds, mask, impute, sequence } = body;
 
     // Validate required fields
     if (!dataset || !modelIds || !Array.isArray(modelIds) || modelIds.length === 0) {
@@ -142,14 +149,20 @@ export async function POST(
       modelIds.join(","),
     ];
 
-    // Add optional mask parameter
-    if (mask !== undefined && mask > 0) {
-      args.push("--mask", String(mask));
-    }
+    // Sequence mode: runs comparison across multiple mask rates
+    if (sequence) {
+      args.push("--sequence");
+    } else {
+      // Standard mode: single mask rate
+      // Add optional mask parameter
+      if (mask !== undefined && mask > 0) {
+        args.push("--mask", String(mask));
+      }
 
-    // Add optional impute flag
-    if (impute) {
-      args.push("--impute");
+      // Add optional impute flag
+      if (impute) {
+        args.push("--impute");
+      }
     }
 
     // ignore_columns is not passed - determined from model's runtime.json
@@ -213,8 +226,8 @@ export async function POST(
       );
     }
 
-    const modelResults = compareOutput.models as ModelResult[];
     const compareId = compareOutput.compareId;
+    const isSequence = compareOutput.sequence === true;
 
     // Check for output images in compare directory
     const images: string[] = [];
@@ -231,6 +244,21 @@ export async function POST(
       // Directory doesn't exist or no images, continue with empty array
     }
 
+    // Build response based on mode
+    if (isSequence) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          compareId,
+          images,
+          sequence: true,
+          results: compareOutput.results,
+        },
+      });
+    }
+
+    // Standard mode
+    const modelResults = compareOutput.models as ModelResult[];
     return NextResponse.json({
       success: true,
       data: {

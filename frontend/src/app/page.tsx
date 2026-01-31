@@ -433,7 +433,9 @@ function HomeContent() {
         setCompareResult({
           compareId: targetCompareId,
           images,
-          models: resultsData.models || [],
+          models: resultsData.models,
+          sequence: resultsData.sequence,
+          results: resultsData.results,
         });
       } catch (err) {
         if (err instanceof Error && err.name === 'AbortError') return;
@@ -550,7 +552,9 @@ function HomeContent() {
       setCompareResult({
         compareId: selectedCompareId,
         images,
-        models: resultsData.models || [],
+        models: resultsData.models,
+        sequence: resultsData.sequence,
+        results: resultsData.results,
       });
       router.replace(`/?compare_id=${selectedCompareId}`);
     } catch {
@@ -903,9 +907,10 @@ function HomeContent() {
 
             {/* Compare results */}
             {isCompareMode && compareResult && (
-              <div className="grid grid-cols-2 xl:grid-cols-2 gap-6">
+              <div className={compareResult.sequence ? "" : "grid grid-cols-2 xl:grid-cols-2 gap-6"}>
                 <CompareResults result={compareResult} onLoadModels={() => loadModelsFromResult(compareResult)} />
-                {compareResult.compareId && <ImagesDisplay compareId={compareResult.compareId} />}
+                {/* Show ImagesDisplay separately only for non-sequence comparisons */}
+                {!compareResult.sequence && compareResult.compareId && <ImagesDisplay compareId={compareResult.compareId} />}
               </div>
             )}
 

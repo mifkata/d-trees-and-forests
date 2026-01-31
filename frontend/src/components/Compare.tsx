@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Button, Select, Card, CardHeader, CardTitle, Badge } from './ui';
+import { ImagesDisplay } from './ResultsDisplay';
 import type { CompareModelEntry, CompareResult, HistoryRun } from '@/hooks/useCompare';
 
 type CompareSortOption = 'default' | 'compare-score' | 'model-score';
@@ -317,6 +318,18 @@ function getBoxBackground(diff: number): string {
   return 'bg-red-100';
 }
 
+function getDiffBgColor(diff: number): string {
+  if (diff >= 0.10) return 'bg-green-600';      // +10%+
+  if (diff > 0) return 'bg-green-500';          // any improvement
+  if (diff === 0) return 'bg-gray-400';         // no change
+  if (diff >= -0.05) return 'bg-yellow-500';    // up to -5%
+  if (diff >= -0.10) return 'bg-orange-500';    // up to -10%
+  if (diff >= -0.20) return 'bg-red-400';       // up to -20%
+  if (diff >= -0.30) return 'bg-red-500';       // up to -30%
+  if (diff >= -0.40) return 'bg-red-600';       // up to -40%
+  return 'bg-red-700';                          // -40%+
+}
+
 function getBorderColor(diff: number): string {
   if (diff >= 0.10) return 'border-green-400';
   if (diff > 0) return 'border-green-300';
@@ -378,7 +391,141 @@ export function CompareResults({ result, onLoadModels }: CompareResultsProps) {
     localStorage.setItem('compare_sort', sortBy);
   }, [sortBy]);
 
+  const handleModelClick = () => {
+    // Switch to train mode before navigation
+    localStorage.setItem('tab_mode', 'train');
+  };
+
+  // Sequence mode: show summary table with accuracy at each mask rate
+  if (result.sequence && result.results) {
+    const maskRates = ['0', '10', '20', '30', '40', '50', '60'];
+    const imputeRates = ['10', '20', '30', '40', '50', '60'];
+
+    // Get unique models - collect from all mask rates to find unique runIds
+    const allModels = Object.values(result.results).flatMap(r => r.models || []);
+    const seenRunIds = new Set<string>();
+    const uniqueModels: Array<{ runId: string; model: string; name?: string }> = [];
+
+    for (const m of allModels) {
+      if (!seenRunIds.has(m.runId)) {
+        seenRunIds.add(m.runId);
+        uniqueModels.push({ runId: m.runId, model: m.model, name: m.name });
+      }
+    }
+
+    if (uniqueModels.length === 0) {
+      return (
+        <Card variant="elevated">
+          <CardHeader>
+            <CardTitle>Sequence Comparison Results</CardTitle>
+          </CardHeader>
+          <div>
+            <p className="text-sm text-gray-600">No results available.</p>
+          </div>
+        </Card>
+      );
+    }
+
+    // Get baseline accuracy from mask=0
+    const baselineResults = result.results['0']?.models || [];
+
+    // Helper to get accuracy for a model at a mask rate
+    const getAccuracy = (runId: string, mask: string, imputed: boolean) => {
+      const maskResults = result.results?.[mask]?.models || [];
+      const modelResult = maskResults.find(
+        m => m.runId === runId && (imputed ? m.imputed === true : m.imputed !== true)
+      );
+      return modelResult?.accuracy;
+    };
+
+    return (
+      <>
+        <Card variant="elevated">
+          <CardHeader>
+            <CardTitle>Sequence Comparison Results</CardTitle>
+          </CardHeader>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-gray-300">
+                  <th rowSpan={2} className="text-left p-2 border-r border-gray-200 bg-gray-50">Model</th>
+                  <th rowSpan={2} className="text-center p-2 border-r border-gray-200 bg-gray-50 w-8">T</th>
+                  <th rowSpan={2} className="text-center p-2 border-r border-gray-200 bg-gray-50">Train</th>
+                  <th colSpan={7} className="text-center p-1 border-r border-gray-200 bg-gray-100">Mask</th>
+                  <th colSpan={6} className="text-center p-1 bg-gray-100">Impute</th>
+                </tr>
+                <tr className="border-b border-gray-300 bg-gray-50">
+                  {maskRates.map(rate => (
+                    <th key={`mask-${rate}`} className="text-center p-1 text-gray-500 font-normal border-r border-gray-100 last:border-r-gray-200">{rate}</th>
+                  ))}
+                  {imputeRates.map(rate => (
+                    <th key={`impute-${rate}`} className="text-center p-1 text-gray-500 font-normal border-r border-gray-100 last:border-r-0">{rate}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {uniqueModels.map((model) => {
+                  const emoji = MODEL_EMOJI[model.model] || '';
+                  const displayName = model.name ? model.name.replace(/_/g, ' ') : model.runId;
+                  const baselineAcc = baselineResults.find(m => m.runId === model.runId)?.accuracy || 0;
+
+                  return (
+                    <tr key={model.runId} className="border-b border-gray-200 hover:bg-gray-50">
+                      <td className="p-2 border-r border-gray-200">
+                        <a
+                          href={`/?run_id=${model.runId}`}
+                          onClick={handleModelClick}
+                          className="text-blue-600 hover:text-blue-800 hover:underline"
+                        >
+                          {displayName}
+                        </a>
+                      </td>
+                      <td className="text-center p-1 border-r border-gray-200">{emoji}</td>
+                      <td className="text-center p-1 border-r border-gray-200 font-medium">
+                        {(() => {
+                          const pct = baselineAcc * 100;
+                          return Number.isInteger(pct) ? `${pct}` : pct.toFixed(2);
+                        })()}
+                      </td>
+                      {maskRates.map(mask => {
+                        const accuracy = getAccuracy(model.runId, mask, false);
+                        const diff = accuracy !== undefined ? accuracy - baselineAcc : 0;
+                        return (
+                          <td key={`mask-${mask}`} className={`text-center p-1 border-r border-gray-100 last:border-r-gray-200 ${getDiffBgColor(diff)} text-white font-medium`}>
+                            {accuracy !== undefined ? `${(accuracy * 100).toFixed(0)}` : '-'}
+                          </td>
+                        );
+                      })}
+                      {imputeRates.map(mask => {
+                        const accuracy = getAccuracy(model.runId, mask, true);
+                        const baseAcc = getAccuracy(model.runId, mask, false) || baselineAcc;
+                        const diff = accuracy !== undefined ? accuracy - baseAcc : 0;
+                        return (
+                          <td key={`impute-${mask}`} className={`text-center p-1 border-r border-gray-100 last:border-r-0 ${getDiffBgColor(diff)} text-white font-medium`}>
+                            {accuracy !== undefined ? `${(accuracy * 100).toFixed(0)}` : '-'}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <p className="text-xs text-gray-500 mt-2 px-2">
+              Mask: accuracy vs baseline (0% mask). Impute: accuracy vs same mask rate without imputation.
+            </p>
+          </div>
+        </Card>
+
+        {/* Show images below for sequence mode */}
+        {result.compareId && <div className="mt-6"><ImagesDisplay compareId={result.compareId} /></div>}
+      </>
+    );
+  }
+
+  // Standard mode: compute sorted models for display
   const sortedModels = (() => {
+    if (!result.models) return [];
     if (sortBy === 'default') return result.models;
     if (sortBy === 'compare-score') {
       return [...result.models].sort((a, b) => b.compareAccuracy - a.compareAccuracy);
@@ -400,6 +547,7 @@ export function CompareResults({ result, onLoadModels }: CompareResultsProps) {
     });
   })();
 
+  // Standard mode: show individual model accuracy cards
   return (
     <Card variant="elevated">
       <CardHeader>

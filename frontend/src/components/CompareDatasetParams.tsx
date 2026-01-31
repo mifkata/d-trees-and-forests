@@ -1,6 +1,6 @@
 'use client';
 
-import { Slider, Checkbox, Button, ImputeCheckbox } from './ui';
+import { Slider, Checkbox, Button, ImputeCheckbox, SequenceCheckbox } from './ui';
 import type { CompareDatasetParams as CompareDatasetParamsType } from '@/hooks/useCompare';
 import type { DatasetId } from '@/types/dataset';
 import { DATASETS } from '@/types/dataset';
@@ -82,15 +82,21 @@ export function CompareDatasetParams({ params, dataset, onChange, onReset, disab
           max={100}
           step={5}
           unit="%"
-          disabled={disabled}
+          disabled={disabled || params.sequence}
           action={
             <ImputeCheckbox
               mask={params.mask}
               impute={params.impute}
               onChange={(impute) => onChange({ impute })}
-              disabled={disabled}
+              disabled={disabled || params.sequence}
             />
           }
+        />
+
+        <SequenceCheckbox
+          checked={params.sequence}
+          onChange={(sequence) => onChange({ sequence })}
+          disabled={disabled}
         />
 
         {!hideColumns && (
