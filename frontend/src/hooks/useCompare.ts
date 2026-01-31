@@ -29,11 +29,13 @@ export interface CompareModelResult {
   runId: string;
   trainAccuracy: number;
   compareAccuracy: number;
+  imputed?: boolean;
 }
 
 export interface CompareResult {
   compareId: string;
   images: string[];
+  modelColumns?: Record<string, number[]>;
   models: {
     tree: CompareModelResult | null;
     forest: CompareModelResult | null;
@@ -214,7 +216,7 @@ export function useCompare(options: UseCompareOptions): UseCompareReturn {
           gradient: selection.gradient,
           mask: datasetParams.mask,
           impute: datasetParams.mask > 0 && datasetParams.impute,
-          ignore_columns: datasetParams.ignore_columns,
+          // ignore_columns not sent - determined from model's runtime.json
         }),
       });
 

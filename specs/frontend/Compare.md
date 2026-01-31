@@ -47,10 +47,8 @@ Compare mode allows users to select three pre-trained models (tree, forest, grad
 │ Dataset Tab:                            │
 │   Mask Rate: [====○====] 30%            │
 │   ☑ Impute missing values               │
-│   Columns: ☑ All  [Copy] [Paste]        │
-│     ☑ SepalLengthCm                     │
-│     ☑ SepalWidthCm                      │
-│     ...                                 │
+│   (No column selection - uses model's   │
+│    trained columns from runtime.json)   │
 │                                         │
 │ Models Tab:                             │
 │   Decision Tree:    [Select run... ▼]   │
@@ -85,10 +83,11 @@ Compare mode allows users to select three pre-trained models (tree, forest, grad
 
 ### CompareDatasetParams
 - Subset of DatasetParams for Compare mode
-- Shows: mask slider, impute checkbox, column selection, Reset button
-- Hides: split slider (not needed for compare)
+- Shows: mask slider, impute checkbox, Reset button
+- Hides: split slider (not needed for compare), column selection (determined from model's runtime.json)
 - Reset button resets to defaults only, does not trigger comparison
-- Props: `params`, `dataset`, `onChange`, `onReset`
+- Props: `params`, `dataset`, `onChange`, `onReset`, `hideColumns`
+- When `hideColumns={true}`, the Feature Columns section is not rendered
 
 ### CompareModelsTab
 - Content for the Models sub-tab in Compare mode
@@ -141,7 +140,7 @@ interface CompareState {
   datasetParams: {
     mask: number;
     impute: boolean;
-    ignore_columns: number[];
+    // ignore_columns not used - determined from model's runtime.json
   };
 }
 
@@ -184,16 +183,17 @@ API route: `POST /api/compare`
   "forest": "1706540456",
   "gradient": "1706540789",
   "mask": 30,
-  "impute": true,
-  "ignore_columns": [0, 1]
+  "impute": true
 }
 ```
+
+Note: `ignore_columns` is NOT sent - each model uses its own column configuration from `runtime.json`.
 
 **Backend Execution:**
 ```bash
 python compare.py --dataset Iris \
   --tree 1706540123 --forest 1706540456 --gradient 1706540789 \
-  --mask 30 --impute --ignore-columns 0,1 --images
+  --mask 30 --impute --images
 ```
 
 **Response:**
@@ -206,14 +206,22 @@ python compare.py --dataset Iris \
       "/output/compare/1706540999/accuracy_bars.png",
       "/output/compare/1706540999/accuracy_diff.png"
     ],
+    "modelColumns": {
+      "tree": [0, 2, 3],
+      "forest": [2, 3],
+      "gradient": [0, 2, 3]
+    },
     "models": {
-      "tree": { "runId": "1706540123", "trainAccuracy": 0.96, "compareAccuracy": 0.92 },
-      "forest": { "runId": "1706540456", "trainAccuracy": 0.98, "compareAccuracy": 0.95 },
-      "gradient": { "runId": "1706540789", "trainAccuracy": 0.97, "compareAccuracy": 0.94 }
+      "tree": { "runId": "1706540123", "trainAccuracy": 0.96, "compareAccuracy": 0.92, "imputed": false },
+      "forest": { "runId": "1706540456", "trainAccuracy": 0.98, "compareAccuracy": 0.95, "imputed": false },
+      "gradient": { "runId": "1706540789", "trainAccuracy": 0.97, "compareAccuracy": 0.94, "imputed": true }
     }
   }
 }
 ```
+
+- `modelColumns`: Per-model array of column indices used for evaluation
+- `imputed`: True if model couldn't handle NaN values and automatic imputation was applied
 
 ### Images Endpoint (Extended)
 API route: `GET /api/images`
@@ -252,7 +260,7 @@ Each ModelHistorySelect fetches from `/api/history` with filters:
 - **Error Handling**: Show error if selected run no longer exists
 - **Lazy History Loading**: History is fetched only when Compare mode Models tab is opened
 - **History Refresh**: Re-fetch history each time Models tab is activated
-- **Dataset Params**: Mask and ignore_columns are separate from Train mode params
+- **Dataset Params**: Mask and impute are separate from Train mode params (ignore_columns not used in Compare)
 
 ## Related specs
 - [frontend/Layout](Layout.md) - Page structure

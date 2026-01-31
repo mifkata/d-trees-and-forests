@@ -16,13 +16,14 @@ interface CompareRequest {
   gradient: string;
   mask?: number;
   impute?: boolean;
-  ignore_columns?: number[];
+  // ignore_columns is not used - determined from model's runtime.json
 }
 
 interface ModelResult {
   runId: string;
   trainAccuracy: number;
   compareAccuracy: number;
+  imputed?: boolean;
 }
 
 interface CompareResponse {
@@ -30,6 +31,7 @@ interface CompareResponse {
   data?: {
     compareId: string;
     images: string[];
+    modelColumns?: Record<string, number[]>;
     models: {
       tree: ModelResult | null;
       forest: ModelResult | null;
@@ -132,7 +134,7 @@ export async function POST(
 ): Promise<NextResponse<CompareResponse>> {
   try {
     const body: CompareRequest = await request.json();
-    const { dataset, tree, forest, gradient, mask, impute, ignore_columns } = body;
+    const { dataset, tree, forest, gradient, mask, impute } = body;
 
     // Validate required fields
     if (!dataset || !tree || !forest || !gradient) {
@@ -170,10 +172,7 @@ export async function POST(
       args.push("--impute");
     }
 
-    // Add optional ignore_columns parameter
-    if (ignore_columns && ignore_columns.length > 0) {
-      args.push("--ignore-columns", ignore_columns.join(","));
-    }
+    // ignore_columns is not passed - determined from model's runtime.json
 
     // Always generate images for frontend
     args.push("--images");
@@ -236,6 +235,7 @@ export async function POST(
 
     const models = compareOutput.models;
     const compareId = compareOutput.compareId;
+    const modelColumns = compareOutput.modelColumns;
 
     // Check for output images in compare directory
     const images: string[] = [];
@@ -257,21 +257,25 @@ export async function POST(
       data: {
         compareId,
         images,
+        modelColumns,
         models: {
           tree: models.tree ? {
             runId: models.tree.runId,
             trainAccuracy: models.tree.trainAccuracy,
             compareAccuracy: models.tree.compareAccuracy,
+            imputed: models.tree.imputed,
           } : null,
           forest: models.forest ? {
             runId: models.forest.runId,
             trainAccuracy: models.forest.trainAccuracy,
             compareAccuracy: models.forest.compareAccuracy,
+            imputed: models.forest.imputed,
           } : null,
           gradient: models.gradient ? {
             runId: models.gradient.runId,
             trainAccuracy: models.gradient.trainAccuracy,
             compareAccuracy: models.gradient.compareAccuracy,
+            imputed: models.gradient.imputed,
           } : null,
         },
       },

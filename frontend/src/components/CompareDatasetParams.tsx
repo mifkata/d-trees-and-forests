@@ -19,9 +19,10 @@ interface CompareDatasetParamsProps {
   clipboard?: ColumnClipboard | null;
   onCopy?: (clipboard: ColumnClipboard) => void;
   onPaste?: (ignore_columns: number[]) => void;
+  hideColumns?: boolean;
 }
 
-export function CompareDatasetParams({ params, dataset, onChange, onReset, disabled, clipboard, onCopy, onPaste }: CompareDatasetParamsProps) {
+export function CompareDatasetParams({ params, dataset, onChange, onReset, disabled, clipboard, onCopy, onPaste, hideColumns }: CompareDatasetParamsProps) {
   const columns = DATASETS[dataset].features;
 
   // Check if paste is available (clipboard has selection for same dataset)
@@ -92,60 +93,62 @@ export function CompareDatasetParams({ params, dataset, onChange, onReset, disab
           }
         />
 
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <label className="text-sm font-medium text-gray-700">
-              Feature Columns
-            </label>
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={handleCopy}
-                disabled={disabled}
-                className="flex items-center gap-1 text-xs"
-              >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                </svg>
-                Copy
-              </Button>
-              {canPaste && (
+        {!hideColumns && (
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium text-gray-700">
+                Feature Columns
+              </label>
+              <div className="flex items-center gap-2">
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={handlePaste}
+                  onClick={handleCopy}
                   disabled={disabled}
                   className="flex items-center gap-1 text-xs"
                 >
                   <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
-                  Paste
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  Copy
                 </Button>
-              )}
-              <Checkbox
-                label="Select All"
-                checked={allSelected}
-                onChange={handleSelectAll}
-                disabled={disabled}
-              />
+                {canPaste && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handlePaste}
+                    disabled={disabled}
+                    className="flex items-center gap-1 text-xs"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                    Paste
+                  </Button>
+                )}
+                <Checkbox
+                  label="Select All"
+                  checked={allSelected}
+                  onChange={handleSelectAll}
+                  disabled={disabled}
+                />
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {columns.map((col, index) => (
+                <Checkbox
+                  key={col}
+                  label={col}
+                  checked={!params.ignore_columns?.includes(index)}
+                  onChange={() => handleColumnToggle(index)}
+                  disabled={disabled}
+                />
+              ))}
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            {columns.map((col, index) => (
-              <Checkbox
-                key={col}
-                label={col}
-                checked={!params.ignore_columns?.includes(index)}
-                onChange={() => handleColumnToggle(index)}
-                disabled={disabled}
-              />
-            ))}
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );
