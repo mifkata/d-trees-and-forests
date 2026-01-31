@@ -15,19 +15,50 @@ function formatTimeAgo(timestamp: number): string {
   return new Date(timestamp * 1000).toLocaleDateString();
 }
 
-function formatModelName(model: { runId: string; name: string | null }): string {
-  if (model.name) {
-    return model.name.replace(/_/g, ' ');
-  }
-  return model.runId;
-}
-
 const MODEL_LABELS: Record<string, string> = {
   'tree': 'Tree',
   'forest': 'Forest',
   'gradient': 'Gradient',
   'hist-gradient': 'Hist Gradient',
 };
+
+const MODEL_EMOJI: Record<string, string> = {
+  'tree': '🌳',
+  'forest': '🌲',
+  'gradient': '🚀',
+  'hist-gradient': '📊',
+};
+
+function ModelCounts({ models }: { models: { model: string }[] }) {
+  const counts: Record<string, number> = {};
+  for (const m of models) {
+    counts[m.model] = (counts[m.model] || 0) + 1;
+  }
+
+  // Sort by model type for consistent ordering
+  const order = ['tree', 'forest', 'gradient', 'hist-gradient'];
+  const sortedTypes = Object.keys(counts).sort((a, b) => {
+    const aIdx = order.indexOf(a);
+    const bIdx = order.indexOf(b);
+    return (aIdx === -1 ? 999 : aIdx) - (bIdx === -1 ? 999 : bIdx);
+  });
+
+  return (
+    <span className="flex items-center gap-3">
+      {sortedTypes.map((type) => {
+        const count = counts[type];
+        const label = MODEL_LABELS[type] || type;
+        const emoji = MODEL_EMOJI[type] || '';
+        return (
+          <span key={type}>
+            <span className="text-base font-semibold text-gray-800">{count}x</span>
+            <span className="text-sm text-gray-600"> {label} {emoji}</span>
+          </span>
+        );
+      })}
+    </span>
+  );
+}
 
 interface CompareHistoryModalProps {
   isOpen: boolean;
@@ -66,7 +97,7 @@ export function CompareHistoryModal({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Compare History" maxWidth="4xl">
+    <Modal isOpen={isOpen} onClose={onClose} title="Compare History" maxWidth="lg" fitContent minWidth={600}>
       {isLoading ? (
         <div className="flex items-center justify-center py-12">
           <Spinner className="h-6 w-6" />
@@ -85,7 +116,7 @@ export function CompareHistoryModal({
               onClick={() => handleSelect(run.compareId)}
               className="p-4 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50/50 cursor-pointer transition-colors"
             >
-              <div className="flex items-start justify-between">
+              <div className="flex items-center justify-between">
                 <div className="flex-1 min-w-0">
                   {/* Header: Name/ID and timestamp */}
                   <div className="flex items-center gap-3 mb-2">
@@ -95,6 +126,11 @@ export function CompareHistoryModal({
                     <span className="text-sm text-gray-500">
                       {formatTimeAgo(run.timestamp)}
                     </span>
+                  </div>
+
+                  {/* Model counts with emojis and params */}
+                  <div className="flex items-center gap-3">
+                    <ModelCounts models={run.models} />
                     {run.mask > 0 && (
                       <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded">
                         mask: {run.mask}%
@@ -105,20 +141,6 @@ export function CompareHistoryModal({
                         imputed
                       </span>
                     )}
-                  </div>
-
-                  {/* Model list - dynamic based on array */}
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
-                    {run.models.map((model, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
-                        <span className="text-gray-500 w-28">
-                          {MODEL_LABELS[model.model] || model.model}:
-                        </span>
-                        <span className="text-gray-700 truncate">
-                          {formatModelName(model)}
-                        </span>
-                      </div>
-                    ))}
                   </div>
                 </div>
 

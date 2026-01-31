@@ -653,17 +653,15 @@ export function CompareResults({ result, onLoadModels, onAddModel }: CompareResu
         </div>
       </CardHeader>
 
-      <div>
-        <div className="space-y-3">
-          {sortedModels.map((model) => (
-            <ModelAccuracyCard
-              key={model.runId}
-              model={model}
-              onAddModel={onAddModel}
-              showAddIcon={!!onAddModel}
-            />
-          ))}
-        </div>
+      <div className="space-y-3">
+        {sortedModels.map((model) => (
+          <ModelAccuracyCard
+            key={model.runId}
+            model={model}
+            onAddModel={onAddModel}
+            showAddIcon={!!onAddModel}
+          />
+        ))}
       </div>
     </Card>
   );

@@ -9,6 +9,7 @@ interface ModalProps {
   children: React.ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl';
   fitContent?: boolean;
+  minWidth?: number;
 }
 
 const maxWidthClasses = {
@@ -23,7 +24,7 @@ const maxWidthClasses = {
   '6xl': 'max-w-6xl',
 };
 
-export function Modal({ isOpen, onClose, title, children, maxWidth = '6xl', fitContent = false }: ModalProps) {
+export function Modal({ isOpen, onClose, title, children, maxWidth = '6xl', fitContent = false, minWidth }: ModalProps) {
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -56,7 +57,10 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = '6xl', fitC
       />
 
       {/* Modal container */}
-      <div className={`relative bg-white rounded-lg shadow-xl ${fitContent ? '' : `w-full ${maxWidthClasses[maxWidth]}`} max-h-[90vh] m-4 flex flex-col`}>
+      <div
+        className={`relative bg-white rounded-lg shadow-xl ${fitContent ? maxWidthClasses[maxWidth] : `w-full ${maxWidthClasses[maxWidth]}`} max-h-[90vh] m-4 flex flex-col`}
+        style={minWidth ? { minWidth: `${minWidth}px` } : undefined}
+      >
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
           <h2 className="text-lg font-semibold text-gray-900 whitespace-nowrap">{title}</h2>
@@ -82,7 +86,7 @@ export function Modal({ isOpen, onClose, title, children, maxWidth = '6xl', fitC
         </div>
 
         {/* Body */}
-        <div className={`flex-1 p-6 ${fitContent ? '' : 'overflow-auto'}`}>
+        <div className="flex-1 p-6 overflow-auto">
           {children}
         </div>
       </div>
