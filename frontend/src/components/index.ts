@@ -8,3 +8,5 @@ export { TrainButton } from './TrainButton';
 export { ResultsDisplay, ImagesDisplay } from './ResultsDisplay';
 export { ErrorDisplay } from './ErrorDisplay';
 export { CompareModelsList, CompareButton, CompareResults, ModelRow } from './Compare';
+export { CompareHistoryModal } from './CompareHistoryModal';
+export { TrainHistoryModal } from './TrainHistoryModal';

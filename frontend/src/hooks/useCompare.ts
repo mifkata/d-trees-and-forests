@@ -41,6 +41,22 @@ export interface CompareResult {
   models: CompareModelResult[];
 }
 
+export interface CompareHistoryModelInfo {
+  runId: string;
+  model: string;
+  name: string | null;
+}
+
+export interface CompareHistoryRun {
+  compareId: string;
+  dataset: string;
+  timestamp: number;
+  name: string | null;
+  mask: number;
+  impute: boolean;
+  models: CompareHistoryModelInfo[];
+}
+
 interface UseCompareOptions {
   dataset: DatasetId;
   isCompareMode: boolean;
@@ -63,6 +79,13 @@ interface UseCompareReturn {
   canCompare: boolean;
   history: HistoryRun[];
   isLoadingHistory: boolean;
+  // Compare history
+  compareHistory: CompareHistoryRun[];
+  isLoadingCompareHistory: boolean;
+  fetchCompareHistory: () => Promise<void>;
+  deleteCompareRun: (compareId: string) => Promise<boolean>;
+  renameCompareRun: (compareId: string, name: string | null) => Promise<boolean>;
+  setCompareResult: (result: CompareResult | null) => void;
 }
 
 const COMPARE_MODELS_KEY = 'compare_models';
@@ -150,6 +173,10 @@ export function useCompare(options: UseCompareOptions): UseCompareReturn {
 
   const [history, setHistory] = useState<HistoryRun[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
+  // Compare history state
+  const [compareHistory, setCompareHistory] = useState<CompareHistoryRun[]>([]);
+  const [isLoadingCompareHistory, setIsLoadingCompareHistory] = useState(false);
 
   // Calculate duplicate run IDs
   const duplicateRunIds = useMemo(() => getDuplicateRunIds(models), [models]);
@@ -277,6 +304,48 @@ export function useCompare(options: UseCompareOptions): UseCompareReturn {
     setCompareError(null);
   }, []);
 
+  // Fetch compare history
+  const fetchCompareHistory = useCallback(async () => {
+    setIsLoadingCompareHistory(true);
+    try {
+      const response = await fetch(`/api/compare/history?dataset=${dataset}`);
+      const data = await response.json();
+      setCompareHistory(data.runs || []);
+    } catch {
+      setCompareHistory([]);
+    } finally {
+      setIsLoadingCompareHistory(false);
+    }
+  }, [dataset]);
+
+  // Delete compare run
+  const deleteCompareRun = useCallback(async (compareId: string): Promise<boolean> => {
+    try {
+      const response = await fetch(`/api/compare/history/${compareId}`, {
+        method: 'DELETE',
+      });
+      const data = await response.json();
+      return data.success === true;
+    } catch {
+      return false;
+    }
+  }, []);
+
+  // Rename compare run
+  const renameCompareRun = useCallback(async (compareId: string, name: string | null): Promise<boolean> => {
+    try {
+      const response = await fetch('/api/compare/rename', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ compareId, name }),
+      });
+      const data = await response.json();
+      return data.success === true;
+    } catch {
+      return false;
+    }
+  }, []);
+
   return {
     models,
     removeModel,
@@ -294,5 +363,12 @@ export function useCompare(options: UseCompareOptions): UseCompareReturn {
     canCompare,
     history,
     isLoadingHistory,
+    // Compare history
+    compareHistory,
+    isLoadingCompareHistory,
+    fetchCompareHistory,
+    deleteCompareRun,
+    renameCompareRun,
+    setCompareResult,
   };
 }
