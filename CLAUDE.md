@@ -7,6 +7,7 @@
 ## Stack
 * Use `scikit-learn`, `pandas`, `numpy` to train and run models.
 * Do not implement classification algorithms from scratch; use existing libraries.
+* Use `pnpm` instead of `npm` for running Node.js applications and scripts.
 
 ## Specs
 * Create specs in `specs/` directory following the Spec Editor skill guidelines.
