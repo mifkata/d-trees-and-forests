@@ -6,6 +6,7 @@ import pandas as pd
 from sklearn.tree import plot_tree
 from sklearn.metrics import accuracy_score
 from sklearn.inspection import PartialDependenceDisplay, DecisionBoundaryDisplay
+from sklearn.manifold import MDS
 from sklearn.preprocessing import LabelEncoder
 from itertools import combinations
 from config import OUTPUT_DIR, VERBOSE
@@ -121,6 +122,34 @@ class Render:
         sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm", center=0)
         plt.title("Feature Correlation Heatmap")
         cls.footer(filename)
+
+    @classmethod
+    def clustering(cls, X, y, filename="clustering.png"):
+        """Render MDS clustering visualization based on feature space.
+
+        Args:
+            X: Feature data
+            y: Target labels
+            filename: Output filename
+        """
+        from sklearn.preprocessing import StandardScaler
+
+        # Standardize features and handle missing values
+        X_filled = X.fillna(X.mean())
+        X_scaled = StandardScaler().fit_transform(X_filled)
+
+        # Apply MDS
+        mds = MDS(n_components=2, random_state=42, normalized_stress="auto")
+        embedding = mds.fit_transform(X_scaled)
+
+        # Plot
+        cls.header(figsize=(10, 8))
+        scatter = plt.scatter(embedding[:, 0], embedding[:, 1], c=LabelEncoder().fit_transform(y),
+                             cmap="viridis", alpha=0.7, s=50)
+        plt.colorbar(scatter, label="Class")
+        plt.xlabel("MDS 1")
+        plt.ylabel("MDS 2")
+        cls.footer(filename, title="Feature Space Clustering (MDS)")
 
     @classmethod
     def tree(cls, clf, feature_names, class_names, filename="decision_tree.png"):
@@ -377,6 +406,47 @@ class Render:
         plt.xlabel("Sample")
         plt.ylabel("Sample")
         cls.footer(filename, title="Random Forest Proximity Matrix")
+
+    @classmethod
+    def forest_clustering(cls, clf, X, y, filename="forest_clustering.png"):
+        """Render t-SNE clustering visualization based on proximity matrix.
+
+        Args:
+            clf: Trained RandomForestClassifier
+            X: Feature data
+            y: Target labels
+            filename: Output filename
+        """
+        # Compute proximity matrix
+        leaves = clf.apply(X)
+        n_samples = len(X)
+        proximity = np.zeros((n_samples, n_samples))
+
+        for tree_leaves in leaves.T:
+            for i in range(n_samples):
+                for j in range(i, n_samples):
+                    if tree_leaves[i] == tree_leaves[j]:
+                        proximity[i, j] += 1
+                        proximity[j, i] += 1
+
+        proximity /= clf.n_estimators
+        np.fill_diagonal(proximity, 1)
+
+        # Convert proximity to dissimilarity (1 - proximity)
+        dissimilarity = 1 - proximity
+
+        # Apply MDS on dissimilarity matrix
+        mds = MDS(n_components=2, dissimilarity="precomputed", random_state=42, normalized_stress="auto")
+        embedding = mds.fit_transform(dissimilarity)
+
+        # Plot
+        cls.header(figsize=(10, 8))
+        scatter = plt.scatter(embedding[:, 0], embedding[:, 1], c=LabelEncoder().fit_transform(y),
+                             cmap="viridis", alpha=0.7, s=50)
+        plt.colorbar(scatter, label="Class")
+        plt.xlabel("MDS 1")
+        plt.ylabel("MDS 2")
+        cls.footer(filename, title="Random Forest Clustering (MDS of Proximity)")
 
     @classmethod
     def gradient_forest_importance(cls, importances, feature_names, filename="gradient_forest_feature_importance.png"):

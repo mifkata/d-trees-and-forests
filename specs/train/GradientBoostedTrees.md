@@ -13,7 +13,8 @@ Train a histogram-based gradient boosted trees classifier using scikit-learn's H
 - Output accuracy and classification report (or JSON summary with `--json`)
 - Print model info: classifier name, number of boosting iterations, and early stopping info if applicable
 - Generate visualizations when `--images` flag is present:
-  - Feature importance bar chart (using permutation importance)
+  - Feature correlation heatmap (correlation matrix of input features)
+  - Clustering visualization (MDS of feature space, colored by class)
 
 ## Implementation Details
 - **Library**: sklearn.ensemble.HistGradientBoostingClassifier

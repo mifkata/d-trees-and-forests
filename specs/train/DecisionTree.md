@@ -14,7 +14,6 @@ Train a single decision tree classifier on tabular datasets with support for mis
 - Generate visualizations when `--images` flag is present:
   - Feature correlation heatmap
   - Tree structure visualization
-  - Feature importance bar chart
   - Decision boundaries (for datasets with ≤6 features)
 
 ## Implementation Details
