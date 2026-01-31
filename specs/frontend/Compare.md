@@ -142,8 +142,8 @@ Compare mode allows users to select an arbitrary number of pre-trained models fr
 
 ### CompareResults
 - Displays accuracy stats for all compared models in a card
+- Header contains: load models button (left), title, sort icons (right) - see [CompareSorting](CompareSorting.md)
 - Model accuracy cards displayed in a vertical column layout (stacked)
-- Displays models in the order they were selected (matches API response order)
 - Each model card layout:
   - Header row: Label/name in top-left, model type with emoji in top-right
   - Stats row: Train accuracy, Compare accuracy, and Diff on single row
@@ -159,7 +159,7 @@ Compare mode allows users to select an arbitrary number of pre-trained models fr
       - Red: diff >= -0.30 (up to 30% drop)
       - Dark red: diff >= -0.40 (up to 40% drop)
       - Darkest red: diff < -0.40 (40%+ drop)
-- Props: `result` (includes `compareId` field and `models` array)
+- Props: `result` (includes `compareId` field and `models` array), `onLoadModels` (optional callback)
 - Note: Visuals are shown in a separate `ImagesDisplay` component in the right column
 
 ## State Management
@@ -342,5 +342,6 @@ Client-side filtering: The run dropdown filters the fetched history by the selec
 - [frontend/Layout](Layout.md) - Page structure
 - [frontend/Form](Form.md) - Form controls and tabs
 - [frontend/Output](Output.md) - Shared visual components (ImageGallery, ZoomableImageModal)
+- [frontend/CompareSorting](CompareSorting.md) - Sorting options for compare results
 - [Compare](../Compare.md) - Backend compare.py script
 - [lib/Render](../lib/Render.md) - Compare visualization methods
