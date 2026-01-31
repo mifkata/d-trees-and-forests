@@ -226,6 +226,8 @@ def parse_args():
                         help="Mask percentage for comparison (0-100)")
     parser.add_argument("--impute", action="store_true",
                         help="Impute missing values during comparison")
+    parser.add_argument("--sequence", action="store_true",
+                        help="Run sequence comparison across mask rates 0,10,20,30,40,50,60")
     parser.add_argument("--ignore-columns", type=str, default=None,
                         help="Comma-separated column indices to ignore")
     parser.add_argument("--compare-id", type=str, default=None,
@@ -251,6 +253,9 @@ def main():
         compare_id = args.compare_id if args.compare_id else str(int(time.time()))
         print(f"Compare ID: {compare_id}", file=sys.stderr)
 
+        # Start timing
+        start_time = time.time()
+
         # Validate all model IDs and collect runtime configs
         runtimes = []
         for run_id in model_ids:
@@ -270,6 +275,178 @@ def main():
             model_used_cols = sorted(all_columns - model_ignore_cols)
             print(f"  {model_type} ({run_id}) uses columns: {model_used_cols}", file=sys.stderr)
 
+        # Sequence mode: run comparison across multiple mask rates
+        if args.sequence:
+            sequence_mask_values = [0, 10, 20, 30, 40, 50, 60]
+            print(f"\nRunning sequence comparison across mask rates: {sequence_mask_values}", file=sys.stderr)
+
+            # Pre-compute model labels and names for visualization
+            model_labels = {}  # run_id -> display label
+            model_names = {}   # run_id -> name (for JSON output)
+            for run_id, model_type, runtime in runtimes:
+                output_dir = get_output_dir(run_id)
+                # Get model name from .id file: {model}_{dataset}_{score}[_{name}].id
+                model_name = None
+                try:
+                    for filename in os.listdir(output_dir):
+                        if filename.endswith('.id'):
+                            parts = filename.replace('.id', '').split('_')
+                            # Name is everything after the 3rd part (index 3+)
+                            if len(parts) > 3:
+                                model_name = '_'.join(parts[3:])
+                            break
+                except (FileNotFoundError, OSError):
+                    pass
+
+                model_names[run_id] = model_name
+                # Format: "name | id (model type)" or just "id (model type)"
+                display_name = model_name.replace('_', ' ') if model_name else run_id[-6:]
+                model_labels[run_id] = f"{display_name} ({model_type})"
+
+            # Collect results for visualization: {label: [accuracies], label_impute: [accuracies]}
+            sequence_results = {}
+            sequence_data = {}  # {mask_rate: {models: [...]}}
+            errors = []
+
+            for mask_rate in sequence_mask_values:
+                print(f"\n  Mask {mask_rate}%:", file=sys.stderr)
+                sequence_data[str(mask_rate)] = {"models": []}
+
+                for run_id, model_type, runtime in runtimes:
+                    output_dir = get_output_dir(run_id)
+                    model_ignore_cols = runtime.get("datasetParams", {}).get("ignore_columns", [])
+                    model_used_cols = sorted(all_columns - set(model_ignore_cols))
+                    label = model_labels[run_id]
+                    model_name = model_names[run_id]
+
+                    # Initialize result lists if not exist
+                    if label not in sequence_results:
+                        sequence_results[label] = []
+                        sequence_results[f"{label}_impute"] = []
+
+                    model_path = os.path.join(output_dir, 'model.pkl')
+
+                    # Test WITHOUT imputation
+                    try:
+                        X, y = load_full_dataset(
+                            args.dataset,
+                            mask_rate=mask_rate / 100.0,
+                            impute=False,
+                            ignore_columns=model_ignore_cols
+                        )
+                        accuracy, was_imputed = evaluate_model(model_path, X, y)
+                        sequence_results[label].append(accuracy)
+                        print(f"    {model_type}: {accuracy:.4f}{' (auto-imputed)' if was_imputed else ''}", file=sys.stderr)
+
+                        model_result = {
+                            "runId": run_id,
+                            "model": model_type,
+                            "name": model_name,
+                            "accuracy": accuracy,
+                            "imputed": was_imputed
+                        }
+                        if mask_rate > 0:
+                            model_result["imputed"] = False
+                        sequence_data[str(mask_rate)]["models"].append(model_result)
+                    except Exception as e:
+                        error_msg = f"{model_type} ({run_id}) mask={mask_rate}%: {e}"
+                        print(f"    {model_type}: ERROR - {e}", file=sys.stderr)
+                        errors.append(error_msg)
+                        sequence_results[label].append(None)
+
+                    # Test WITH imputation (only for mask > 0)
+                    if mask_rate > 0:
+                        try:
+                            X, y = load_full_dataset(
+                                args.dataset,
+                                mask_rate=mask_rate / 100.0,
+                                impute=True,
+                                ignore_columns=model_ignore_cols
+                            )
+                            accuracy_imputed, _ = evaluate_model(model_path, X, y)
+                            sequence_results[f"{label}_impute"].append(accuracy_imputed)
+                            print(f"    {model_type} (imputed): {accuracy_imputed:.4f}", file=sys.stderr)
+
+                            sequence_data[str(mask_rate)]["models"].append({
+                                "runId": run_id,
+                                "model": model_type,
+                                "name": model_name,
+                                "accuracy": accuracy_imputed,
+                                "imputed": True
+                            })
+                        except Exception as e:
+                            error_msg = f"{model_type} ({run_id}) mask={mask_rate}% imputed: {e}"
+                            print(f"    {model_type} (imputed): ERROR - {e}", file=sys.stderr)
+                            errors.append(error_msg)
+                            sequence_results[f"{label}_impute"].append(None)
+                    else:
+                        # For mask=0, imputed is same as non-imputed
+                        sequence_results[f"{label}_impute"].append(sequence_results[label][-1])
+
+            # Generate sequence comparison image if requested
+            if args.images:
+                print(f"\nGenerating sequence comparison image...", file=sys.stderr)
+                Render.set_compare_id(compare_id)
+
+                # Build colors dict for sequence visualization using labels
+                sequence_colors = {}
+                for run_id, model_type, _ in runtimes:
+                    label = model_labels[run_id]
+                    sequence_colors[label] = COLORS.get(model_type, "gray")
+
+                Render.compare_accuracy_impute(
+                    sequence_mask_values,
+                    sequence_results,
+                    sequence_colors,
+                    "sequence_comparison.png"
+                )
+                print(f"  Image saved to frontend/public/output/compare/{compare_id}/", file=sys.stderr)
+
+            # Calculate elapsed time
+            elapsed_time = time.time() - start_time
+            print(f"\nCompleted in {elapsed_time:.2f}s", file=sys.stderr)
+
+            # Save results.json and runtime.json for compare history
+            compare_dir = os.path.realpath(os.path.join(
+                os.path.dirname(__file__), 'frontend', 'public', 'output', 'compare', compare_id
+            ))
+            os.makedirs(compare_dir, exist_ok=True)
+
+            # Save results.json with sequence data
+            results_data = {
+                "compareId": compare_id,
+                "sequence": True,
+                "dataset": args.dataset,
+                "elapsed": round(elapsed_time, 2),
+                "results": sequence_data
+            }
+            with open(os.path.join(compare_dir, 'results.json'), 'w') as f:
+                json.dump(results_data, f, indent=2)
+
+            # Save runtime.json with runtime parameters
+            runtime_data = {
+                "compare_id": compare_id,
+                "dataset": args.dataset,
+                "sequence": True,
+                "name": None,
+                "models": [{"runId": run_id, "model": model_type} for run_id, model_type, _ in runtimes]
+            }
+            with open(os.path.join(compare_dir, 'runtime.json'), 'w') as f:
+                json.dump(runtime_data, f, indent=2)
+
+            print(f"  Saved results.json and runtime.json to compare/{compare_id}/", file=sys.stderr)
+
+            # Output results as JSON
+            print(json.dumps({
+                "success": True,
+                "compareId": compare_id,
+                "sequence": True,
+                "elapsed": round(elapsed_time, 2),
+                "results": sequence_data
+            }))
+            return
+
+        # Standard single mask rate comparison
         print(f"\nRunning comparison with mask={args.mask}%, impute={args.impute}", file=sys.stderr)
 
         results = []
@@ -374,6 +551,10 @@ def main():
             Render.compare_accuracy_diff(results, "accuracy_diff.png")
             print(f"  Images saved to frontend/public/output/compare/{compare_id}/", file=sys.stderr)
 
+        # Calculate elapsed time
+        elapsed_time = time.time() - start_time
+        print(f"\nCompleted in {elapsed_time:.2f}s", file=sys.stderr)
+
         # Save results.json and runtime.json for compare history
         compare_dir = os.path.realpath(os.path.join(
             os.path.dirname(__file__), 'frontend', 'public', 'output', 'compare', compare_id
@@ -386,6 +567,7 @@ def main():
             "mask": args.mask,
             "impute": args.impute,
             "dataset": args.dataset,
+            "elapsed": round(elapsed_time, 2),
             "models": results
         }
         with open(os.path.join(compare_dir, 'results.json'), 'w') as f:
@@ -400,15 +582,12 @@ def main():
             "name": None,
             "models": [{"runId": run_id, "model": model_type} for run_id, model_type, _ in runtimes]
         }
-        with open(os.path.join(compare_dir, 'runtime.json'), 'w') as f:
-            json.dump(runtime_data, f, indent=2)
-
-        print(f"  Saved results.json and runtime.json to compare/{compare_id}/", file=sys.stderr)
 
         # Output results as JSON (array format)
         print(json.dumps({
             "success": True,
             "compareId": compare_id,
+            "elapsed": round(elapsed_time, 2),
             "models": results
         }))
         return

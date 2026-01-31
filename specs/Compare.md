@@ -97,6 +97,7 @@ When running with model IDs, outputs JSON with both training and comparison accu
 {
   "success": true,
   "compareId": "1706540999",
+  "elapsed": 5.23,
   "models": [
     {
       "runId": "1706540123",
@@ -127,6 +128,7 @@ When running with model IDs, outputs JSON with both training and comparison accu
 ```
 
 - `compareId`: Unique identifier for this comparison run (timestamp)
+- `elapsed`: Time in seconds to run the comparison
 - `models`: Array of model results (order matches input `--models` order)
   - `runId`: The run ID provided in `--models`
   - `model`: Model type auto-detected from runtime.json (tree, forest, gradient, hist-gradient)
@@ -186,3 +188,4 @@ The `columns` from each model in the compare result can be displayed as read-onl
 - [train/HistGradientBoostedTrees](train/HistGradientBoostedTrees.md) - Hist gradient model being compared
 - [lib/Render](lib/Render.md) - Visualization utilities
 - [lib/Model](lib/Model.md) - Model persistence including runtime.json format
+- [frontend/CompareSequence](frontend/CompareSequence.md) - Frontend Sequence mode UI

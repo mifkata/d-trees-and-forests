@@ -15,6 +15,7 @@ export interface CompareDatasetParams {
   mask: number;
   impute: boolean;
   ignore_columns: number[];
+  sequence: boolean;
 }
 
 export interface HistoryRun {
@@ -38,7 +39,9 @@ export interface CompareModelResult {
 export interface CompareResult {
   compareId: string;
   images: string[];
-  models: CompareModelResult[];
+  models?: CompareModelResult[];
+  sequence?: boolean;
+  results?: Record<string, { models: Array<{ runId: string; model: string; name?: string; accuracy: number; imputed?: boolean }> }>;
 }
 
 export interface CompareHistoryModelInfo {
@@ -96,6 +99,7 @@ const DEFAULT_COMPARE_PARAMS: CompareDatasetParams = {
   mask: 0,
   impute: false,
   ignore_columns: [],
+  sequence: false,
 };
 
 function generateId(): string {
@@ -265,16 +269,25 @@ export function useCompare(options: UseCompareOptions): UseCompareReturn {
         .filter((m) => m.runId !== null)
         .map((m) => m.runId as string);
 
+      // Build request body based on sequence mode
+      const requestBody = datasetParams.sequence
+        ? {
+            dataset,
+            models: modelIds,
+            sequence: true,
+          }
+        : {
+            dataset,
+            models: modelIds,
+            mask: datasetParams.mask,
+            impute: datasetParams.mask > 0 && datasetParams.impute,
+            // ignore_columns not sent - determined from model's runtime.json
+          };
+
       const response = await fetch('/api/compare', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          dataset,
-          models: modelIds,
-          mask: datasetParams.mask,
-          impute: datasetParams.mask > 0 && datasetParams.impute,
-          // ignore_columns not sent - determined from model's runtime.json
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await response.json();

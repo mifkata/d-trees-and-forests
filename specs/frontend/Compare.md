@@ -343,5 +343,6 @@ Client-side filtering: The run dropdown filters the fetched history by the selec
 - [frontend/Form](Form.md) - Form controls and tabs
 - [frontend/Output](Output.md) - Shared visual components (ImageGallery, ZoomableImageModal)
 - [frontend/CompareSorting](CompareSorting.md) - Sorting options for compare results
+- [frontend/CompareSequence](CompareSequence.md) - Sequence mode for running comparisons across multiple mask rates
 - [Compare](../Compare.md) - Backend compare.py script
 - [lib/Render](../lib/Render.md) - Compare visualization methods
