@@ -80,9 +80,10 @@ Compare mode allows users to select three pre-trained models (tree, forest, grad
 
 ### CompareDatasetParams
 - Subset of DatasetParams for Compare mode
-- Shows: mask slider, impute checkbox, column selection
+- Shows: mask slider, impute checkbox, column selection, Reset button
 - Hides: split slider (not needed for compare)
-- Props: `params`, `dataset`, `onChange`
+- Reset button resets to defaults only, does not trigger comparison
+- Props: `params`, `dataset`, `onChange`, `onReset`
 
 ### CompareModelsTab
 - Content for the Models sub-tab in Compare mode

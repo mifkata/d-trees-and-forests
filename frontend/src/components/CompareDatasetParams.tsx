@@ -41,7 +41,7 @@ export function CompareDatasetParams({ params, dataset, onChange, onReset, disab
     <div>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-medium text-gray-700">Dataset Parameters</h3>
-        <Button variant="ghost" size="sm" onClick={onReset} disabled={disabled}>
+        <Button type="button" variant="ghost" size="sm" onClick={onReset} disabled={disabled}>
           Reset
         </Button>
       </div>

@@ -20,8 +20,8 @@ export function ModelParams({ model, params, onChange, onReset, disabled }: Mode
         <h3 className="text-sm font-medium text-gray-700">
           Model Parameters ({MODELS[model].name})
         </h3>
-        <Button variant="ghost" size="sm" onClick={onReset} disabled={disabled}>
-          Reset to Defaults
+        <Button type="button" variant="ghost" size="sm" onClick={onReset} disabled={disabled}>
+          Reset
         </Button>
       </div>
 

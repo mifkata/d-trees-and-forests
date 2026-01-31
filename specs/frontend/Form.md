@@ -9,7 +9,7 @@ Form components for selecting dataset, model, and configuring training parameter
 - Dataset and Model parameters displayed in separate tabs (only one visible at a time)
 - Dataset parameters: mask slider, split slider, column selection, checkboxes
 - Model-specific parameters card that changes based on selected model
-- Reset buttons to restore default values
+- Reset buttons to restore default values (reset only, do not trigger training or any other action)
 - Only submit button disabled during training (inputs remain enabled to preserve focus)
 - Parameters cached per dataset/model combination in localStorage
 - Pressing Enter inside any parameter input triggers form submission
@@ -41,7 +41,7 @@ Form components for selecting dataset, model, and configuring training parameter
 - Props: `activeTab`, `onTabChange`, `children`
 
 ### DatasetParams
-- Card with header "Dataset Parameters" and Reset button
+- Card with header "Dataset Parameters" and Reset button (resets to defaults only, does not trigger training)
 - Mask rate slider (0-100%, step 5) with "Impute" checkbox next to label
   - Impute checkbox is disabled when mask rate is 0
 - Split slider for train/test split (10-90%, step 5, default 30) - defines test set percentage
@@ -53,7 +53,7 @@ Form components for selecting dataset, model, and configuring training parameter
 - Props: `params`, `columns`, `onChange`, `onReset`, `disabled`
 
 ### ModelParams
-- Card with header showing model name and Reset button
+- Card with header showing model name and Reset button (resets to defaults only, does not trigger training)
 - Renders model-specific form based on `model` prop:
   - **TreeParamsForm** (DecisionTreeClassifier):
     - criterion (gini/entropy/log_loss)
