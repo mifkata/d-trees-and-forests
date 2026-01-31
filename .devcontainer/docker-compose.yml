@@ -10,7 +10,12 @@ services:
       - ..:/app
       - home:/home/dev
     ports:
-      - "3000:3000"
+      - 3000:3000
+      - 3001:3001
+      - 3002:3002
+      - 3003:3003
+      - 3004:3004
+      - 3005:3005
     working_dir: /app
     stdin_open: true
     tty: true

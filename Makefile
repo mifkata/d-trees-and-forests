@@ -16,7 +16,7 @@ gradient:
 compare:
 	python compare.py
 
-ui:
+dev:
 	cd frontend && npm run dev
 
 devcontainer.start:
@@ -34,5 +34,5 @@ devcontainer.build:
 devcontainer.rebuild:
 	docker compose -f .devcontainer/docker-compose.yml build --no-cache
 
-devcontainer.shell:
+devcontainer:
 	docker compose -f .devcontainer/docker-compose.yml exec dtf_devcontainer zsh
