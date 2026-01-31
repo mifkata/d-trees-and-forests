@@ -105,6 +105,12 @@ Compare mode allows users to select three pre-trained models (tree, forest, grad
 - Shows spinner when comparing
 - Props: `loading`, `disabled`, `onClick`
 
+### CompareLoadingState
+- Displayed when comparison is in progress (`isComparing` is true) and no result yet
+- Replaces the "Select three models from history and click Compare" empty state
+- Shows centered spinner with "Loading..." text
+- Card container matching the empty state styling
+
 ### CompareResults
 - Displays comparison output images
 - Shows accuracy stats for all three models:

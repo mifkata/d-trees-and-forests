@@ -28,6 +28,18 @@ When `run_id` query param is present:
 
 After training completes, navigates to `/?run_id=<new_run_id>`.
 
+**Auto-Load Latest Run (Train Mode Only):**
+When in Train mode, the page automatically loads the latest run for the current dataset/model combination:
+- On first load with no `run_id` query param
+- When switching from Compare mode to Train mode
+- When changing the dataset or model selector
+
+The auto-load behavior:
+- Fetches `/api/history?model=<model>&dataset=<dataset>` to get latest run
+- If a run exists, navigates to `/?run_id=<latest_run_id>`
+- If no history exists, shows empty state ("Configure parameters and click Train to see results")
+- Shows loading state with spinner while fetching history/loading run
+
 ## Page Composition
 
 **Header**: Page title "Model Trainer" with run ID display and inline rename
