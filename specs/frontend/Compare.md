@@ -92,7 +92,9 @@ Compare mode allows users to select three pre-trained models (tree, forest, grad
 
 ### ModelHistorySelect
 - Dropdown showing runs from training history
-- Displays: "Run ID - Accuracy% - time ago"
+- Displays: "Name or Run ID - Accuracy% - time ago"
+  - If run has a custom name, displays name with underscores as spaces
+  - Otherwise displays run ID
 - Filters by dataset and model type
 - Props: `label`, `runs`, `value`, `onChange`
 

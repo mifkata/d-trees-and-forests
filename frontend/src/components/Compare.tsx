@@ -33,7 +33,7 @@ export function ModelHistorySelect({
     { value: '', label: 'Select run...' },
     ...runs.map((run) => ({
       value: run.runId,
-      label: `${run.runId} - ${(run.accuracy * 100).toFixed(2)}% - ${formatTimeAgo(run.timestamp)}`,
+      label: `${run.name ? run.name.replace(/_/g, ' ') : run.runId} - ${(run.accuracy * 100).toFixed(2)}% - ${formatTimeAgo(run.timestamp)}`,
     })),
   ];
 

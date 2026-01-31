@@ -47,7 +47,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     // Parse current filename: <model>_<dataset>_<score>[_<name>].id
-    const match = idFile.match(/^([^_]+)_([^_]+)_(\d{6})(?:_(.+))?\.id$/);
+    // Score is stored as accuracy * 1000000 (e.g., 0.98 -> 980000)
+    const match = idFile.match(/^([^_]+)_([^_]+)_(\d+)(?:_(.+))?\.id$/);
     if (!match) {
       return NextResponse.json(
         { error: "Invalid ID file format" },

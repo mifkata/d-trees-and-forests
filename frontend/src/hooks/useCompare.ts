@@ -22,6 +22,7 @@ export interface HistoryRun {
   dataset: string;
   accuracy: number;
   timestamp: number;
+  name?: string;
 }
 
 export interface CompareModelResult {
