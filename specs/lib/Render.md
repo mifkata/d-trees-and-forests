@@ -14,7 +14,8 @@ Visualization utilities for model analysis. Generates matplotlib plots for featu
 |--------|-------------|
 | `set_mask(mask_rate)` | Set mask percentage for filename prefixes |
 | `set_run_id(run_id)` | Set run ID for output directory (overrides legacy path) |
-| `get_output_path(filename)` | Get full output path based on run_id or legacy mode |
+| `set_compare_id(compare_id)` | Set compare ID for compare output directory |
+| `get_output_path(filename)` | Get full output path based on compare_id, run_id, or legacy mode |
 | `header(figsize, subplots)` | Initialize figure/axes |
 | `footer(filename, title, dpi)` | Save and close figure |
 | `heatmap(X, filename)` | Feature correlation heatmap |
@@ -48,14 +49,18 @@ Visualization utilities for model analysis. Generates matplotlib plots for featu
 |--------|-------------|
 | `compare_accuracy(mask_values, results, colors, filename)` | Accuracy comparison line plot |
 | `compare_accuracy_impute(mask_values, results, colors, filename)` | Accuracy comparison with impute variants |
+| `compare_accuracy_bars(models, filename)` | Bar chart comparing train vs compare accuracy for each model |
+| `compare_accuracy_diff(models, filename)` | Visual representation of accuracy differences (ratio chart) |
 
 ## Implementation Details
 - **Libraries**: matplotlib, seaborn, sklearn.tree.plot_tree, sklearn.inspection (PartialDependenceDisplay, DecisionBoundaryDisplay)
 - **Location**: `lib/dataset/render.py`
 - **Output paths**:
+  - With `compare_id`: `frontend/public/output/compare/{compare_id}/{filename}` (no mask prefix)
   - With `run_id`: `frontend/public/output/{run_id}/{filename}` (no mask prefix)
   - Legacy (no run_id): `./output/{base}_{mask_pct}.{ext}`
-- **Path function**: `get_output_path(filename)` returns the full path based on current run_id or legacy mode
+- **Path priority**: `compare_id` > `run_id` > legacy mode
+- **Path function**: `get_output_path(filename)` returns the full path based on current compare_id, run_id, or legacy mode
 - **Default DPI**: 150
 - **Tree grids**: `forest_trees` uses 5x4 inches per cell, 150 DPI for all grid sizes
 

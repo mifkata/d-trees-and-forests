@@ -6,6 +6,7 @@ import json
 import os
 import subprocess
 import sys
+import time
 
 import joblib
 import numpy as np
@@ -197,6 +198,10 @@ def parse_args():
                         help="Impute missing values during comparison")
     parser.add_argument("--ignore-columns", type=str, default=None,
                         help="Comma-separated column indices to ignore")
+    parser.add_argument("--compare-id", type=str, default=None,
+                        help="Optional: Use provided compare ID instead of generating new one")
+    parser.add_argument("--images", action="store_true",
+                        help="Generate visualization images to frontend/public/output/compare/<compare_id>/")
     return parser.parse_args()
 
 
@@ -217,6 +222,10 @@ def main():
         if not all(v is not None for v in model_ids.values()):
             print("Error: All three model IDs (--tree, --forest, --gradient) are required")
             sys.exit(1)
+
+        # Generate or use provided compare_id
+        compare_id = args.compare_id if args.compare_id else str(int(time.time()))
+        print(f"Compare ID: {compare_id}", file=sys.stderr)
 
         # Validate all model IDs
         for arg_name, run_id in model_ids.items():
@@ -314,9 +323,18 @@ def main():
             }))
             sys.exit(1)
 
+        # Generate images if requested
+        if args.images:
+            print(f"\nGenerating comparison images...", file=sys.stderr)
+            Render.set_compare_id(compare_id)
+            Render.compare_accuracy_bars(results, "accuracy_bars.png")
+            Render.compare_accuracy_diff(results, "accuracy_diff.png")
+            print(f"  Images saved to frontend/public/output/compare/{compare_id}/", file=sys.stderr)
+
         # Output results as JSON
         print(json.dumps({
             "success": True,
+            "compareId": compare_id,
             "models": results
         }))
         return

@@ -1,7 +1,7 @@
 # Frontend Output
 
 ## Overview
-Components for displaying training results, datasets, and errors.
+Components for displaying training results, datasets, errors, and shared visual components used across train and compare modes.
 
 ## Requirements
 - Results displayed in tabbed interface (Results tab, Dataset tab)
@@ -9,6 +9,7 @@ Components for displaying training results, datasets, and errors.
 - Dataset tab: sortable table showing train/test data with filtered fields
 - Error card with dismissible display, error details, and optional stack trace
 - Accuracy badge color-coded by performance (green ≥90%, yellow ≥70%, red <70%)
+- Shared visual components extracted for reuse across Train and Compare modes
 
 ## Components
 
@@ -38,24 +39,7 @@ Components for displaying training results, datasets, and errors.
   - Bar opacity/intensity determined by importance value (e.g., 0.90 importance = 0.9 alpha)
   - Feature name on left, importance value on right
   - Bars sorted by importance descending
-- **Visuals section**: Grid of PNG images from the run
-  - Fetches list of `.png` files from `/output/<runId>/`
-  - Displays as thumbnail grid (responsive: 2 cols mobile, 3 cols tablet, 4 cols desktop)
-  - Each image has a beautified label below it (full name, not truncated):
-    - Remove file extension (`.png`)
-    - Replace dashes (`-`) and underscores (`_`) with spaces
-    - Capitalize each word (Title Case)
-    - Example: `feature_importance-chart.png` → "Feature Importance Chart"
-  - Clicking image opens fullscreen zoomable modal
-  - **Zoomable Image Modal**:
-    - Dark overlay with image centered
-    - Zoom controls in header: zoom out (-), reset, zoom in (+), close (X)
-    - Shows current zoom percentage
-    - Keyboard shortcuts: +/- to zoom, 0 to reset, Esc to close
-    - Ctrl+Scroll to zoom in/out
-    - Scroll to pan when zoomed in
-    - Footer shows keyboard hints
-    - Zoom range: 10% to 500%, step 10%
+- **Visuals section**: Uses shared `ImageGallery` component (see Shared Visual Components below)
 - Execution time footer
 
 #### Dataset Tab
@@ -130,6 +114,51 @@ Components for displaying training results, datasets, and errors.
 }
 ```
 
+## Shared Visual Components
+
+Components extracted for reuse across Train results and Compare results.
+
+### ImageGallery
+- Fetches and displays PNG images in a responsive grid
+- **Props:**
+  - `runId?: string` - Training run ID (fetches from `/api/images?runId=...`)
+  - `compareId?: string` - Compare run ID (fetches from `/api/images?compareId=...`)
+  - One of `runId` or `compareId` must be provided
+- Displays loading spinner while fetching
+- Returns null if no images found
+- Grid layout: 2 cols mobile, 3 cols tablet, 4 cols desktop
+- Each image has a beautified label below it (full name, not truncated):
+  - Remove file extension (`.png`)
+  - Replace dashes (`-`) and underscores (`_`) with spaces
+  - Capitalize each word (Title Case)
+  - Example: `feature_importance-chart.png` → "Feature Importance Chart"
+- Clicking image opens `ZoomableImageModal`
+
+### ZoomableImageModal
+- Fullscreen modal for viewing images with zoom/pan capabilities
+- **Props:**
+  - `src: string | null` - Image source URL (null to hide modal)
+  - `onClose: () => void` - Callback to close modal
+- **Features:**
+  - Dark overlay with image centered
+  - Zoom controls in header: zoom out (-), reset, zoom in (+), close (X)
+  - Shows current zoom percentage
+  - Keyboard shortcuts: +/- to zoom, 0 to reset, Esc to close
+  - Ctrl+Scroll to zoom in/out at pointer location
+  - Scroll to pan when zoomed in
+  - Footer shows keyboard hints
+  - Zoom range: 10% to 500%, step 10%
+
+### beautifyImageName (utility)
+- Transforms image filename to human-readable label
+- **Input:** Full image path (e.g., `/output/123/feature_importance-chart.png`)
+- **Output:** Beautified name (e.g., "Feature Importance Chart")
+- **Logic:**
+  1. Extract filename from path
+  2. Remove file extension
+  3. Replace dashes and underscores with spaces
+  4. Capitalize each word (Title Case)
+
 ## Implementation Details
 - **Badge Component**: Uses `variant` prop for color (success/warning/error)
 - **Table**: Responsive with `overflow-x-auto` wrapper
@@ -146,7 +175,11 @@ Components for displaying training results, datasets, and errors.
     - F key opens fullscreen (when Dataset tab active and modal closed)
     - ESC key closes modal
   - Body scroll locked when modal is open
+- **Shared components location**: `frontend/src/components/ImageGallery.tsx`
+  - Export `ImageGallery`, `ZoomableImageModal`, and `beautifyImageName`
+  - Import into `ResultsDisplay.tsx` and `Compare.tsx`
 
 ## Related specs
 - [frontend/Layout](Layout.md) - Page structure
 - [frontend/Form](Form.md) - Form inputs
+- [frontend/Compare](Compare.md) - Compare mode (uses shared visual components)

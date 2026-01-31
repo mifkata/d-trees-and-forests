@@ -17,6 +17,7 @@ class Render:
     _axes = None
     _mask_pct = 0
     _run_id = None
+    _compare_id = None
 
     @classmethod
     def set_mask(cls, mask_rate):
@@ -37,8 +38,19 @@ class Render:
         cls._run_id = run_id
 
     @classmethod
+    def set_compare_id(cls, compare_id):
+        """Set the compare ID for compare output directory.
+
+        Args:
+            compare_id: Compare identifier (outputs to frontend/public/output/compare/<compare_id>/)
+        """
+        cls._compare_id = compare_id
+
+    @classmethod
     def get_output_path(cls, filename):
-        """Get full output path based on run_id or legacy mode.
+        """Get full output path based on compare_id, run_id, or legacy mode.
+
+        Priority: compare_id > run_id > legacy mode
 
         Args:
             filename: Base filename
@@ -46,7 +58,14 @@ class Render:
         Returns:
             Full path to output file
         """
-        if cls._run_id:
+        if cls._compare_id:
+            # Output to compare directory
+            output_dir = os.path.realpath(os.path.join(
+                os.path.dirname(__file__), '..', '..', 'frontend', 'public', 'output', 'compare', cls._compare_id
+            ))
+            os.makedirs(output_dir, exist_ok=True)
+            return os.path.join(output_dir, filename)
+        elif cls._run_id:
             # Output to frontend public directory
             output_dir = os.path.realpath(os.path.join(
                 os.path.dirname(__file__), '..', '..', 'frontend', 'public', 'output', cls._run_id
@@ -580,4 +599,141 @@ class Render:
         ax.set_xticks(mask_values)
         ax.legend(loc="lower left", fontsize=10)
         ax.grid(True, alpha=0.3)
+        cls.footer(filename)
+
+    @classmethod
+    def compare_accuracy_bars(cls, models, filename="accuracy_bars.png"):
+        """Render bar chart comparing train vs compare accuracy for each model.
+
+        Args:
+            models: Dict with keys 'tree', 'forest', 'gradient', each containing
+                    'trainAccuracy' and 'compareAccuracy'
+            filename: Output filename
+        """
+        cls.header(figsize=(10, 6))
+
+        model_names = ['Decision Tree', 'Random Forest', 'Gradient Boosted']
+        model_keys = ['tree', 'forest', 'gradient']
+        colors = {'tree': 'forestgreen', 'forest': 'royalblue', 'gradient': 'darkorange'}
+
+        x = np.arange(len(model_names))
+        width = 0.35
+
+        train_accs = []
+        compare_accs = []
+        bar_colors = []
+
+        for key in model_keys:
+            if key in models and models[key]:
+                train_accs.append(models[key].get('trainAccuracy', 0) or 0)
+                compare_accs.append(models[key].get('compareAccuracy', 0) or 0)
+                bar_colors.append(colors[key])
+            else:
+                train_accs.append(0)
+                compare_accs.append(0)
+                bar_colors.append('gray')
+
+        ax = plt.gca()
+        bars1 = ax.bar(x - width/2, train_accs, width, label='Train Accuracy',
+                       color=bar_colors, alpha=0.7, edgecolor='black')
+        bars2 = ax.bar(x + width/2, compare_accs, width, label='Compare Accuracy',
+                       color=bar_colors, alpha=1.0, edgecolor='black', hatch='//')
+
+        ax.set_ylabel('Accuracy', fontsize=12)
+        ax.set_title('Model Accuracy Comparison: Training vs Current Settings', fontsize=14)
+        ax.set_xticks(x)
+        ax.set_xticklabels(model_names)
+        ax.set_ylim(0, 1.1)
+        ax.legend(loc='upper right')
+        ax.grid(True, alpha=0.3, axis='y')
+
+        # Add value labels on bars
+        for bar in bars1:
+            height = bar.get_height()
+            if height > 0:
+                ax.annotate(f'{height:.2%}',
+                           xy=(bar.get_x() + bar.get_width() / 2, height),
+                           xytext=(0, 3), textcoords="offset points",
+                           ha='center', va='bottom', fontsize=9)
+
+        for bar in bars2:
+            height = bar.get_height()
+            if height > 0:
+                ax.annotate(f'{height:.2%}',
+                           xy=(bar.get_x() + bar.get_width() / 2, height),
+                           xytext=(0, 3), textcoords="offset points",
+                           ha='center', va='bottom', fontsize=9)
+
+        cls.footer(filename)
+
+    @classmethod
+    def compare_accuracy_diff(cls, models, filename="accuracy_diff.png"):
+        """Render visual representation of accuracy differences (ratio chart).
+
+        Args:
+            models: Dict with keys 'tree', 'forest', 'gradient', each containing
+                    'trainAccuracy' and 'compareAccuracy'
+            filename: Output filename
+        """
+        cls.header(figsize=(10, 6))
+
+        model_names = ['Decision Tree', 'Random Forest', 'Gradient Boosted']
+        model_keys = ['tree', 'forest', 'gradient']
+        colors = {'tree': 'forestgreen', 'forest': 'royalblue', 'gradient': 'darkorange'}
+
+        ratios = []
+        bar_colors = []
+        ratio_colors = []
+
+        for key in model_keys:
+            if key in models and models[key]:
+                train_acc = models[key].get('trainAccuracy', 0) or 0
+                compare_acc = models[key].get('compareAccuracy', 0) or 0
+                if train_acc > 0:
+                    ratio = compare_acc / train_acc
+                else:
+                    ratio = 0
+                ratios.append(ratio)
+                bar_colors.append(colors[key])
+                # Color based on ratio
+                if ratio >= 1.0:
+                    ratio_colors.append('green')
+                elif ratio >= 0.95:
+                    ratio_colors.append('yellowgreen')
+                elif ratio >= 0.90:
+                    ratio_colors.append('orange')
+                else:
+                    ratio_colors.append('red')
+            else:
+                ratios.append(0)
+                bar_colors.append('gray')
+                ratio_colors.append('gray')
+
+        ax = plt.gca()
+        x = np.arange(len(model_names))
+
+        bars = ax.barh(x, ratios, color=ratio_colors, edgecolor='black', height=0.6)
+
+        # Add reference line at 1.0
+        ax.axvline(x=1.0, color='black', linestyle='--', linewidth=2, label='No Change (1.0)')
+
+        ax.set_xlabel('Accuracy Ratio (Compare / Train)', fontsize=12)
+        ax.set_title('Accuracy Retention: How Well Models Generalize', fontsize=14)
+        ax.set_yticks(x)
+        ax.set_yticklabels(model_names)
+        ax.set_xlim(0, max(1.2, max(ratios) * 1.1) if ratios else 1.2)
+        ax.legend(loc='lower right')
+        ax.grid(True, alpha=0.3, axis='x')
+
+        # Add value labels
+        for i, (bar, ratio) in enumerate(zip(bars, ratios)):
+            width = bar.get_width()
+            if ratio > 0:
+                diff_pct = (ratio - 1) * 100
+                sign = '+' if diff_pct >= 0 else ''
+                ax.annotate(f'{ratio:.2%} ({sign}{diff_pct:.1f}%)',
+                           xy=(width, bar.get_y() + bar.get_height() / 2),
+                           xytext=(5, 0), textcoords="offset points",
+                           ha='left', va='center', fontsize=10, fontweight='bold')
+
         cls.footer(filename)

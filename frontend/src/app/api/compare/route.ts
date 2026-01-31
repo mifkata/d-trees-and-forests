@@ -28,6 +28,7 @@ interface ModelResult {
 interface CompareResponse {
   success: boolean;
   data?: {
+    compareId: string;
     images: string[];
     models: {
       tree: ModelResult | null;
@@ -174,6 +175,9 @@ export async function POST(
       args.push("--ignore-columns", ignore_columns.join(","));
     }
 
+    // Always generate images for frontend
+    args.push("--images");
+
     const scriptResult = await executeScript(args);
 
     // Parse JSON output from compare.py
@@ -231,27 +235,27 @@ export async function POST(
     }
 
     const models = compareOutput.models;
+    const compareId = compareOutput.compareId;
 
-    // Check for output images
+    // Check for output images in compare directory
     const images: string[] = [];
-    const imageFiles = [
-      "accuracy_comparison.png",
-      "accuracy_comparison_impute.png",
-    ];
+    const compareDir = path.join(OUTPUT_DIR, "compare", compareId);
 
-    for (const file of imageFiles) {
-      const imagePath = path.join(OUTPUT_DIR, file);
-      try {
-        await fs.access(imagePath);
-        images.push(`/output/${file}`);
-      } catch {
-        // Image doesn't exist, skip
+    try {
+      const files = await fs.readdir(compareDir);
+      for (const file of files) {
+        if (file.endsWith(".png")) {
+          images.push(`/output/compare/${compareId}/${file}`);
+        }
       }
+    } catch {
+      // Directory doesn't exist or no images, continue with empty array
     }
 
     return NextResponse.json({
       success: true,
       data: {
+        compareId,
         images,
         models: {
           tree: models.tree ? {
