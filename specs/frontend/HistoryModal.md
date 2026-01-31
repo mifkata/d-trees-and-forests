@@ -195,6 +195,7 @@ When no history exists for the model/dataset combination:
 
 - **Modal Component**: Uses standard modal pattern with overlay backdrop
 - **Modal Width**: Uses `w-fit` to size to content, with `max-w-lg` as upper bound
+- **Modal Height**: Table body scrolls vertically when content exceeds max height (`max-h-[60vh]` or similar), header remains fixed
 - **Table/Grid**: Use CSS Grid or HTML table for consistent column widths
 - **Name Column**: `white-space: nowrap` to prevent wrapping, no truncation/ellipsis
 - **Time Formatting**: Use relative time library (e.g., date-fns `formatDistanceToNow`)

@@ -162,16 +162,17 @@ export function ModelSelector({ value, onChange, dataset, disabled }: ModelSelec
             No history found
           </div>
         ) : (
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-gray-200 text-xs font-medium text-gray-500">
-                <th className="text-left px-3 py-2 font-medium">Name/ID</th>
-                <th className="text-right px-3 py-2 font-medium w-[70px]">Accuracy</th>
-                <th className="text-right px-3 py-2 font-medium w-[90px]">Time</th>
-                <th className="text-center px-1 py-2 font-medium w-[44px]"><span className="sr-only">Delete</span></th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
+          <div className="max-h-[60vh] overflow-y-auto">
+            <table className="w-full">
+              <thead className="sticky top-0 bg-white">
+                <tr className="border-b border-gray-200 text-xs font-medium text-gray-500">
+                  <th className="text-left px-3 py-2 font-medium">Name/ID</th>
+                  <th className="text-right px-3 py-2 font-medium w-[70px]">Accuracy</th>
+                  <th className="text-right px-3 py-2 font-medium w-[90px]">Time</th>
+                  <th className="text-center px-1 py-2 font-medium w-[44px]"><span className="sr-only">Delete</span></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
               {history.map((run) => {
                 const isConfirming = deleteConfirmId === run.runId;
                 const isDeleting = deletingId === run.runId;
@@ -246,7 +247,8 @@ export function ModelSelector({ value, onChange, dataset, disabled }: ModelSelec
                 );
               })}
             </tbody>
-          </table>
+            </table>
+          </div>
         )}
       </Modal>
     </>

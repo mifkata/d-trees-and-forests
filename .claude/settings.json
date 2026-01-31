@@ -5,6 +5,7 @@
             "Bash(pnpm:*)",
             "Bash(git:*)",
             "Bash(python:*)",
+            "Bash(gh pr create:*)",
             "Bash(node:*)"
         ],
         "ask": [
