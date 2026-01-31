@@ -6,7 +6,8 @@
             "Bash(pnpm:*)",
             "Bash(python:*)",
             "Bash(pip:*)",
-            "Bash(gh pr:*)"
+            "Bash(gh pr:*)",
+            "Bash(gh api repos/* -X PATCH -f body=:*)"
         ],
         "deny": [
             "Bash(npm:*)"
