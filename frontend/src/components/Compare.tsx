@@ -29,9 +29,24 @@ export function ModelHistorySelect({
   onChange,
   isLoading,
 }: ModelHistorySelectProps) {
+  // Sort runs: named first (alphabetically), then unnamed (alphabetically by ID)
+  const sortedRuns = [...runs].sort((a, b) => {
+    const aHasName = Boolean(a.name);
+    const bHasName = Boolean(b.name);
+
+    // Named runs come first
+    if (aHasName && !bHasName) return -1;
+    if (!aHasName && bHasName) return 1;
+
+    // Within same group, sort alphabetically
+    const aLabel = a.name ? a.name.replace(/_/g, ' ') : a.runId;
+    const bLabel = b.name ? b.name.replace(/_/g, ' ') : b.runId;
+    return aLabel.localeCompare(bLabel);
+  });
+
   const options = [
     { value: '', label: 'Select run...' },
-    ...runs.map((run) => ({
+    ...sortedRuns.map((run) => ({
       value: run.runId,
       label: `${run.name ? run.name.replace(/_/g, ' ') : run.runId} - ${(run.accuracy * 100).toFixed(2)}% - ${formatTimeAgo(run.timestamp)}`,
     })),

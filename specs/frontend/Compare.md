@@ -102,8 +102,10 @@ Compare mode allows users to select four pre-trained models (tree, forest, gradi
 - Displays: "Name or Run ID - Accuracy% - time ago"
   - If run has a custom name, displays name with underscores as spaces
   - Otherwise displays run ID
+- **Sorting**: Named runs first (alphabetically), then unnamed runs (alphabetically by ID)
+  - This ensures named runs appear at the top, not buried below numeric IDs
 - Filters by dataset and model type
-- Props: `label`, `runs`, `value`, `onChange`
+- Props: `label`, `runs`, `value`, `onChange`, `isLoading`
 
 ### CompareButton
 - Submit button for Compare mode
