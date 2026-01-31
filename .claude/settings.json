@@ -3,7 +3,9 @@
         "allow": [
             "Bash(npm:*)",
             "Bash(pnpm:*)",
-            "Bash(git:*)"
+            "Bash(git:*)",
+            "Bash(python:*)",
+            "Bash(node:*)"
         ],
         "ask": [
             "Bash(rm:*)",
