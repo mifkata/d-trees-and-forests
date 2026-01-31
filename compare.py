@@ -256,24 +256,30 @@ def main():
         for arg_name, run_id in model_ids.items():
             output_dir = get_output_dir(run_id)
 
-            # Get original training accuracy from .id file in run directory
-            # The .id file is named {model}_{dataset}_{score}.id where score = accuracy * 1000000
-            # Multiple .id files may exist if comparisons were run; take the OLDEST (original training)
+            # Get original training accuracy from result.json (most reliable source)
             train_accuracy = None
-            oldest_time = None
+            result_path = os.path.join(output_dir, 'result.json')
             try:
-                for filename in os.listdir(output_dir):
-                    if filename.endswith('.id'):
-                        filepath = os.path.join(output_dir, filename)
-                        file_time = os.path.getmtime(filepath)
-                        if oldest_time is None or file_time < oldest_time:
-                            oldest_time = file_time
-                            # Parse accuracy from filename: {model}_{dataset}_{score}.id
+                if os.path.exists(result_path):
+                    with open(result_path) as f:
+                        result_data = json.load(f)
+                    train_accuracy = result_data.get('accuracy')
+            except (json.JSONDecodeError, OSError) as e:
+                print(f"  Warning: Could not read result.json for {arg_name}: {e}", file=sys.stderr)
+
+            # Fallback: try parsing from .id filename if result.json failed
+            if train_accuracy is None:
+                try:
+                    for filename in os.listdir(output_dir):
+                        if filename.endswith('.id'):
+                            # Parse accuracy from filename: {model}_{dataset}_{score}[_{name}].id
+                            # Score is always the 3rd part (index 2)
                             parts = filename.replace('.id', '').split('_')
-                            score_str = parts[-1]  # Last part is the score
+                            score_str = parts[2]  # Score is always index 2
                             train_accuracy = int(score_str) / 1000000
-            except (FileNotFoundError, ValueError, IndexError, OSError) as e:
-                errors.append(f"{arg_name}: failed to read training accuracy - {e}")
+                            break  # Use first .id file found
+                except (FileNotFoundError, ValueError, IndexError, OSError) as e:
+                    errors.append(f"{arg_name}: failed to read training accuracy - {e}")
 
             # Load and evaluate the model on the full dataset
             model_path = os.path.join(output_dir, 'model.pkl')

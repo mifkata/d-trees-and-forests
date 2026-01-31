@@ -7,9 +7,23 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '6xl';
+  fitContent?: boolean;
 }
 
-export function Modal({ isOpen, onClose, title, children }: ModalProps) {
+const maxWidthClasses = {
+  sm: 'max-w-sm',
+  md: 'max-w-md',
+  lg: 'max-w-lg',
+  xl: 'max-w-xl',
+  '2xl': 'max-w-2xl',
+  '3xl': 'max-w-3xl',
+  '4xl': 'max-w-4xl',
+  '5xl': 'max-w-5xl',
+  '6xl': 'max-w-6xl',
+};
+
+export function Modal({ isOpen, onClose, title, children, maxWidth = '6xl', fitContent = false }: ModalProps) {
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -42,13 +56,13 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
       />
 
       {/* Modal container */}
-      <div className="relative bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-[90vh] m-4 flex flex-col">
+      <div className={`relative bg-white rounded-lg shadow-xl ${fitContent ? '' : `w-full ${maxWidthClasses[maxWidth]}`} max-h-[90vh] m-4 flex flex-col`}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">{title}</h2>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 shrink-0">
+          <h2 className="text-lg font-semibold text-gray-900 whitespace-nowrap">{title}</h2>
           <button
             onClick={onClose}
-            className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100"
+            className="p-2 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 ml-4"
             aria-label="Close modal"
           >
             <svg
@@ -68,7 +82,7 @@ export function Modal({ isOpen, onClose, title, children }: ModalProps) {
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-auto p-6">
+        <div className={`flex-1 p-6 ${fitContent ? '' : 'overflow-auto'}`}>
           {children}
         </div>
       </div>

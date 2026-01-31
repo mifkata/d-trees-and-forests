@@ -24,13 +24,7 @@ Form components for selecting dataset, model, and configuring training parameter
 ### ModelSelector
 - Dropdown with model options
 - **History button**: Next to the "Model" label, displays "History" text button
-  - Opens modal showing previous training runs for the selected model
-  - Scans `frontend/public/output/<timestamp>/<model>_<dataset>_<score>[_<name>].id` files
-  - Each run displays as: "Timestamp - Accuracy% - timeago" (e.g., "1706540123 - 98.00% - 2 hours ago")
-  - If run has a custom name, displays as: "Name - Accuracy% - timeago" (e.g., "my experiment - 98.00% - 2 hours ago")
-  - Names are stored with underscores but displayed with spaces
-  - Clicking a run navigates to `/?run_id=<timestamp>`
-  - Shows "No history found" when no runs exist
+  - Opens HistoryModal (see [HistoryModal spec](HistoryModal.md))
 - Props: `value`, `onChange`, `disabled`
 
 ### ParamsTabs
@@ -148,3 +142,4 @@ Columns displayed as a list of checkboxes. User can deselect columns to exclude 
 ## Related specs
 - [frontend/Layout](Layout.md) - Page structure
 - [frontend/Output](Output.md) - Results display
+- [frontend/HistoryModal](HistoryModal.md) - History modal for viewing/deleting runs
