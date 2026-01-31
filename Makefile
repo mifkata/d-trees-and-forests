@@ -21,7 +21,7 @@ setup:
 	cd frontend && pnpm install
 
 link:
-	ln -s ../../frontend/node_modules ./frontend/node_modules
+	ln -s ../../../frontend/node_modules ./frontend/node_modules
 
 dev:
 	cd frontend && pnpm run dev

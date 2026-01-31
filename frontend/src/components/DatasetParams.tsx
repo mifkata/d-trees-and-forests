@@ -1,6 +1,6 @@
 'use client';
 
-import { Slider, Checkbox, Button } from './ui';
+import { Slider, Checkbox, Button, ImputeCheckbox } from './ui';
 import type { DatasetParams as DatasetParamsType } from '@/types/params';
 import type { DatasetId } from '@/types/dataset';
 import { DATASETS } from '@/types/dataset';
@@ -57,11 +57,11 @@ export function DatasetParams({ params, dataset, onChange, onReset, disabled }: 
           unit="%"
           disabled={disabled}
           action={
-            <Checkbox
-              label="Impute"
-              checked={params.impute}
+            <ImputeCheckbox
+              mask={params.mask}
+              impute={params.impute}
               onChange={(impute) => onChange({ impute })}
-              disabled={disabled || params.mask === 0}
+              disabled={disabled}
             />
           }
         />

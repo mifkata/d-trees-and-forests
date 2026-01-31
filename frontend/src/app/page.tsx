@@ -412,7 +412,10 @@ function HomeContent() {
         train({
           dataset,
           model,
-          datasetParams,
+          datasetParams: {
+            ...datasetParams,
+            impute: datasetParams.mask > 0 && datasetParams.impute,
+          },
           modelParams,
         });
       }

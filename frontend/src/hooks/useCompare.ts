@@ -212,7 +212,7 @@ export function useCompare(options: UseCompareOptions): UseCompareReturn {
           forest: selection.forest,
           gradient: selection.gradient,
           mask: datasetParams.mask,
-          impute: datasetParams.impute,
+          impute: datasetParams.mask > 0 && datasetParams.impute,
           ignore_columns: datasetParams.ignore_columns,
         }),
       });
