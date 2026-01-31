@@ -8,6 +8,7 @@ import {
   DatasetSelector,
   ModelSelector,
   DatasetParams,
+  FeatureColumns,
   CompareDatasetParams,
   ModelParams,
   TrainButton,
@@ -18,18 +19,12 @@ import {
   CompareButton,
   CompareResults,
 } from "@/components";
+import type { ColumnClipboard } from "@/components";
 import { ControlledTabs, Spinner } from "@/components/ui";
 import type { TrainResult } from "@/types/api";
 import type { DatasetId } from "@/types/dataset";
 import type { ModelId } from "@/types/model";
 import type { ModelParams as ModelParamsType } from "@/types/params";
-import type { DatasetId as DatasetIdType } from "@/types/dataset";
-
-// Clipboard state for copying column selection between models
-interface ColumnClipboard {
-  dataset: DatasetIdType;
-  ignore_columns: number[];
-}
 
 interface RuntimeJson {
   run_id: string;
@@ -597,15 +592,21 @@ function HomeContent() {
                   onTabChange={(tab) => setTrainTab(tab as TrainTab)}
                 >
                   {trainTab === "dataset" && (
-                    <DatasetParams
-                      params={datasetParams}
-                      dataset={dataset}
-                      onChange={setDatasetParams}
-                      onReset={resetDatasetParams}
-                      clipboard={columnClipboard}
-                      onCopy={(clipboard) => setColumnClipboard(clipboard)}
-                      onPaste={(ignore_columns) => setDatasetParams({ ignore_columns })}
-                    />
+                    <div className="space-y-6">
+                      <DatasetParams
+                        params={datasetParams}
+                        onChange={setDatasetParams}
+                        onReset={resetDatasetParams}
+                      />
+                      <FeatureColumns
+                        dataset={dataset}
+                        ignoreColumns={datasetParams.ignore_columns || []}
+                        onChange={(ignore_columns) => setDatasetParams({ ignore_columns })}
+                        clipboard={columnClipboard}
+                        onCopy={(clipboard) => setColumnClipboard(clipboard)}
+                        onPaste={(ignore_columns) => setDatasetParams({ ignore_columns })}
+                      />
+                    </div>
                   )}
                   {trainTab === "model" && (
                     <ModelParams
