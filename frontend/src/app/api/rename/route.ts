@@ -3,7 +3,7 @@ import fs from "fs";
 import path from "path";
 
 const OUTPUT_DIR = path.join(process.cwd(), "public", "output");
-const NAME_PATTERN = /^[a-zA-Z0-9_./-]*$/;
+const NAME_PATTERN = /^[a-zA-Z0-9_./,-]*$/;
 const MAX_LENGTH = 50;
 
 interface RenameRequest {
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     if (!NAME_PATTERN.test(name)) {
       return NextResponse.json(
-        { error: "Name must contain only alphanumeric characters, hyphens, underscores, dots, and slashes" },
+        { error: "Name must contain only alphanumeric characters, hyphens, underscores, dots, slashes, and commas" },
         { status: 400 }
       );
     }
