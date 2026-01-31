@@ -84,6 +84,8 @@ Inline editing for renaming a training run with a custom name.
 - Shows run name (with underscores displayed as spaces) or run ID if no name
 - Styled as clickable with hover underline
 - Tooltip: "Click to rename"
+- Edit icon button (pencil) next to the name for better discoverability
+  - Both clicking the name and clicking the icon trigger edit mode
 
 **Edit Mode**:
 - Text input replaces the name/ID display

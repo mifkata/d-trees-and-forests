@@ -421,15 +421,30 @@ function HomeContent() {
                     )}
                   </span>
                 ) : (
-                  <span
-                    onClick={() => {
-                      setEditingNameValue(runName?.replace(/_/g, " ") ?? "");
-                      setIsEditingName(true);
-                    }}
-                    className="cursor-pointer hover:text-gray-700 hover:underline"
-                    title="Click to rename"
-                  >
-                    {runName ? runName.replace(/_/g, " ") : runId}
+                  <span className="inline-flex items-center gap-1">
+                    <span
+                      onClick={() => {
+                        setEditingNameValue(runName?.replace(/_/g, " ") ?? "");
+                        setIsEditingName(true);
+                      }}
+                      className="cursor-pointer hover:text-gray-700 hover:underline"
+                      title="Click to rename"
+                    >
+                      {runName ? runName.replace(/_/g, " ") : runId}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditingNameValue(runName?.replace(/_/g, " ") ?? "");
+                        setIsEditingName(true);
+                      }}
+                      className="p-0.5 text-gray-400 hover:text-gray-600"
+                      title="Rename run"
+                    >
+                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                      </svg>
+                    </button>
                   </span>
                 )}
               </span>
