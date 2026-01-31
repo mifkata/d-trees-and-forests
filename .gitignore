@@ -1,5 +1,6 @@
 .DS_Store
 output/
+public/output
 __pycache__/
 .next/
 node_modules

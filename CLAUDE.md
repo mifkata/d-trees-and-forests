@@ -24,6 +24,14 @@
 * PR description should include only information about specific changes with no actionable items.
 * PR description should be updated when new commits are pushed, if a previously defined change was rolled back or modified, it should be only 1 record for the current state of a change (examples: deleted func(), restored func() in 2 commits should cleanup any reference to func() being changed, as it was rolled back to previous change; if a value was changed from 3 to 5 to 7, only 1 record for the change should be in the PR description - latest value: 7).
 
+## Makefile Commands
+* `make setup` - Install Python and Node.js dependencies
+* `make dev` - Start the frontend development server
+* `make worktree <name>` - Create a git worktree at `./worktrees/<name>` with symlinks to `frontend/public/output` and `frontend/node_modules`
+* `make worktree.rm <name>` - Remove worktree at `./worktrees/<name>`
+* `make tree` / `make forest` / `make gradient` - Run training scripts
+* `make compare` - Run comparison script
+
 ## Training scripts
 Use 2/3 of the data for training and 1/3 for testing. Dataset should be Iris dataset via kagglehub `saurabh00007/iriscsv`.
 
