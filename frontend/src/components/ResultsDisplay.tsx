@@ -73,12 +73,12 @@ interface DatasetTableProps {
   data: Record<string, unknown>[];
   labels?: string[];
   featureNames?: string[];
+  pageSize?: number;
 }
 
-function DatasetTable({ data, labels, featureNames }: DatasetTableProps) {
+function DatasetTable({ data, labels, featureNames, pageSize = 10 }: DatasetTableProps) {
   const [sort, setSort] = useState<SortableColumn | null>(null);
   const [page, setPage] = useState(0);
-  const pageSize = 100;
 
   const columns = useMemo(() => {
     if (featureNames && featureNames.length > 0) return featureNames;
@@ -144,12 +144,12 @@ function DatasetTable({ data, labels, featureNames }: DatasetTableProps) {
             {pagedData.map((row, i) => (
               <tr key={i} className="border-b border-gray-100 hover:bg-gray-50">
                 {columns.map((col) => (
-                  <td key={col} className="py-2 px-3 text-gray-700">
+                  <td key={col} className="py-2 px-3 text-gray-700 whitespace-nowrap">
                     {formatCellValue(row[col])}
                   </td>
                 ))}
                 {labels && (
-                  <td className="py-2 px-3 text-gray-700">
+                  <td className="py-2 px-3 text-gray-700 whitespace-nowrap">
                     {labels[page * pageSize + i]}
                   </td>
                 )}
@@ -436,6 +436,7 @@ export function ResultsDisplay({ result, isLoading }: ResultsDisplayProps) {
                           data={result.trainData}
                           labels={result.trainLabels}
                           featureNames={result.featureNames}
+                          pageSize={25}
                         />
                       )}
                       {datasetView === 'test' && result.testData && (
@@ -443,6 +444,7 @@ export function ResultsDisplay({ result, isLoading }: ResultsDisplayProps) {
                           data={result.testData}
                           labels={result.testLabels}
                           featureNames={result.featureNames}
+                          pageSize={25}
                         />
                       )}
                     </div>

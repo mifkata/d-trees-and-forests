@@ -1,7 +1,8 @@
 export * from './ui';
 export { DatasetSelector } from './DatasetSelector';
 export { ModelSelector } from './ModelSelector';
-export { DatasetParams } from './DatasetParams';
+export { DatasetParams, FeatureColumns } from './DatasetParams';
+export type { ColumnClipboard } from './DatasetParams';
 export { CompareDatasetParams } from './CompareDatasetParams';
 export { ModelParams } from './ModelParams';
 export { TrainButton } from './TrainButton';

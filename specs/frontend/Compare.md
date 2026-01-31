@@ -144,15 +144,21 @@ Compare mode allows users to select an arbitrary number of pre-trained models fr
 - Displays accuracy stats for all compared models in a card
 - Model accuracy cards displayed in a vertical column layout (stacked)
 - Displays models in the order they were selected (matches API response order)
-- Each model card shows:
-  - Model type (tree, forest, gradient, hist-gradient)
-  - Run ID
-  - Training accuracy (original accuracy when model was trained)
-  - Compare accuracy (accuracy with current mask/impute settings)
-  - Accuracy ratio (compare/train) with visual indicator:
-    - Green (↑): ratio >= 0.99 (performance maintained or improved)
-    - Yellow (→): ratio >= 0.95 (slight degradation)
-    - Red (↓): ratio < 0.95 (significant degradation)
+- Each model card layout:
+  - Header row: Label/name in top-left, model type with emoji in top-right
+  - Stats row: Train accuracy, Compare accuracy, and Diff on single row
+    - Train: original accuracy when model was trained
+    - Compare: accuracy with current mask/impute settings (larger, colored)
+    - Diff: accuracy difference (compare - train) with color indicator:
+      - Dark green: diff >= +0.10 (10%+ improvement)
+      - Green: diff > 0 (any improvement < 10%)
+      - Gray: diff == 0 (no change)
+      - Yellow: diff >= -0.05 (up to 5% drop)
+      - Orange: diff >= -0.10 (up to 10% drop)
+      - Light red: diff >= -0.20 (up to 20% drop)
+      - Red: diff >= -0.30 (up to 30% drop)
+      - Dark red: diff >= -0.40 (up to 40% drop)
+      - Darkest red: diff < -0.40 (40%+ drop)
 - Props: `result` (includes `compareId` field and `models` array)
 - Note: Visuals are shown in a separate `ImagesDisplay` component in the right column
 

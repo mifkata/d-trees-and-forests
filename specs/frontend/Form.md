@@ -39,12 +39,17 @@ Form components for selecting dataset, model, and configuring training parameter
 - Mask rate slider (0-100%, step 5) with "Impute" checkbox next to label
   - Impute checkbox is disabled when mask rate is 0
 - Split slider for train/test split (10-90%, step 5, default 30) - defines test set percentage
+- Note: Images are always generated (--images flag always passed to scripts)
+- Props: `params`, `onChange`, `onReset`, `disabled`
+
+### FeatureColumns
+- Separate card with header "Feature Columns" (no Reset button)
+- Displayed as a separate block below DatasetParams within the Dataset tab
 - Column selection: list of available columns with checkboxes to include/exclude
   - Columns fetched based on selected dataset
   - Deselected columns are passed as `ignore_columns` array
   - All columns selected by default
-- Note: Images are always generated (--images flag always passed to scripts)
-- Props: `params`, `columns`, `onChange`, `onReset`, `disabled`
+- Props: `columns`, `ignoreColumns`, `onChange`, `disabled`, `clipboard`, `onCopy`, `onPaste`
 
 ### ModelParams
 - Card with header showing model name and Reset button (resets to defaults only, does not trigger training)

@@ -227,69 +227,78 @@ interface CompareResultsProps {
   result: CompareResult;
 }
 
-function formatRatio(ratio: number): string {
-  if (ratio >= 1) {
-    return `+${((ratio - 1) * 100).toFixed(1)}%`;
-  }
-  return `-${((1 - ratio) * 100).toFixed(1)}%`;
+function formatDiff(diff: number): string {
+  const sign = diff >= 0 ? '+' : '';
+  return `${sign}${(diff * 100).toFixed(1)}%`;
 }
 
-function getRatioColor(ratio: number): string {
-  if (ratio >= 1) return 'text-green-600';
-  if (ratio >= 0.95) return 'text-yellow-600';
-  if (ratio >= 0.90) return 'text-orange-600';
-  return 'text-red-600';
+function getDiffColor(diff: number): string {
+  if (diff >= 0.10) return 'text-green-800';      // +10%+
+  if (diff > 0) return 'text-green-600';          // any improvement
+  if (diff === 0) return 'text-gray-500';         // no change
+  if (diff >= -0.05) return 'text-yellow-600';    // up to -5%
+  if (diff >= -0.10) return 'text-orange-500';    // up to -10%
+  if (diff >= -0.20) return 'text-red-400';       // up to -20%
+  if (diff >= -0.30) return 'text-red-500';       // up to -30%
+  if (diff >= -0.40) return 'text-red-600';       // up to -40%
+  return 'text-red-800';                          // -40%+
 }
 
-function getRatioIcon(ratio: number): string {
-  if (ratio >= 1) return '↑';
-  if (ratio >= 0.99) return '→';
-  return '↓';
+function getBoxBackground(diff: number): string {
+  if (diff >= 0.10) return 'bg-green-100';
+  if (diff > 0) return 'bg-green-50';
+  if (diff === 0) return 'bg-gray-50';
+  if (diff >= -0.05) return 'bg-yellow-50';
+  if (diff >= -0.10) return 'bg-orange-50';
+  if (diff >= -0.20) return 'bg-red-50';
+  return 'bg-red-100';
 }
 
-function getBoxBackground(ratio: number): string {
-  if (ratio >= 1) return 'bg-green-100';
-  if (ratio >= 0.95) return 'bg-green-50';
-  if (ratio >= 0.90) return 'bg-yellow-50';
-  if (ratio >= 0.85) return 'bg-orange-50';
-  return 'bg-red-50';
+function getBorderColor(diff: number): string {
+  if (diff >= 0.10) return 'border-green-400';
+  if (diff > 0) return 'border-green-300';
+  if (diff === 0) return 'border-gray-300';
+  if (diff >= -0.05) return 'border-yellow-300';
+  if (diff >= -0.10) return 'border-orange-300';
+  if (diff >= -0.20) return 'border-red-300';
+  return 'border-red-400';
 }
 
-function getBorderColor(ratio: number): string {
-  if (ratio >= 1) return 'border-green-300';
-  if (ratio >= 0.95) return 'border-green-200';
-  if (ratio >= 0.90) return 'border-yellow-300';
-  if (ratio >= 0.85) return 'border-orange-300';
-  return 'border-red-300';
-}
+const MODEL_EMOJI: Record<string, string> = {
+  'tree': '🌳',
+  'forest': '🌲',
+  'gradient': '🚀',
+  'hist-gradient': '📊',
+};
 
 function ModelAccuracyCard({
   model
 }: {
-  model: { model: string; runId: string; trainAccuracy: number; compareAccuracy: number; imputed?: boolean }
+  model: { model: string; runId: string; name?: string; trainAccuracy: number; compareAccuracy: number; imputed?: boolean }
 }) {
-  const ratio = model.compareAccuracy / model.trainAccuracy;
+  const diff = model.compareAccuracy - model.trainAccuracy;
+  const displayName = model.name ? model.name.replace(/_/g, ' ') : model.runId;
+  const modelLabel = getModelLabel(model.model);
+  const emoji = MODEL_EMOJI[model.model] || '';
+
   return (
-    <div className={`p-3 rounded-lg border ${getBoxBackground(ratio)} ${getBorderColor(ratio)}`}>
-      <div className="text-center mb-2">
-        <p className="text-sm font-medium text-gray-700">{getModelLabel(model.model)}</p>
-        <p className="text-xs text-gray-500 font-mono">{model.runId}</p>
+    <div className={`p-3 rounded-lg border ${getBoxBackground(diff)} ${getBorderColor(diff)}`}>
+      <div className="flex justify-between">
+        <p className="text-sm font-medium text-gray-900">{displayName}</p>
+        <p className="text-xs text-gray-500">{modelLabel} {emoji}</p>
       </div>
-      <div className="space-y-1 text-sm">
-        <div className="flex justify-between">
-          <span className="text-gray-500">Train:</span>
-          <span className="font-medium">{(model.trainAccuracy * 100).toFixed(2)}%</span>
+      <div className="flex justify-between items-end">
+        <div className="text-left">
+          <div className="text-xs text-gray-400">Train</div>
+          <div className="text-sm font-medium">{(model.trainAccuracy * 100).toFixed(1)}%</div>
         </div>
-        <div className="flex justify-between">
-          <span className="text-gray-500">Compare:</span>
-          <span className="font-bold">{(model.compareAccuracy * 100).toFixed(2)}%</span>
+        <div className="text-center">
+          <div className="text-xs text-gray-400">Compare</div>
+          <div className={`font-bold text-xl ${getDiffColor(diff)}`}>{(model.compareAccuracy * 100).toFixed(1)}%</div>
         </div>
-        <div className={`flex justify-between border-t pt-1 mt-1 ${getBorderColor(ratio)}`}>
-          <span className="text-gray-500">Diff:</span>
-          <span className={`font-medium ${getRatioColor(ratio)}`}>
-            {getRatioIcon(ratio)} {formatRatio(ratio)}
-            {model.imputed && <span className="text-gray-400 ml-1">(imputed)</span>}
-          </span>
+        <div className="text-right">
+          <div className="text-xs text-gray-400">Diff{model.imputed ? ' (imputed)' : ''}</div>
+          <div className={`text-sm font-medium ${getDiffColor(diff)}`}>{formatDiff(diff)}</div>
         </div>
       </div>
     </div>
@@ -305,7 +314,7 @@ export function CompareResults({ result }: CompareResultsProps) {
 
       <div>
         <h4 className="text-sm font-medium text-gray-700 mb-3">Model Accuracies</h4>
-        <div className="space-y-4">
+        <div className="space-y-3">
           {result.models.map((model) => (
             <ModelAccuracyCard key={model.runId} model={model} />
           ))}

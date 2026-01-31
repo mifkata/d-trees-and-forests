@@ -47,7 +47,8 @@ Components for displaying training results, datasets, errors, and shared visual 
 - Sortable table displaying dataset records
 - Columns: only feature columns that were used (filtered by ignore_columns)
 - Click column header to sort ascending/descending
-- Maximum 100 rows shown at once with pagination or "showing X of Y" indicator
+- Maximum 10 rows shown at once with pagination (25 rows in fullscreen mode)
+- Table cells use `white-space: nowrap` to prevent text wrapping
 - If impute was used, train data shows imputed values
 - Visual indicator for which dataset is shown (Train/Test) and row count
 - **Horizontal scrolling**: Table container has `overflow-x-auto` for wide datasets
@@ -163,7 +164,7 @@ Components extracted for reuse across Train results and Compare results.
 - **Badge Component**: Uses `variant` prop for color (success/warning/error)
 - **Table**: Responsive with `overflow-x-auto` wrapper
 - **Sortable Table**: Click header to toggle sort, display sort indicator (arrow)
-- **Pagination**: Show max 100 rows, display "Showing 1-100 of X rows"
+- **Pagination**: Show max 10 rows per page (25 in fullscreen), display "Showing 1-10 of X rows"
 - **Error Details**: Collapsible section using disclosure pattern
 - **Loading Spinner**: Displayed inline to the left of the accuracy badge in the header, shown when `isLoading` prop is true
 - **Tabs**: Use same tab component pattern as Form params tabs
