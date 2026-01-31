@@ -5,15 +5,13 @@
             "Bash(pnpm:*)",
             "Bash(git:*)"
         ],
-        "deny": [
+        "ask": [
+            "Bash(rm:*)",
             "Bash(git reset:*)",
             "Bash(git push -f:*)",
             "Bash(git push --force:*)",
             "Bash(git push * -f:*)",
             "Bash(git push * --force:*)"
-        ],
-        "ask": [
-            "Bash(rm:*)"
         ]
     }
 }
