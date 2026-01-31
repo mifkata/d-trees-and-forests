@@ -1,7 +1,69 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Button, Select, Card, CardHeader, CardTitle, Badge } from './ui';
 import type { CompareModelEntry, CompareResult, HistoryRun } from '@/hooks/useCompare';
+
+type CompareSortOption = 'default' | 'compare-score' | 'model-score';
+
+function SortIconButton({
+  active,
+  onClick,
+  title,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      className={`p-1.5 rounded transition-colors ${
+        active
+          ? 'text-blue-600 bg-blue-50'
+          : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function ListIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+      <path fillRule="evenodd" d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+    </svg>
+  );
+}
+
+function SortDescIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+      <path d="M3 3a1 1 0 000 2h11a1 1 0 100-2H3zM3 7a1 1 0 000 2h7a1 1 0 100-2H3zM3 11a1 1 0 000 2h4a1 1 0 100-2H3zM15 8a1 1 0 10-2 0v5.586l-1.293-1.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L15 13.586V8z" />
+    </svg>
+  );
+}
+
+function GridIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+      <path d="M5 3a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2V5a2 2 0 00-2-2H5zM5 11a2 2 0 00-2 2v2a2 2 0 002 2h2a2 2 0 002-2v-2a2 2 0 00-2-2H5zM11 5a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V5zM11 13a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+    </svg>
+  );
+}
+
+function SaveIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+      <path d="M3 5a2 2 0 012-2h8.586a1 1 0 01.707.293l2.414 2.414a1 1 0 01.293.707V15a2 2 0 01-2 2H5a2 2 0 01-2-2V5zm2 0v10h10V6.414L13.586 5H5zm2 0v3h4V5H7zm1 7a2 2 0 114 0 2 2 0 01-4 0z" />
+    </svg>
+  );
+}
 
 function formatTimeAgo(timestamp: number): string {
   const now = Math.floor(Date.now() / 1000);
@@ -225,6 +287,7 @@ export function CompareButton({ loading, disabled, onClick }: CompareButtonProps
 
 interface CompareResultsProps {
   result: CompareResult;
+  onLoadModels?: () => void;
 }
 
 function formatDiff(diff: number): string {
@@ -305,17 +368,84 @@ function ModelAccuracyCard({
   );
 }
 
-export function CompareResults({ result }: CompareResultsProps) {
+export function CompareResults({ result, onLoadModels }: CompareResultsProps) {
+  const [sortBy, setSortBy] = useState<CompareSortOption>(() => {
+    if (typeof window === 'undefined') return 'default';
+    return (localStorage.getItem('compare_sort') as CompareSortOption) || 'default';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('compare_sort', sortBy);
+  }, [sortBy]);
+
+  const sortedModels = (() => {
+    if (sortBy === 'default') return result.models;
+    if (sortBy === 'compare-score') {
+      return [...result.models].sort((a, b) => b.compareAccuracy - a.compareAccuracy);
+    }
+    // model-score: group by model type, sorted by best performance
+    const bestByModel = new Map<string, number>();
+    for (const m of result.models) {
+      const current = bestByModel.get(m.model) ?? -1;
+      if (m.compareAccuracy > current) {
+        bestByModel.set(m.model, m.compareAccuracy);
+      }
+    }
+    return [...result.models].sort((a, b) => {
+      const aBest = bestByModel.get(a.model) ?? 0;
+      const bBest = bestByModel.get(b.model) ?? 0;
+      if (aBest !== bBest) return bBest - aBest;
+      if (a.model !== b.model) return a.model.localeCompare(b.model);
+      return b.compareAccuracy - a.compareAccuracy;
+    });
+  })();
+
   return (
     <Card variant="elevated">
       <CardHeader>
-        <CardTitle>Comparison Results</CardTitle>
+        <div className="flex items-center justify-between w-full">
+          <div className="flex items-center gap-2">
+            {onLoadModels && (
+              <button
+                type="button"
+                onClick={onLoadModels}
+                title="Load models into compare"
+                className="p-1.5 rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+              >
+                <SaveIcon />
+              </button>
+            )}
+            <CardTitle>Comparison Results</CardTitle>
+          </div>
+          <div className="flex gap-1">
+            <SortIconButton
+              active={sortBy === 'default'}
+              onClick={() => setSortBy('default')}
+              title="Default order"
+            >
+              <ListIcon />
+            </SortIconButton>
+            <SortIconButton
+              active={sortBy === 'compare-score'}
+              onClick={() => setSortBy('compare-score')}
+              title="Sort by compare score"
+            >
+              <SortDescIcon />
+            </SortIconButton>
+            <SortIconButton
+              active={sortBy === 'model-score'}
+              onClick={() => setSortBy('model-score')}
+              title="Group by model type"
+            >
+              <GridIcon />
+            </SortIconButton>
+          </div>
+        </div>
       </CardHeader>
 
       <div>
-        <h4 className="text-sm font-medium text-gray-700 mb-3">Model Accuracies</h4>
         <div className="space-y-3">
-          {result.models.map((model) => (
+          {sortedModels.map((model) => (
             <ModelAccuracyCard key={model.runId} model={model} />
           ))}
         </div>

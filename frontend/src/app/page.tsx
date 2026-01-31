@@ -119,6 +119,7 @@ function HomeContent() {
     deleteCompareRun,
     renameCompareRun,
     setCompareResult,
+    loadModelsFromResult,
   } = useCompare({ dataset, isCompareMode });
 
   // Column selection clipboard (memory only, not persisted)
@@ -903,7 +904,7 @@ function HomeContent() {
             {/* Compare results */}
             {isCompareMode && compareResult && (
               <div className="grid grid-cols-2 xl:grid-cols-2 gap-6">
-                <CompareResults result={compareResult} />
+                <CompareResults result={compareResult} onLoadModels={() => loadModelsFromResult(compareResult)} />
                 {compareResult.compareId && <ImagesDisplay compareId={compareResult.compareId} />}
               </div>
             )}

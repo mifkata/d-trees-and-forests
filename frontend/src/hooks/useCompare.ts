@@ -86,6 +86,7 @@ interface UseCompareReturn {
   deleteCompareRun: (compareId: string) => Promise<boolean>;
   renameCompareRun: (compareId: string, name: string | null) => Promise<boolean>;
   setCompareResult: (result: CompareResult | null) => void;
+  loadModelsFromResult: (result: CompareResult) => void;
 }
 
 const COMPARE_MODELS_KEY = 'compare_models';
@@ -346,6 +347,18 @@ export function useCompare(options: UseCompareOptions): UseCompareReturn {
     }
   }, []);
 
+  // Load models from a compare result into the models list
+  const loadModelsFromResult = useCallback((result: CompareResult) => {
+    const newModels: CompareModelEntry[] = result.models.map((m) => ({
+      id: generateId(),
+      modelType: m.model,
+      runId: m.runId,
+    }));
+    const modelsWithEmpty = ensureEmptyModel(newModels);
+    setModelsState(modelsWithEmpty);
+    storeModels(dataset, modelsWithEmpty);
+  }, [dataset]);
+
   return {
     models,
     removeModel,
@@ -370,5 +383,6 @@ export function useCompare(options: UseCompareOptions): UseCompareReturn {
     deleteCompareRun,
     renameCompareRun,
     setCompareResult,
+    loadModelsFromResult,
   };
 }
