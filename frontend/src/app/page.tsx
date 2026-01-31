@@ -2,22 +2,27 @@
 
 import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useParamsCache, useTraining } from "@/hooks";
+import { useParamsCache, useTraining, useCompare } from "@/hooks";
 import {
   Card,
   DatasetSelector,
   ModelSelector,
   DatasetParams,
+  CompareDatasetParams,
   ModelParams,
   TrainButton,
   ResultsDisplay,
   ImagesDisplay,
   ErrorDisplay,
+  CompareModelsTab,
+  CompareButton,
+  CompareResults,
 } from "@/components";
 import { ControlledTabs } from "@/components/ui";
 import type { TrainResult } from "@/types/api";
 import type { DatasetId } from "@/types/dataset";
 import type { ModelId } from "@/types/model";
+import type { ModelParams as ModelParamsType } from "@/types/params";
 
 interface RuntimeJson {
   run_id: string;
@@ -32,6 +37,10 @@ interface RuntimeJson {
   modelParams: Record<string, unknown>;
 }
 
+type Mode = "train" | "compare";
+type TrainTab = "dataset" | "model";
+type CompareTab = "dataset" | "models";
+
 function HomeContent() {
   const {
     dataset,
@@ -44,15 +53,67 @@ function HomeContent() {
     setModelParams,
     resetDatasetParams,
     resetModelParams,
+    loadRun,
     isHydrated,
   } = useParamsCache();
 
   const { isLoading, result, error, train, clearError, setResult } =
     useTraining();
-  const [paramsTab, setParamsTab] = useState<"dataset" | "model">("dataset");
+
+  // Persist tab states in localStorage
+  const [mode, setModeState] = useState<Mode>("train");
+  const [trainTab, setTrainTabState] = useState<TrainTab>("dataset");
+  const [compareTab, setCompareTabState] = useState<CompareTab>("dataset");
+
+  // Load saved tab states on mount
+  useEffect(() => {
+    const savedMode = localStorage.getItem("tab_mode") as Mode | null;
+    const savedTrainTab = localStorage.getItem("tab_train") as TrainTab | null;
+    const savedCompareTab = localStorage.getItem("tab_compare") as CompareTab | null;
+    if (savedMode === "train" || savedMode === "compare") setModeState(savedMode);
+    if (savedTrainTab === "dataset" || savedTrainTab === "model") setTrainTabState(savedTrainTab);
+    if (savedCompareTab === "dataset" || savedCompareTab === "models") setCompareTabState(savedCompareTab);
+  }, []);
+
+  const setMode = useCallback((newMode: Mode) => {
+    setModeState(newMode);
+    localStorage.setItem("tab_mode", newMode);
+  }, []);
+
+  const setTrainTab = useCallback((newTab: TrainTab) => {
+    setTrainTabState(newTab);
+    localStorage.setItem("tab_train", newTab);
+  }, []);
+
+  const setCompareTab = useCallback((newTab: CompareTab) => {
+    setCompareTabState(newTab);
+    localStorage.setItem("tab_compare", newTab);
+  }, []);
+
   const router = useRouter();
   const searchParams = useSearchParams();
   const runId = searchParams.get("run_id");
+
+  const isCompareMode = mode === "compare";
+  const isModelsTabActive = isCompareMode && compareTab === "models";
+
+  const {
+    selection,
+    updateSelection,
+    datasetParams: compareDatasetParams,
+    setDatasetParams: setCompareDatasetParams,
+    resetDatasetParams: resetCompareDatasetParams,
+    isComparing,
+    compareResult,
+    compareError,
+    runCompare,
+    clearCompareResult,
+    isSelectionComplete,
+    historyTree,
+    historyForest,
+    historyGradient,
+    isLoadingHistory,
+  } = useCompare({ dataset, isCompareMode, isModelsTabActive });
 
   const [isLoadingRun, setIsLoadingRun] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -76,16 +137,18 @@ function HomeContent() {
         }
         const runtime: RuntimeJson = await runtimeRes.json();
 
-        // Set form state from runtime
-        setDataset(runtime.dataset);
-        setModel(runtime.model);
-        setDatasetParams({
-          mask: runtime.datasetParams.mask,
-          split: runtime.datasetParams.split,
-          impute: runtime.datasetParams.impute,
-          ignore_columns: runtime.datasetParams.ignore_columns || [],
+        // Set form state from runtime atomically to avoid closure issues
+        loadRun({
+          dataset: runtime.dataset,
+          model: runtime.model,
+          datasetParams: {
+            mask: runtime.datasetParams.mask,
+            split: runtime.datasetParams.split,
+            impute: runtime.datasetParams.impute,
+            ignore_columns: runtime.datasetParams.ignore_columns || [],
+          },
+          modelParams: runtime.modelParams as unknown as ModelParamsType,
         });
-        setModelParams(runtime.modelParams);
 
         // Load result.json
         const resultRes = await fetch(`/output/${runId}/result.json`);
@@ -195,10 +258,7 @@ function HomeContent() {
   }, [
     runId,
     isHydrated,
-    setDataset,
-    setModel,
-    setDatasetParams,
-    setModelParams,
+    loadRun,
     setResult,
   ]);
 
@@ -217,14 +277,18 @@ function HomeContent() {
   const handleSubmit = useCallback(
     (e: React.FormEvent) => {
       e.preventDefault();
-      train({
-        dataset,
-        model,
-        datasetParams,
-        modelParams,
-      });
+      if (isCompareMode) {
+        runCompare();
+      } else {
+        train({
+          dataset,
+          model,
+          datasetParams,
+          modelParams,
+        });
+      }
     },
-    [train, dataset, model, datasetParams, modelParams],
+    [isCompareMode, runCompare, train, dataset, model, datasetParams, modelParams],
   );
 
   if (!isHydrated || isLoadingRun) {
@@ -278,7 +342,7 @@ function HomeContent() {
       <div className="mx-auto">
         <div className="flex items-center gap-4 mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Model Trainer</h1>
-          {runId && (
+          {runId && !isCompareMode && (
             <span className="text-sm text-gray-500 font-mono">
               Run: {runId}
             </span>
@@ -288,67 +352,141 @@ function HomeContent() {
         <div className="flex gap-6">
           {/* Left Column - Form */}
           <form onSubmit={handleSubmit} className="space-y-6 w-[920px]">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <Card>
-                <DatasetSelector value={dataset} onChange={setDataset} />
-              </Card>
-              <Card>
-                <ModelSelector
-                  value={model}
-                  onChange={setModel}
-                  dataset={dataset}
-                />
-              </Card>
-            </div>
-
+            {/* Mode Tabs + Dataset/Model selectors */}
             <Card>
               <ControlledTabs
                 tabs={[
-                  { id: "dataset", label: "Dataset" },
-                  { id: "model", label: "Model" },
+                  { id: "train", label: "Train" },
+                  { id: "compare", label: "Compare" },
                 ]}
-                activeTab={paramsTab}
-                onTabChange={(tab) => setParamsTab(tab as "dataset" | "model")}
+                activeTab={mode}
+                onTabChange={(tab) => setMode(tab as Mode)}
               >
-                {paramsTab === "dataset" && (
-                  <DatasetParams
-                    params={datasetParams}
-                    dataset={dataset}
-                    onChange={setDatasetParams}
-                    onReset={resetDatasetParams}
-                  />
-                )}
-                {paramsTab === "model" && (
-                  <ModelParams
-                    model={model}
-                    params={modelParams}
-                    onChange={setModelParams}
-                    onReset={resetModelParams}
-                  />
+                {isCompareMode ? (
+                  <DatasetSelector value={dataset} onChange={setDataset} />
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <DatasetSelector value={dataset} onChange={setDataset} />
+                    <ModelSelector
+                      value={model}
+                      onChange={setModel}
+                      dataset={dataset}
+                    />
+                  </div>
                 )}
               </ControlledTabs>
             </Card>
 
+            {/* Sub-tabs: Different for Train vs Compare */}
+            <Card>
+              {isCompareMode ? (
+                <ControlledTabs
+                  tabs={[
+                    { id: "dataset", label: "Dataset" },
+                    { id: "models", label: "Models" },
+                  ]}
+                  activeTab={compareTab}
+                  onTabChange={(tab) => setCompareTab(tab as CompareTab)}
+                >
+                  {compareTab === "dataset" && (
+                    <CompareDatasetParams
+                      params={compareDatasetParams}
+                      dataset={dataset}
+                      onChange={setCompareDatasetParams}
+                      onReset={resetCompareDatasetParams}
+                    />
+                  )}
+                  {compareTab === "models" && (
+                    <CompareModelsTab
+                      selection={selection}
+                      onSelectionChange={updateSelection}
+                      historyTree={historyTree}
+                      historyForest={historyForest}
+                      historyGradient={historyGradient}
+                      isLoadingHistory={isLoadingHistory}
+                    />
+                  )}
+                </ControlledTabs>
+              ) : (
+                <ControlledTabs
+                  tabs={[
+                    { id: "dataset", label: "Dataset" },
+                    { id: "model", label: "Model" },
+                  ]}
+                  activeTab={trainTab}
+                  onTabChange={(tab) => setTrainTab(tab as TrainTab)}
+                >
+                  {trainTab === "dataset" && (
+                    <DatasetParams
+                      params={datasetParams}
+                      dataset={dataset}
+                      onChange={setDatasetParams}
+                      onReset={resetDatasetParams}
+                    />
+                  )}
+                  {trainTab === "model" && (
+                    <ModelParams
+                      model={model}
+                      params={modelParams}
+                      onChange={setModelParams}
+                      onReset={resetModelParams}
+                    />
+                  )}
+                </ControlledTabs>
+              )}
+            </Card>
+
             <Card padding="sm">
-              <TrainButton loading={isLoading} disabled={isLoading} />
+              {isCompareMode ? (
+                <CompareButton
+                  loading={isComparing}
+                  disabled={isComparing || !isSelectionComplete}
+                  onClick={runCompare}
+                />
+              ) : (
+                <TrainButton loading={isLoading} disabled={isLoading} />
+              )}
             </Card>
           </form>
 
           {/* Right Column - Output */}
           <div className="space-y-6 w-full">
-            {error && <ErrorDisplay error={error} onDismiss={clearError} />}
+            {/* Training error */}
+            {!isCompareMode && error && (
+              <ErrorDisplay error={error} onDismiss={clearError} />
+            )}
 
-            {result && (
+            {/* Compare error */}
+            {isCompareMode && compareError && (
+              <ErrorDisplay error={compareError} onDismiss={clearCompareResult} />
+            )}
+
+            {/* Compare results */}
+            {isCompareMode && compareResult && (
+              <CompareResults result={compareResult} />
+            )}
+
+            {/* Training results */}
+            {!isCompareMode && result && (
               <div className="grid grid-cols-2 xl:grid-cols-2 gap-6">
                 <ResultsDisplay result={result} isLoading={isLoading} />
                 {result.runId && <ImagesDisplay runId={result.runId} />}
               </div>
             )}
 
-            {!error && !result && (
+            {/* Empty state */}
+            {!isCompareMode && !error && !result && (
               <Card>
                 <div className="text-center py-12 text-gray-500">
                   <p>Configure parameters and click Train to see results</p>
+                </div>
+              </Card>
+            )}
+
+            {isCompareMode && !compareError && !compareResult && (
+              <Card>
+                <div className="text-center py-12 text-gray-500">
+                  <p>Select three models from history and click Compare</p>
                 </div>
               </Card>
             )}

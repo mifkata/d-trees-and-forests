@@ -43,7 +43,7 @@ interface ControlledTabsProps {
   tabs: Tab[];
   activeTab: string;
   onTabChange: (tabId: string) => void;
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 export function ControlledTabs({ tabs, activeTab, onTabChange, children }: ControlledTabsProps) {

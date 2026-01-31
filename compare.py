@@ -6,7 +6,13 @@ import json
 import os
 import subprocess
 import sys
-from lib import Render
+
+import joblib
+import numpy as np
+import pandas as pd
+from sklearn.impute import KNNImputer
+
+from lib import Dataset, Render
 
 SCRIPTS = ["train-tree.py", "train-forest.py", "train-gradient-forest.py"]
 MASK_VALUES = list(range(0, 95, 5))  # 0, 5, 10, ..., 90
@@ -20,7 +26,7 @@ COLORS = {
 MODEL_TYPE_MAP = {
     "tree": "tree",
     "forest": "forest",
-    "gradient": "gradient-forest"
+    "gradient": "gradient"
 }
 
 
@@ -80,7 +86,65 @@ def validate_model_id(run_id, expected_model, expected_dataset):
     return True
 
 
-def run_script(script, mask, impute=False, use_output=False, run_id=None, dataset="Iris"):
+def load_full_dataset(dataset_name, mask_rate=0.0, impute=False, ignore_columns=None):
+    """Load the full dataset without train/test split.
+
+    Args:
+        dataset_name: Dataset name (Iris or Income)
+        mask_rate: Fraction of values to mask (0.0-1.0)
+        impute: If True, impute missing values
+        ignore_columns: List of column indices to drop
+
+    Returns:
+        tuple: (X, y) feature matrix and target series
+    """
+    # Get dataset class
+    dataset_cls = getattr(Dataset, dataset_name)
+
+    # Load raw dataset
+    X, y = dataset_cls._load_raw()
+
+    # Apply masking if needed
+    if mask_rate > 0:
+        rng = np.random.default_rng(42)
+        mask = rng.random(X.shape) < mask_rate
+        X = X.mask(mask)
+
+    # Drop ignored columns
+    if ignore_columns:
+        cols_to_drop = [X.columns[i] for i in ignore_columns if i < len(X.columns)]
+        X = X.drop(columns=cols_to_drop)
+
+    # Impute missing values if needed
+    if impute and X.isna().any().any():
+        imputer = KNNImputer(n_neighbors=5, weights="distance")
+        X = pd.DataFrame(
+            imputer.fit_transform(X),
+            columns=X.columns,
+            index=X.index
+        )
+
+    return X, y
+
+
+def evaluate_model(model_path, X, y):
+    """Load a model and evaluate it on the given data.
+
+    Args:
+        model_path: Path to the model pkl file
+        X: Feature matrix
+        y: Target series
+
+    Returns:
+        float: Accuracy score
+    """
+    model = joblib.load(model_path)
+    y_pred = model.predict(X)
+    accuracy = (y_pred == y).mean()
+    return accuracy
+
+
+def run_script(script, mask, impute=False, use_output=False, run_id=None, dataset="Iris", ignore_columns=None):
     """Run a training script and return accuracy from JSON output."""
     cmd = ["python", "-W", "ignore", script, "--json", "--dataset", dataset]
 
@@ -94,6 +158,9 @@ def run_script(script, mask, impute=False, use_output=False, run_id=None, datase
         if use_output:
             cmd.extend(["--use-output", "true"])
 
+    if ignore_columns:
+        cmd.extend(["--ignore-columns", ignore_columns])
+
     result = subprocess.run(cmd, capture_output=True, text=True)
     try:
         # Extract JSON from stdout (may contain warnings before JSON)
@@ -105,9 +172,9 @@ def run_script(script, mask, impute=False, use_output=False, run_id=None, datase
         output = json.loads(stdout[json_start:json_end])
         return output["accuracy"]
     except (json.JSONDecodeError, KeyError, ValueError) as e:
-        print(f"Error: {script} mask={mask} impute={impute}: {e}")
+        print(f"Error: {script} mask={mask} impute={impute}: {e}", file=sys.stderr)
         if result.stderr:
-            print(f"  stderr: {result.stderr[:100]}")
+            print(f"  stderr: {result.stderr[:100]}", file=sys.stderr)
         return None
 
 
@@ -124,6 +191,12 @@ def parse_args():
                         help="Run ID for random forest model")
     parser.add_argument("--gradient", type=str, default=None,
                         help="Run ID for gradient boosted model")
+    parser.add_argument("--mask", type=int, default=0,
+                        help="Mask percentage for comparison (0-100)")
+    parser.add_argument("--impute", action="store_true",
+                        help="Impute missing values during comparison")
+    parser.add_argument("--ignore-columns", type=str, default=None,
+                        help="Comma-separated column indices to ignore")
     return parser.parse_args()
 
 
@@ -138,20 +211,108 @@ def main():
     }
     has_model_ids = any(v is not None for v in model_ids.values())
 
-    # If model IDs provided, validate them
+    # If model IDs provided, validate and run comparison
     if has_model_ids:
-        for arg_name, run_id in model_ids.items():
-            if run_id is not None:
-                expected_model = MODEL_TYPE_MAP[arg_name]
-                validate_model_id(run_id, expected_model, args.dataset)
-                print(f"Validated {arg_name} model: {run_id}")
+        # All three model IDs are required for comparison mode
+        if not all(v is not None for v in model_ids.values()):
+            print("Error: All three model IDs (--tree, --forest, --gradient) are required")
+            sys.exit(1)
 
-        # TODO: Implement loading pre-trained models and comparing them
-        print("\nModel ID mode not yet fully implemented.")
-        print("Validated models can be loaded from:")
+        # Validate all model IDs
         for arg_name, run_id in model_ids.items():
-            if run_id is not None:
-                print(f"  {arg_name}: {get_output_dir(run_id)}/model.pkl")
+            expected_model = MODEL_TYPE_MAP[arg_name]
+            validate_model_id(run_id, expected_model, args.dataset)
+            print(f"Validated {arg_name} model: {run_id}", file=sys.stderr)
+
+        print(f"\nRunning comparison with mask={args.mask}%, impute={args.impute}", file=sys.stderr)
+
+        # Parse ignore_columns from comma-separated string
+        ignore_columns = None
+        if args.ignore_columns:
+            ignore_columns = [int(x.strip()) for x in args.ignore_columns.split(',')]
+
+        # Load the full dataset once (no train/test split)
+        try:
+            X, y = load_full_dataset(
+                args.dataset,
+                mask_rate=args.mask / 100.0,
+                impute=args.impute,
+                ignore_columns=ignore_columns
+            )
+            print(f"  Loaded {len(X)} samples from {args.dataset} dataset", file=sys.stderr)
+        except Exception as e:
+            print(json.dumps({
+                "success": False,
+                "error": {
+                    "message": f"Failed to load dataset: {e}",
+                    "details": str(e)
+                }
+            }))
+            sys.exit(1)
+
+        results = {}
+        errors = []
+
+        for arg_name, run_id in model_ids.items():
+            output_dir = get_output_dir(run_id)
+
+            # Get original training accuracy from .id file in run directory
+            # The .id file is named {model}_{dataset}_{score}.id where score = accuracy * 1000000
+            # Multiple .id files may exist if comparisons were run; take the OLDEST (original training)
+            train_accuracy = None
+            oldest_time = None
+            try:
+                for filename in os.listdir(output_dir):
+                    if filename.endswith('.id'):
+                        filepath = os.path.join(output_dir, filename)
+                        file_time = os.path.getmtime(filepath)
+                        if oldest_time is None or file_time < oldest_time:
+                            oldest_time = file_time
+                            # Parse accuracy from filename: {model}_{dataset}_{score}.id
+                            parts = filename.replace('.id', '').split('_')
+                            score_str = parts[-1]  # Last part is the score
+                            train_accuracy = int(score_str) / 1000000
+            except (FileNotFoundError, ValueError, IndexError, OSError) as e:
+                errors.append(f"{arg_name}: failed to read training accuracy - {e}")
+
+            # Load and evaluate the model on the full dataset
+            model_path = os.path.join(output_dir, 'model.pkl')
+            try:
+                compare_accuracy = evaluate_model(model_path, X, y)
+            except Exception as e:
+                error_msg = f"{arg_name}: failed to evaluate model - {e}"
+                print(f"  {error_msg}", file=sys.stderr)
+                errors.append(error_msg)
+                compare_accuracy = None
+
+            results[arg_name] = {
+                "runId": run_id,
+                "trainAccuracy": train_accuracy,
+                "compareAccuracy": compare_accuracy
+            }
+
+            if compare_accuracy is not None and train_accuracy is not None:
+                ratio = compare_accuracy / train_accuracy
+                print(f"  {arg_name}: train={train_accuracy:.4f}, compare={compare_accuracy:.4f}, ratio={ratio:.4f}", file=sys.stderr)
+            else:
+                print(f"  {arg_name}: error", file=sys.stderr)
+
+        # Check if any model failed
+        if errors:
+            print(json.dumps({
+                "success": False,
+                "error": {
+                    "message": "One or more models failed to evaluate",
+                    "details": "\n".join(errors)
+                }
+            }))
+            sys.exit(1)
+
+        # Output results as JSON
+        print(json.dumps({
+            "success": True,
+            "models": results
+        }))
         return
 
     # Original comparison mode: run fresh training
