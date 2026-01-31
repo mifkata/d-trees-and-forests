@@ -12,6 +12,13 @@ Components for displaying training results, datasets, and errors.
 
 ## Components
 
+### TrainLoadingState
+- Displayed when training is in progress (`isLoading` is true) and no result yet
+- Also displayed when auto-loading latest run (`isLoadingLatest` is true)
+- Replaces the "Configure parameters and click Train to see results" empty state
+- Shows centered spinner with "Loading..." text
+- Card container matching the empty state styling
+
 ### ResultsDisplay
 - Elevated card variant
 - Tabbed interface with two tabs: "Results" and "Dataset"
