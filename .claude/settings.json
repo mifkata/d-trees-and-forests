@@ -1,12 +1,16 @@
 {
     "permissions": {
         "allow": [
-            "Bash(npm:*)",
-            "Bash(pnpm:*)",
             "Bash(git:*)",
+            "Bash(node:*)",
+            "Bash(pnpm:*)",
             "Bash(python:*)",
+            "Bash(pip:*)",
             "Bash(gh pr create:*)",
-            "Bash(node:*)"
+            "Bash(gh pr edit:*)"
+        ],
+        "deny": [
+            "Bash(npm:*)"
         ],
         "ask": [
             "Bash(rm:*)",
