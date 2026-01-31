@@ -38,6 +38,29 @@ def get_output_dir(run_id):
     ))
 
 
+def load_runtime(run_id):
+    """Load runtime.json for a run ID.
+
+    Args:
+        run_id: Run identifier
+
+    Returns:
+        dict: Runtime configuration
+
+    Raises:
+        SystemExit if runtime.json not found
+    """
+    output_dir = get_output_dir(run_id)
+    runtime_path = os.path.join(output_dir, 'runtime.json')
+
+    if not os.path.exists(runtime_path):
+        print(f"Error: runtime.json not found at {runtime_path}")
+        sys.exit(1)
+
+    with open(runtime_path) as f:
+        return json.load(f)
+
+
 def validate_model_id(run_id, expected_model, expected_dataset):
     """Validate a model run ID against expected model type and dataset.
 
@@ -47,7 +70,7 @@ def validate_model_id(run_id, expected_model, expected_dataset):
         expected_dataset: Expected dataset name (Iris, Income)
 
     Returns:
-        True if valid
+        dict: Runtime configuration if valid
 
     Raises:
         SystemExit if validation fails
@@ -60,15 +83,8 @@ def validate_model_id(run_id, expected_model, expected_dataset):
         print(f"Error: model.pkl not found at {model_path}")
         sys.exit(1)
 
-    # Check runtime.json exists
-    runtime_path = os.path.join(output_dir, 'runtime.json')
-    if not os.path.exists(runtime_path):
-        print(f"Error: runtime.json not found at {runtime_path}")
-        sys.exit(1)
-
-    # Load and validate runtime.json
-    with open(runtime_path) as f:
-        runtime = json.load(f)
+    # Load runtime.json
+    runtime = load_runtime(run_id)
 
     # Validate dataset
     if runtime.get('dataset') != expected_dataset:
@@ -84,7 +100,7 @@ def validate_model_id(run_id, expected_model, expected_dataset):
         print(f"  Found: {runtime.get('model')}")
         sys.exit(1)
 
-    return True
+    return runtime
 
 
 def load_full_dataset(dataset_name, mask_rate=0.0, impute=False, ignore_columns=None):
@@ -137,12 +153,28 @@ def evaluate_model(model_path, X, y):
         y: Target series
 
     Returns:
-        float: Accuracy score
+        tuple: (accuracy, imputed) where imputed is True if imputation was applied
     """
     model = joblib.load(model_path)
-    y_pred = model.predict(X)
-    accuracy = (y_pred == y).mean()
-    return accuracy
+
+    try:
+        y_pred = model.predict(X)
+        accuracy = (y_pred == y).mean()
+        return accuracy, False
+    except ValueError as e:
+        # Check if error is due to NaN values
+        if "NaN" in str(e) and X.isna().any().any():
+            # Model doesn't support NaN - impute and retry
+            imputer = KNNImputer(n_neighbors=5, weights="distance")
+            X_imputed = pd.DataFrame(
+                imputer.fit_transform(X),
+                columns=X.columns,
+                index=X.index
+            )
+            y_pred = model.predict(X_imputed)
+            accuracy = (y_pred == y).mean()
+            return accuracy, True
+        raise
 
 
 def run_script(script, mask, impute=False, use_output=False, run_id=None, dataset="Iris", ignore_columns=None):
@@ -227,43 +259,56 @@ def main():
         compare_id = args.compare_id if args.compare_id else str(int(time.time()))
         print(f"Compare ID: {compare_id}", file=sys.stderr)
 
-        # Validate all model IDs
+        # Validate all model IDs and collect runtime configs
+        runtimes = {}
         for arg_name, run_id in model_ids.items():
             expected_model = MODEL_TYPE_MAP[arg_name]
-            validate_model_id(run_id, expected_model, args.dataset)
+            runtimes[arg_name] = validate_model_id(run_id, expected_model, args.dataset)
             print(f"Validated {arg_name} model: {run_id}", file=sys.stderr)
 
+        # Extract ignore_columns from each model's runtime.json
+        dataset_cls = getattr(Dataset, args.dataset)
+        total_columns = len(dataset_cls._load_raw()[0].columns)
+        all_columns = set(range(total_columns))
+
+        # Collect each model's used columns for reporting
+        model_columns = {}
+        for arg_name, runtime in runtimes.items():
+            model_ignore_cols = set(runtime.get("datasetParams", {}).get("ignore_columns", []))
+            model_used_cols = sorted(all_columns - model_ignore_cols)
+            model_columns[arg_name] = model_used_cols
+            print(f"  {arg_name} uses columns: {model_used_cols}", file=sys.stderr)
+
         print(f"\nRunning comparison with mask={args.mask}%, impute={args.impute}", file=sys.stderr)
-
-        # Parse ignore_columns from comma-separated string
-        ignore_columns = None
-        if args.ignore_columns:
-            ignore_columns = [int(x.strip()) for x in args.ignore_columns.split(',')]
-
-        # Load the full dataset once (no train/test split)
-        try:
-            X, y = load_full_dataset(
-                args.dataset,
-                mask_rate=args.mask / 100.0,
-                impute=args.impute,
-                ignore_columns=ignore_columns
-            )
-            print(f"  Loaded {len(X)} samples from {args.dataset} dataset", file=sys.stderr)
-        except Exception as e:
-            print(json.dumps({
-                "success": False,
-                "error": {
-                    "message": f"Failed to load dataset: {e}",
-                    "details": str(e)
-                }
-            }))
-            sys.exit(1)
 
         results = {}
         errors = []
 
         for arg_name, run_id in model_ids.items():
             output_dir = get_output_dir(run_id)
+            runtime = runtimes[arg_name]
+
+            # Get this model's ignore_columns from its runtime.json
+            model_ignore_cols = runtime.get("datasetParams", {}).get("ignore_columns", [])
+
+            # Load dataset with THIS model's column configuration
+            try:
+                X, y = load_full_dataset(
+                    args.dataset,
+                    mask_rate=args.mask / 100.0,
+                    impute=args.impute,
+                    ignore_columns=model_ignore_cols
+                )
+            except Exception as e:
+                error_msg = f"{arg_name}: failed to load dataset - {e}"
+                print(f"  {error_msg}", file=sys.stderr)
+                errors.append(error_msg)
+                results[arg_name] = {
+                    "runId": run_id,
+                    "trainAccuracy": None,
+                    "compareAccuracy": None
+                }
+                continue
 
             # Get original training accuracy from result.json (most reliable source)
             train_accuracy = None
@@ -290,25 +335,28 @@ def main():
                 except (FileNotFoundError, ValueError, IndexError, OSError) as e:
                     errors.append(f"{arg_name}: failed to read training accuracy - {e}")
 
-            # Load and evaluate the model on the full dataset
+            # Load and evaluate the model on the dataset
             model_path = os.path.join(output_dir, 'model.pkl')
             try:
-                compare_accuracy = evaluate_model(model_path, X, y)
+                compare_accuracy, was_imputed = evaluate_model(model_path, X, y)
             except Exception as e:
                 error_msg = f"{arg_name}: failed to evaluate model - {e}"
                 print(f"  {error_msg}", file=sys.stderr)
                 errors.append(error_msg)
                 compare_accuracy = None
+                was_imputed = False
 
             results[arg_name] = {
                 "runId": run_id,
                 "trainAccuracy": train_accuracy,
-                "compareAccuracy": compare_accuracy
+                "compareAccuracy": compare_accuracy,
+                "imputed": was_imputed
             }
 
             if compare_accuracy is not None and train_accuracy is not None:
                 ratio = compare_accuracy / train_accuracy
-                print(f"  {arg_name}: train={train_accuracy:.4f}, compare={compare_accuracy:.4f}, ratio={ratio:.4f}", file=sys.stderr)
+                impute_note = " (imputed)" if was_imputed else ""
+                print(f"  {arg_name}: train={train_accuracy:.4f}, compare={compare_accuracy:.4f}, ratio={ratio:.4f}{impute_note}", file=sys.stderr)
             else:
                 print(f"  {arg_name}: error", file=sys.stderr)
 
@@ -332,9 +380,11 @@ def main():
             print(f"  Images saved to frontend/public/output/compare/{compare_id}/", file=sys.stderr)
 
         # Output results as JSON
+        # Include per-model feature columns
         print(json.dumps({
             "success": True,
             "compareId": compare_id,
+            "modelColumns": model_columns,
             "models": results
         }))
         return

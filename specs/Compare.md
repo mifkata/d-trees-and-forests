@@ -34,16 +34,18 @@ Load pre-trained models from existing run directories instead of training fresh:
 | `--gradient <ID>` | Run ID for gradient boosted model |
 | `--mask <PERCENT>` | Mask percentage for comparison (0-100) |
 | `--impute` | Impute missing values during comparison |
-| `--ignore-columns <LIST>` | Comma-separated column indices to ignore |
 | `--compare-id <ID>` | Optional: Use provided compare ID instead of generating new one |
 | `--images` | Generate visualization images to `frontend/public/output/compare/<compare_id>/` |
+
+**Note:** `--ignore-columns` is NOT used in Model ID mode. Feature columns are automatically determined from the models' `runtime.json`.
 
 **Requirements:**
 - All three ID parameters must be provided when using this mode
 - Each ID maps to directory: `frontend/public/output/<ID>/`
 - Each directory must contain `model.pkl`
-- Each directory must contain `runtime.json` for validation
+- Each directory must contain `runtime.json` for validation (includes `datasetParams.ignore_columns`)
 - Each directory must contain `result.json` for training accuracy
+- Models can have different `ignore_columns` - comparison uses the intersection of columns
 
 **Validation:**
 - Read `runtime.json` from each provided ID directory
@@ -71,14 +73,21 @@ When running with model IDs (comparison mode):
 4. Pass results to `Render.compare_accuracy()` and `Render.compare_accuracy_impute()`
 
 ### Execution Flow (Model ID Mode)
-1. Load the full dataset (no train/test split)
-2. Apply mask rate and imputation if specified
-3. Drop ignored columns if specified
-4. For each model:
+1. Read `runtime.json` from each model directory to get `datasetParams.ignore_columns`
+2. For each model:
+   - Load the full dataset (no train/test split)
+   - Apply mask rate and imputation if specified
+   - Drop columns based on THIS model's `ignore_columns` from its runtime.json
    - Load model from `model.pkl`
-   - Evaluate on full dataset
-   - Get training accuracy from oldest `.id` file
-5. Return JSON with trainAccuracy and compareAccuracy for each model
+   - Evaluate on dataset with model's own column configuration
+   - Get training accuracy from `result.json`
+3. Return JSON with trainAccuracy, compareAccuracy, and modelColumns
+
+**Column Handling:**
+- The `--ignore-columns` CLI argument is **ignored** in Model ID mode
+- Each model is evaluated using its OWN column configuration from `runtime.json`
+- Models with different `ignore_columns` are supported - each is evaluated on its training columns
+- This ensures fair comparison as each model sees the same column structure it was trained with
 
 ### JSON Output Parsing
 Scripts output JSON with warnings potentially before the JSON object. Parser finds first `{` and last `}` to extract JSON, then reads `accuracy` field.
@@ -90,29 +99,48 @@ When running with model IDs, outputs JSON with both training and comparison accu
 {
   "success": true,
   "compareId": "1706540999",
+  "modelColumns": {
+    "tree": [0, 2, 3],
+    "forest": [2, 3],
+    "gradient": [0, 2, 3]
+  },
   "models": {
     "tree": {
       "runId": "1706540123",
       "trainAccuracy": 0.96,
-      "compareAccuracy": 0.92
+      "compareAccuracy": 0.92,
+      "imputed": false
     },
     "forest": {
       "runId": "1706540456",
       "trainAccuracy": 0.98,
-      "compareAccuracy": 0.95
+      "compareAccuracy": 0.95,
+      "imputed": false
     },
     "gradient": {
       "runId": "1706540789",
       "trainAccuracy": 0.97,
-      "compareAccuracy": 0.94
+      "compareAccuracy": 0.94,
+      "imputed": true
     }
   }
 }
 ```
 
 - `compareId`: Unique identifier for this comparison run (timestamp)
+- `modelColumns`: Per-model array of column indices that were **used** for training
 - `trainAccuracy`: Original accuracy from `result.json` when model was trained
-- `compareAccuracy`: Accuracy when tested with current mask/impute/ignore_columns settings
+- `compareAccuracy`: Accuracy when tested with current mask/impute settings using model's own columns
+- `imputed`: Boolean indicating if automatic imputation was applied (for models that don't support NaN)
+
+### Automatic Imputation Fallback
+When `mask > 0` and `impute=False`, some models may not support NaN values natively (e.g., `GradientBoostingClassifier`). In this case:
+- The compare script catches the NaN error during prediction
+- Automatically applies KNN imputation to the dataset
+- Re-evaluates the model on the imputed data
+- Sets `imputed: true` in the model's result to indicate fallback was used
+
+This allows fair comparison of models with different NaN handling capabilities.
 
 ### Comparison Images
 When `--images` flag is provided in model ID mode:
@@ -132,8 +160,25 @@ When `--images` flag is provided in model ID mode:
 | forest | royalblue |
 | gradient-forest | darkorange |
 
+## Frontend Requirements
+
+### CompareDatasetParams Component
+When used in Compare mode (Model ID mode), the "Feature Columns" section should be **hidden**:
+- Do not display the feature column checkboxes
+- Do not display the Copy/Paste/Select All buttons for columns
+- The dataset will automatically use the columns the models were trained with
+- Only show Mask Rate and Impute controls
+
+The `featureColumns` from the compare result can be displayed as read-only info after comparison completes, showing which columns were used.
+
+### Compare Mode Detection
+- `CompareDatasetParams` receives a new prop: `hideColumns?: boolean`
+- When `hideColumns` is true, the entire "Feature Columns" section is not rendered
+- The parent component sets `hideColumns={true}` when in Compare (Model ID) mode
+
 ## Related specs
 - [train/DecisionTree](train/DecisionTree.md) - Tree model being compared
 - [train/RandomForest](train/RandomForest.md) - Forest model being compared
 - [train/GradientBoostedTrees](train/GradientBoostedTrees.md) - Gradient model being compared
 - [lib/Render](lib/Render.md) - Visualization utilities
+- [lib/Model](lib/Model.md) - Model persistence including runtime.json format

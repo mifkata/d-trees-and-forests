@@ -591,6 +591,7 @@ function HomeContent() {
                       clipboard={columnClipboard}
                       onCopy={(clipboard) => setColumnClipboard(clipboard)}
                       onPaste={(ignore_columns) => setCompareDatasetParams({ ignore_columns })}
+                      hideColumns
                     />
                   )}
                   {compareTab === "models" && (
