@@ -487,6 +487,7 @@ function HomeContent() {
                         }
                       }}
                       placeholder={runId}
+                      maxLength={50}
                       className={`bg-transparent border-b focus:outline-none px-1 min-w-40 ${
                         renameError
                           ? "border-red-500 focus:border-red-500"
