@@ -17,8 +17,12 @@
 * When asked to commit, push automatically unless told not to
 * Do not commit author/co-author information
 * Use conventional commit messages (e.g., `feat: add random forest training script`)
+
+# Pull Requests
 * Pushing a branch for the first time, should open a Draft PR automatically. Use `gh` CLI tool for GitHub operations.
 * Automatically assign the current `gh` user to newly created PRs.
+* PR description should include only information about specific changes with no actionable items.
+* PR description should be updated when new commits are pushed, if a previously defined change was rolled back or modified, it should be only 1 record for the current state of a change (examples: deleted func(), restored func() in 2 commits should cleanup any reference to func() being changed, as it was rolled back to previous change; if a value was changed from 3 to 5 to 7, only 1 record for the change should be in the PR description - latest value: 7).
 
 ## Training scripts
 Use 2/3 of the data for training and 1/3 for testing. Dataset should be Iris dataset via kagglehub `saurabh00007/iriscsv`.
