@@ -601,7 +601,7 @@ function HomeContent() {
       <main className="min-h-screen p-4 sm:p-8">
         <div className="mx-auto">
           <h1 className="text-2xl font-bold text-gray-900 mb-8">
-            Model Trainer
+            Sci-Lab Junior
           </h1>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="animate-pulse space-y-4">
@@ -622,7 +622,7 @@ function HomeContent() {
     <main className="min-h-screen p-4 sm:p-8">
       <div className="mx-auto">
         <div className="flex items-center gap-4 mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Model Trainer</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Sci-Lab Junior</h1>
           {runId && !isCompareMode && (
             <div className="text-sm text-gray-500 font-mono">
               <span>
@@ -989,7 +989,7 @@ function LoadingFallback() {
   return (
     <main className="min-h-screen p-4 sm:p-8">
       <div className="mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-8">Model Trainer</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-8">Sci-Lab Junior</h1>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="animate-pulse space-y-4">
             <div className="h-10 bg-gray-200 rounded"></div>

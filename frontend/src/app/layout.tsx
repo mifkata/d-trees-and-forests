@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Model Trainer",
+  title: "Sci-Lab Junior",
   description: "Train and evaluate decision tree and ensemble classifiers",
 };
 

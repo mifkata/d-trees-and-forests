@@ -12,7 +12,7 @@ Page structure and component composition for the training and comparison interfa
 
 ## Root Layout
 - HTML document with Inter font
-- Metadata title: "Model Trainer"
+- Metadata title: "Sci-Lab Junior"
 - Body renders page children directly
 
 ## Routes
@@ -42,7 +42,7 @@ The auto-load behavior:
 
 ## Page Composition
 
-**Header**: Page title "Model Trainer" with run ID display and inline rename
+**Header**: Page title "Sci-Lab Junior" with run ID display and inline rename
 
 When viewing a run (`?run_id=<run_id>`):
 - Display "Run: {name or runId}" in monospace font next to the title
