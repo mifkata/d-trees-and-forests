@@ -173,6 +173,38 @@ function getBorderColor(ratio: number): string {
   return 'border-red-300';
 }
 
+function ModelAccuracyCard({
+  label,
+  model
+}: {
+  label: string;
+  model: { trainAccuracy: number; compareAccuracy: number; runId: string }
+}) {
+  const ratio = model.compareAccuracy / model.trainAccuracy;
+  return (
+    <div className={`p-3 rounded-lg border ${getBoxBackground(ratio)} ${getBorderColor(ratio)}`}>
+      <p className="text-xs text-gray-500 text-center mb-2">{label}</p>
+      <div className="space-y-1 text-sm">
+        <div className="flex justify-between">
+          <span className="text-gray-500">Train:</span>
+          <span className="font-medium">{(model.trainAccuracy * 100).toFixed(2)}%</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-gray-500">Compare:</span>
+          <span className="font-bold">{(model.compareAccuracy * 100).toFixed(2)}%</span>
+        </div>
+        <div className={`flex justify-between border-t pt-1 mt-1 ${getBorderColor(ratio)}`}>
+          <span className="text-gray-500">Diff:</span>
+          <span className={`font-medium ${getRatioColor(ratio)}`}>
+            {getRatioIcon(ratio)} {formatRatio(ratio)}
+          </span>
+        </div>
+      </div>
+      <p className="text-xs text-gray-400 font-mono text-center mt-2">{model.runId}</p>
+    </div>
+  );
+}
+
 export function CompareResults({ result }: CompareResultsProps) {
   return (
     <Card variant="elevated">
@@ -180,105 +212,15 @@ export function CompareResults({ result }: CompareResultsProps) {
         <CardTitle>Comparison Results</CardTitle>
       </CardHeader>
 
-      <div className="space-y-6">
-        {/* Model accuracy summary */}
-        <div>
-          <h4 className="text-sm font-medium text-gray-700 mb-3">Model Accuracies</h4>
-          <div className="grid grid-cols-3 gap-4">
-            {result.models.tree && (() => {
-              const ratio = result.models.tree.compareAccuracy / result.models.tree.trainAccuracy;
-              return (
-                <div className={`p-3 rounded-lg border ${getBoxBackground(ratio)} ${getBorderColor(ratio)}`}>
-                  <p className="text-xs text-gray-500 text-center mb-2">Decision Tree</p>
-                  <div className="space-y-1 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Train:</span>
-                      <span className="font-medium">{(result.models.tree.trainAccuracy * 100).toFixed(2)}%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Compare:</span>
-                      <span className="font-bold">{(result.models.tree.compareAccuracy * 100).toFixed(2)}%</span>
-                    </div>
-                    <div className={`flex justify-between border-t pt-1 mt-1 ${getBorderColor(ratio)}`}>
-                      <span className="text-gray-500">Diff:</span>
-                      <span className={`font-medium ${getRatioColor(ratio)}`}>
-                        {getRatioIcon(ratio)} {formatRatio(ratio)}
-                      </span>
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-400 font-mono text-center mt-2">{result.models.tree.runId}</p>
-                </div>
-              );
-            })()}
-            {result.models.forest && (() => {
-              const ratio = result.models.forest.compareAccuracy / result.models.forest.trainAccuracy;
-              return (
-                <div className={`p-3 rounded-lg border ${getBoxBackground(ratio)} ${getBorderColor(ratio)}`}>
-                  <p className="text-xs text-gray-500 text-center mb-2">Random Forest</p>
-                  <div className="space-y-1 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Train:</span>
-                      <span className="font-medium">{(result.models.forest.trainAccuracy * 100).toFixed(2)}%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Compare:</span>
-                      <span className="font-bold">{(result.models.forest.compareAccuracy * 100).toFixed(2)}%</span>
-                    </div>
-                    <div className={`flex justify-between border-t pt-1 mt-1 ${getBorderColor(ratio)}`}>
-                      <span className="text-gray-500">Diff:</span>
-                      <span className={`font-medium ${getRatioColor(ratio)}`}>
-                        {getRatioIcon(ratio)} {formatRatio(ratio)}
-                      </span>
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-400 font-mono text-center mt-2">{result.models.forest.runId}</p>
-                </div>
-              );
-            })()}
-            {result.models.gradient && (() => {
-              const ratio = result.models.gradient.compareAccuracy / result.models.gradient.trainAccuracy;
-              return (
-                <div className={`p-3 rounded-lg border ${getBoxBackground(ratio)} ${getBorderColor(ratio)}`}>
-                  <p className="text-xs text-gray-500 text-center mb-2">Gradient Boosted</p>
-                  <div className="space-y-1 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Train:</span>
-                      <span className="font-medium">{(result.models.gradient.trainAccuracy * 100).toFixed(2)}%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-500">Compare:</span>
-                      <span className="font-bold">{(result.models.gradient.compareAccuracy * 100).toFixed(2)}%</span>
-                    </div>
-                    <div className={`flex justify-between border-t pt-1 mt-1 ${getBorderColor(ratio)}`}>
-                      <span className="text-gray-500">Diff:</span>
-                      <span className={`font-medium ${getRatioColor(ratio)}`}>
-                        {getRatioIcon(ratio)} {formatRatio(ratio)}
-                      </span>
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-400 font-mono text-center mt-2">{result.models.gradient.runId}</p>
-                </div>
-              );
-            })()}
-          </div>
-        </div>
-
-        {/* Comparison images */}
-        {result.images.length > 0 && (
-          <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-3">Comparison Charts</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {result.images.map((src, i) => (
-                <div key={i} className="border border-gray-200 rounded-lg overflow-hidden">
-                  <img
-                    src={src}
-                    alt={`Comparison chart ${i + 1}`}
-                    className="w-full h-auto"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
+      <div className="space-y-4">
+        {result.models.tree && (
+          <ModelAccuracyCard label="Decision Tree" model={result.models.tree} />
+        )}
+        {result.models.forest && (
+          <ModelAccuracyCard label="Random Forest" model={result.models.forest} />
+        )}
+        {result.models.gradient && (
+          <ModelAccuracyCard label="Gradient Boosted" model={result.models.gradient} />
         )}
       </div>
     </Card>

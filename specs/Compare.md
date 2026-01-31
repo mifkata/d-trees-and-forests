@@ -13,13 +13,16 @@ Benchmark script that runs all training models across varying mask rates and gen
   - Basic comparison (without impute variants)
   - Full comparison (with impute variants)
 - Support loading pre-trained models via run IDs (see Model ID Parameters below)
+- Generate a unique `compare_id` (timestamp) when running with model IDs
+- Output images to `frontend/public/output/compare/<compare_id>/`
 
 ## Implementation Details
 - **Location**: `compare.py`
 - **Dependencies**: subprocess for running training scripts, json for parsing output, lib.Render for visualization
 - **Scripts tested**: `train-tree.py`, `train-forest.py`, `train-gradient-forest.py`
 - **Mask values**: 0, 5, 10, 15, ..., 90
-- **Output files**: `./output/accuracy_comparison.png`, `./output/accuracy_comparison_impute.png`
+- **Output files (fresh mode)**: `./output/accuracy_comparison.png`, `./output/accuracy_comparison_impute.png`
+- **Output files (model ID mode)**: `frontend/public/output/compare/<compare_id>/*.png`
 
 ### Model ID Parameters
 Load pre-trained models from existing run directories instead of training fresh:
@@ -32,6 +35,8 @@ Load pre-trained models from existing run directories instead of training fresh:
 | `--mask <PERCENT>` | Mask percentage for comparison (0-100) |
 | `--impute` | Impute missing values during comparison |
 | `--ignore-columns <LIST>` | Comma-separated column indices to ignore |
+| `--compare-id <ID>` | Optional: Use provided compare ID instead of generating new one |
+| `--images` | Generate visualization images to `frontend/public/output/compare/<compare_id>/` |
 
 **Requirements:**
 - All three ID parameters must be provided when using this mode
@@ -48,6 +53,13 @@ Load pre-trained models from existing run directories instead of training fresh:
   - `--forest` ID must have `model: "forest"`
   - `--gradient` ID must have `model: "gradient"`
 - Exit with error if validation fails
+
+### Compare ID Generation
+When running with model IDs (comparison mode):
+- Generate `compare_id` as Unix timestamp (seconds since epoch), similar to `run_id`
+- If `--compare-id` is provided, use that value instead
+- Create output directory: `frontend/public/output/compare/<compare_id>/`
+- Return `compare_id` in JSON output
 
 ### Execution Flow (Fresh Training Mode)
 1. Initialize results dict for each model (with and without impute)
@@ -77,6 +89,7 @@ When running with model IDs, outputs JSON with both training and comparison accu
 ```json
 {
   "success": true,
+  "compareId": "1706540999",
   "models": {
     "tree": {
       "runId": "1706540123",
@@ -97,8 +110,20 @@ When running with model IDs, outputs JSON with both training and comparison accu
 }
 ```
 
+- `compareId`: Unique identifier for this comparison run (timestamp)
 - `trainAccuracy`: Original accuracy from `result.json` when model was trained
 - `compareAccuracy`: Accuracy when tested with current mask/impute/ignore_columns settings
+
+### Comparison Images
+When `--images` flag is provided in model ID mode:
+- Create directory `frontend/public/output/compare/<compare_id>/`
+- Generate comparison visualizations using lib.Render with `set_compare_id(compare_id)`
+- Images saved to the compare output directory
+
+| Image | Description |
+|-------|-------------|
+| `accuracy_bars.png` | Bar chart comparing train vs compare accuracy for each model |
+| `accuracy_diff.png` | Visual representation of accuracy differences (ratio chart) |
 
 ### Color Scheme
 | Model | Color |

@@ -20,6 +20,11 @@ Compare mode allows users to select three pre-trained models (tree, forest, grad
 - Compare button is disabled until all three models are selected
 - Comparison evaluates models on the full dataset (no train/test split)
 - Results display comparison visualization from `compare.py`
+- Triggering Compare generates a new `compare_id` (timestamp-based)
+- Comparison images saved to `frontend/public/output/compare/<compare_id>/`
+- Results displayed in 2-column layout (same as Train view):
+  - Left column: CompareResults card with model accuracy stats
+  - Right column: ImagesDisplay card with comparison visualizations
 
 ## Layout
 
@@ -113,15 +118,17 @@ Compare mode allows users to select three pre-trained models (tree, forest, grad
 - Card container matching the empty state styling
 
 ### CompareResults
-- Displays comparison output images
-- Shows accuracy stats for all three models:
+- Displays accuracy stats for all three models in a card
+- Model accuracy cards displayed in vertical column layout (stacked)
+- Each model card shows:
   - Training accuracy (original accuracy when model was trained)
   - Compare accuracy (accuracy with current mask/impute/ignore_columns)
   - Accuracy ratio (compare/train) with visual indicator:
     - Green (↑): ratio >= 0.99 (performance maintained or improved)
     - Yellow (→): ratio >= 0.95 (slight degradation)
     - Red (↓): ratio < 0.95 (significant degradation)
-- Props: `result`
+- Props: `result` (includes `compareId` field)
+- Note: Visuals are shown in a separate `ImagesDisplay` component in the right column
 
 ## State Management
 
@@ -142,6 +149,25 @@ interface CompareSelection {
   tree: string | null;
   forest: string | null;
   gradient: string | null;
+}
+```
+
+### Compare Result State
+```typescript
+interface CompareResult {
+  compareId: string;  // Unique ID for this comparison run
+  images: string[];   // Paths to generated images
+  models: {
+    tree: CompareModelResult | null;
+    forest: CompareModelResult | null;
+    gradient: CompareModelResult | null;
+  };
+}
+
+interface CompareModelResult {
+  runId: string;
+  trainAccuracy: number;
+  compareAccuracy: number;
 }
 ```
 
@@ -167,7 +193,7 @@ API route: `POST /api/compare`
 ```bash
 python compare.py --dataset Iris \
   --tree 1706540123 --forest 1706540456 --gradient 1706540789 \
-  --mask 30 --impute --ignore-columns 0,1
+  --mask 30 --impute --ignore-columns 0,1 --images
 ```
 
 **Response:**
@@ -175,9 +201,10 @@ python compare.py --dataset Iris \
 {
   "success": true,
   "data": {
+    "compareId": "1706540999",
     "images": [
-      "/output/accuracy_comparison.png",
-      "/output/accuracy_comparison_impute.png"
+      "/output/compare/1706540999/accuracy_bars.png",
+      "/output/compare/1706540999/accuracy_diff.png"
     ],
     "models": {
       "tree": { "runId": "1706540123", "trainAccuracy": 0.96, "compareAccuracy": 0.92 },
@@ -185,6 +212,22 @@ python compare.py --dataset Iris \
       "gradient": { "runId": "1706540789", "trainAccuracy": 0.97, "compareAccuracy": 0.94 }
     }
   }
+}
+```
+
+### Images Endpoint (Extended)
+API route: `GET /api/images`
+
+Supports two modes:
+- Training run images: `GET /api/images?runId=<run_id>`
+  - Returns images from `frontend/public/output/<run_id>/`
+- Compare run images: `GET /api/images?compareId=<compare_id>`
+  - Returns images from `frontend/public/output/compare/<compare_id>/`
+
+**Response:**
+```json
+{
+  "images": ["/output/compare/1706540999/accuracy_bars.png", "..."]
 }
 ```
 
@@ -214,4 +257,6 @@ Each ModelHistorySelect fetches from `/api/history` with filters:
 ## Related specs
 - [frontend/Layout](Layout.md) - Page structure
 - [frontend/Form](Form.md) - Form controls and tabs
+- [frontend/Output](Output.md) - Shared visual components (ImageGallery, ZoomableImageModal)
 - [Compare](../Compare.md) - Backend compare.py script
+- [lib/Render](../lib/Render.md) - Compare visualization methods

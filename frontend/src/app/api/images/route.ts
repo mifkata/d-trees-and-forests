@@ -13,22 +13,31 @@ export async function GET(
 ): Promise<NextResponse<ImagesResponse>> {
   const searchParams = request.nextUrl.searchParams;
   const runId = searchParams.get("runId");
+  const compareId = searchParams.get("compareId");
 
-  if (!runId) {
+  // Determine the directory and URL prefix based on parameter
+  let targetDir: string;
+  let urlPrefix: string;
+
+  if (compareId) {
+    targetDir = path.join(OUTPUT_DIR, "compare", compareId);
+    urlPrefix = `/output/compare/${compareId}`;
+  } else if (runId) {
+    targetDir = path.join(OUTPUT_DIR, runId);
+    urlPrefix = `/output/${runId}`;
+  } else {
     return NextResponse.json({ images: [] });
   }
 
   try {
-    const runDir = path.join(OUTPUT_DIR, runId);
-
-    if (!fs.existsSync(runDir)) {
+    if (!fs.existsSync(targetDir)) {
       return NextResponse.json({ images: [] });
     }
 
-    const files = fs.readdirSync(runDir);
+    const files = fs.readdirSync(targetDir);
     const images = files
       .filter((file) => file.endsWith(".png"))
-      .map((file) => `/output/${runId}/${file}`);
+      .map((file) => `${urlPrefix}/${file}`);
 
     return NextResponse.json({ images });
   } catch {

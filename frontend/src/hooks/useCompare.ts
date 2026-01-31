@@ -32,6 +32,7 @@ export interface CompareModelResult {
 }
 
 export interface CompareResult {
+  compareId: string;
   images: string[];
   models: {
     tree: CompareModelResult | null;

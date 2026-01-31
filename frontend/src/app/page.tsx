@@ -647,7 +647,10 @@ function HomeContent() {
 
             {/* Compare results */}
             {isCompareMode && compareResult && (
-              <CompareResults result={compareResult} />
+              <div className="grid grid-cols-2 xl:grid-cols-2 gap-6">
+                <CompareResults result={compareResult} />
+                {compareResult.compareId && <ImagesDisplay compareId={compareResult.compareId} />}
+              </div>
             )}
 
             {/* Training results */}
