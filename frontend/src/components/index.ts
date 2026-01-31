@@ -7,4 +7,4 @@ export { ModelParams } from './ModelParams';
 export { TrainButton } from './TrainButton';
 export { ResultsDisplay, ImagesDisplay } from './ResultsDisplay';
 export { ErrorDisplay } from './ErrorDisplay';
-export { CompareModelsTab, CompareButton, CompareResults, ModelHistorySelect } from './Compare';
+export { CompareModelsList, CompareButton, CompareResults, ModelRow } from './Compare';
