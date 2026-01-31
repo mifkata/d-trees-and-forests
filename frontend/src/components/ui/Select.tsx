@@ -11,11 +11,20 @@ const selectLabel = tv({
 
 const selectElement = tv({
   base: [
-    'block w-full rounded-lg border border-gray-300 bg-white px-3 py-2',
+    'block w-full rounded-lg border bg-white px-3 py-2',
     'text-gray-900 text-sm',
-    'focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500',
+    'focus:outline-none focus:ring-2 focus:border-blue-500',
     'disabled:opacity-50 disabled:cursor-not-allowed',
   ],
+  variants: {
+    error: {
+      true: 'border-red-500 focus:ring-red-500',
+      false: 'border-gray-300 focus:ring-blue-500',
+    },
+  },
+  defaultVariants: {
+    error: false,
+  },
 });
 
 interface SelectOption {
@@ -30,6 +39,7 @@ interface SelectProps {
   onChange: (value: string) => void;
   options: SelectOption[];
   disabled?: boolean;
+  error?: boolean;
   className?: string;
 }
 
@@ -40,6 +50,7 @@ export function Select({
   onChange,
   options,
   disabled,
+  error,
   className,
 }: SelectProps) {
   return (
@@ -54,7 +65,7 @@ export function Select({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         disabled={disabled}
-        className={selectElement()}
+        className={selectElement({ error })}
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>

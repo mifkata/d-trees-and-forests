@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, Suspense, useMemo } from "react";
+import { useState, useEffect, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useParamsCache, useTraining, useCompare } from "@/hooks";
 import {
@@ -14,7 +14,7 @@ import {
   ResultsDisplay,
   ImagesDisplay,
   ErrorDisplay,
-  CompareModelsTab,
+  CompareModelsList,
   CompareButton,
   CompareResults,
 } from "@/components";
@@ -46,7 +46,6 @@ interface RuntimeJson {
 
 type Mode = "train" | "compare";
 type TrainTab = "dataset" | "model";
-type CompareTab = "dataset" | "models";
 
 function HomeContent() {
   const {
@@ -70,16 +69,13 @@ function HomeContent() {
   // Persist tab states in localStorage
   const [mode, setModeState] = useState<Mode>("train");
   const [trainTab, setTrainTabState] = useState<TrainTab>("dataset");
-  const [compareTab, setCompareTabState] = useState<CompareTab>("dataset");
 
   // Load saved tab states on mount
   useEffect(() => {
     const savedMode = localStorage.getItem("tab_mode") as Mode | null;
     const savedTrainTab = localStorage.getItem("tab_train") as TrainTab | null;
-    const savedCompareTab = localStorage.getItem("tab_compare") as CompareTab | null;
     if (savedMode === "train" || savedMode === "compare") setModeState(savedMode);
     if (savedTrainTab === "dataset" || savedTrainTab === "model") setTrainTabState(savedTrainTab);
-    if (savedCompareTab === "dataset" || savedCompareTab === "models") setCompareTabState(savedCompareTab);
   }, []);
 
   const setMode = useCallback((newMode: Mode) => {
@@ -92,21 +88,18 @@ function HomeContent() {
     localStorage.setItem("tab_train", newTab);
   }, []);
 
-  const setCompareTab = useCallback((newTab: CompareTab) => {
-    setCompareTabState(newTab);
-    localStorage.setItem("tab_compare", newTab);
-  }, []);
-
   const router = useRouter();
   const searchParams = useSearchParams();
   const runId = searchParams.get("run_id");
 
   const isCompareMode = mode === "compare";
-  const isModelsTabActive = isCompareMode && compareTab === "models";
 
   const {
-    selection,
-    updateSelection,
+    models: compareModels,
+    removeModel,
+    updateModelType,
+    updateModelRun,
+    duplicateRunIds,
     datasetParams: compareDatasetParams,
     setDatasetParams: setCompareDatasetParams,
     resetDatasetParams: resetCompareDatasetParams,
@@ -115,43 +108,10 @@ function HomeContent() {
     compareError,
     runCompare,
     clearCompareResult,
-    isSelectionComplete,
-    historyTree,
-    historyForest,
-    historyGradient,
-    historyHistGradient,
+    canCompare,
+    history: compareHistory,
     isLoadingHistory,
-  } = useCompare({ dataset, isCompareMode, isModelsTabActive });
-
-  // Enrich compare result with names from history
-  const enrichedCompareResult = useMemo(() => {
-    if (!compareResult) return null;
-
-    const findName = (runId: string, history: typeof historyTree) =>
-      history.find(h => h.runId === runId)?.name;
-
-    return {
-      ...compareResult,
-      models: {
-        tree: compareResult.models.tree ? {
-          ...compareResult.models.tree,
-          name: findName(compareResult.models.tree.runId, historyTree),
-        } : null,
-        forest: compareResult.models.forest ? {
-          ...compareResult.models.forest,
-          name: findName(compareResult.models.forest.runId, historyForest),
-        } : null,
-        gradient: compareResult.models.gradient ? {
-          ...compareResult.models.gradient,
-          name: findName(compareResult.models.gradient.runId, historyGradient),
-        } : null,
-        'hist-gradient': compareResult.models['hist-gradient'] ? {
-          ...compareResult.models['hist-gradient'],
-          name: findName(compareResult.models['hist-gradient'].runId, historyHistGradient),
-        } : null,
-      },
-    };
-  }, [compareResult, historyTree, historyForest, historyGradient, historyHistGradient]);
+  } = useCompare({ dataset, isCompareMode });
 
   // Column selection clipboard (memory only, not persisted)
   const [columnClipboard, setColumnClipboard] = useState<ColumnClipboard | null>(null);
@@ -602,41 +562,31 @@ function HomeContent() {
               </ControlledTabs>
             </Card>
 
-            {/* Sub-tabs: Different for Train vs Compare */}
+            {/* Sub-tabs: Only for Train mode; Compare shows both sections together */}
             <Card>
               {isCompareMode ? (
-                <ControlledTabs
-                  tabs={[
-                    { id: "dataset", label: "Dataset" },
-                    { id: "models", label: "Models" },
-                  ]}
-                  activeTab={compareTab}
-                  onTabChange={(tab) => setCompareTab(tab as CompareTab)}
-                >
-                  {compareTab === "dataset" && (
-                    <CompareDatasetParams
-                      params={compareDatasetParams}
-                      dataset={dataset}
-                      onChange={setCompareDatasetParams}
-                      onReset={resetCompareDatasetParams}
-                      clipboard={columnClipboard}
-                      onCopy={(clipboard) => setColumnClipboard(clipboard)}
-                      onPaste={(ignore_columns) => setCompareDatasetParams({ ignore_columns })}
-                      hideColumns
-                    />
-                  )}
-                  {compareTab === "models" && (
-                    <CompareModelsTab
-                      selection={selection}
-                      onSelectionChange={updateSelection}
-                      historyTree={historyTree}
-                      historyForest={historyForest}
-                      historyGradient={historyGradient}
-                      historyHistGradient={historyHistGradient}
-                      isLoadingHistory={isLoadingHistory}
-                    />
-                  )}
-                </ControlledTabs>
+                <div className="space-y-6">
+                  <CompareDatasetParams
+                    params={compareDatasetParams}
+                    dataset={dataset}
+                    onChange={setCompareDatasetParams}
+                    onReset={resetCompareDatasetParams}
+                    clipboard={columnClipboard}
+                    onCopy={(clipboard) => setColumnClipboard(clipboard)}
+                    onPaste={(ignore_columns) => setCompareDatasetParams({ ignore_columns })}
+                    hideColumns
+                  />
+                  <hr className="border-gray-200" />
+                  <CompareModelsList
+                    models={compareModels}
+                    history={compareHistory}
+                    duplicateRunIds={duplicateRunIds}
+                    onRemoveModel={removeModel}
+                    onUpdateModelType={updateModelType}
+                    onUpdateModelRun={updateModelRun}
+                    isLoadingHistory={isLoadingHistory}
+                  />
+                </div>
               ) : (
                 <ControlledTabs
                   tabs={[
@@ -673,7 +623,7 @@ function HomeContent() {
               {isCompareMode ? (
                 <CompareButton
                   loading={isComparing}
-                  disabled={isComparing || !isSelectionComplete}
+                  disabled={isComparing || !canCompare}
                   onClick={runCompare}
                 />
               ) : (
@@ -695,10 +645,10 @@ function HomeContent() {
             )}
 
             {/* Compare results */}
-            {isCompareMode && enrichedCompareResult && (
+            {isCompareMode && compareResult && (
               <div className="grid grid-cols-2 xl:grid-cols-2 gap-6">
-                <CompareResults result={enrichedCompareResult} />
-                {enrichedCompareResult.compareId && <ImagesDisplay compareId={enrichedCompareResult.compareId} />}
+                <CompareResults result={compareResult} />
+                {compareResult.compareId && <ImagesDisplay compareId={compareResult.compareId} />}
               </div>
             )}
 
@@ -743,7 +693,7 @@ function HomeContent() {
             {isCompareMode && !isComparing && !compareError && !compareResult && (
               <Card>
                 <div className="text-center py-12 text-gray-500">
-                  <p>Select four models from history and click Compare</p>
+                  <p>Add models to compare and click Compare Models</p>
                 </div>
               </Card>
             )}

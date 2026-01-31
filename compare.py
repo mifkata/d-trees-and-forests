@@ -63,16 +63,15 @@ def load_runtime(run_id):
         return json.load(f)
 
 
-def validate_model_id(run_id, expected_model, expected_dataset):
-    """Validate a model run ID against expected model type and dataset.
+def validate_model_id(run_id, expected_dataset):
+    """Validate a model run ID and auto-detect model type.
 
     Args:
         run_id: Run identifier
-        expected_model: Expected model type (tree, forest, gradient-forest)
         expected_dataset: Expected dataset name (Iris, Income)
 
     Returns:
-        dict: Runtime configuration if valid
+        dict: Runtime configuration if valid (includes 'model' field with detected type)
 
     Raises:
         SystemExit if validation fails
@@ -95,11 +94,12 @@ def validate_model_id(run_id, expected_model, expected_dataset):
         print(f"  Found: {runtime.get('dataset')}")
         sys.exit(1)
 
-    # Validate model type
-    if runtime.get('model') != expected_model:
-        print(f"Error: Model type mismatch for run {run_id}")
-        print(f"  Expected: {expected_model}")
-        print(f"  Found: {runtime.get('model')}")
+    # Validate model type exists
+    model_type = runtime.get('model')
+    if model_type not in MODEL_TYPE_MAP.values():
+        print(f"Error: Unknown model type for run {run_id}")
+        print(f"  Found: {model_type}")
+        print(f"  Expected one of: {list(MODEL_TYPE_MAP.values())}")
         sys.exit(1)
 
     return runtime
@@ -220,14 +220,8 @@ def parse_args():
     )
     parser.add_argument("--dataset", type=str, choices=["Iris", "Income"], default="Iris",
                         help="Dataset to use (default: Iris)")
-    parser.add_argument("--tree", type=str, default=None,
-                        help="Run ID for decision tree model")
-    parser.add_argument("--forest", type=str, default=None,
-                        help="Run ID for random forest model")
-    parser.add_argument("--gradient", type=str, default=None,
-                        help="Run ID for gradient boosted model")
-    parser.add_argument("--hist-gradient", type=str, default=None,
-                        help="Run ID for hist gradient boosted model")
+    parser.add_argument("--models", type=str, default=None,
+                        help="Comma-separated run IDs (e.g., 1706540123,1706540456)")
     parser.add_argument("--mask", type=int, default=0,
                         help="Mask percentage for comparison (0-100)")
     parser.add_argument("--impute", action="store_true",
@@ -244,21 +238,13 @@ def parse_args():
 def main():
     args = parse_args()
 
-    # Check if any model IDs provided
-    hist_gradient = getattr(args, 'hist_gradient', None)
-    model_ids = {
-        "tree": args.tree,
-        "forest": args.forest,
-        "gradient": args.gradient,
-        "hist-gradient": hist_gradient
-    }
-    has_model_ids = any(v is not None for v in model_ids.values())
+    # Check if --models provided (model ID comparison mode)
+    if args.models:
+        # Parse comma-separated model IDs
+        model_ids = [mid.strip() for mid in args.models.split(',') if mid.strip()]
 
-    # If model IDs provided, validate and run comparison
-    if has_model_ids:
-        # All four model IDs are required for comparison mode
-        if not all(v is not None for v in model_ids.values()):
-            print("Error: All four model IDs (--tree, --forest, --gradient, --hist-gradient) are required")
+        if not model_ids:
+            print("Error: --models requires at least one run ID")
             sys.exit(1)
 
         # Generate or use provided compare_id
@@ -266,36 +252,35 @@ def main():
         print(f"Compare ID: {compare_id}", file=sys.stderr)
 
         # Validate all model IDs and collect runtime configs
-        runtimes = {}
-        for arg_name, run_id in model_ids.items():
-            expected_model = MODEL_TYPE_MAP[arg_name]
-            runtimes[arg_name] = validate_model_id(run_id, expected_model, args.dataset)
-            print(f"Validated {arg_name} model: {run_id}", file=sys.stderr)
+        runtimes = []
+        for run_id in model_ids:
+            runtime = validate_model_id(run_id, args.dataset)
+            model_type = runtime.get('model')
+            runtimes.append((run_id, model_type, runtime))
+            print(f"Validated {model_type} model: {run_id}", file=sys.stderr)
 
         # Extract ignore_columns from each model's runtime.json
         dataset_cls = getattr(Dataset, args.dataset)
         total_columns = len(dataset_cls._load_raw()[0].columns)
         all_columns = set(range(total_columns))
 
-        # Collect each model's used columns for reporting
-        model_columns = {}
-        for arg_name, runtime in runtimes.items():
+        # Print column info for each model
+        for run_id, model_type, runtime in runtimes:
             model_ignore_cols = set(runtime.get("datasetParams", {}).get("ignore_columns", []))
             model_used_cols = sorted(all_columns - model_ignore_cols)
-            model_columns[arg_name] = model_used_cols
-            print(f"  {arg_name} uses columns: {model_used_cols}", file=sys.stderr)
+            print(f"  {model_type} ({run_id}) uses columns: {model_used_cols}", file=sys.stderr)
 
         print(f"\nRunning comparison with mask={args.mask}%, impute={args.impute}", file=sys.stderr)
 
-        results = {}
+        results = []
         errors = []
 
-        for arg_name, run_id in model_ids.items():
+        for run_id, model_type, runtime in runtimes:
             output_dir = get_output_dir(run_id)
-            runtime = runtimes[arg_name]
 
             # Get this model's ignore_columns from its runtime.json
             model_ignore_cols = runtime.get("datasetParams", {}).get("ignore_columns", [])
+            model_used_cols = sorted(all_columns - set(model_ignore_cols))
 
             # Load dataset with THIS model's column configuration
             try:
@@ -306,14 +291,16 @@ def main():
                     ignore_columns=model_ignore_cols
                 )
             except Exception as e:
-                error_msg = f"{arg_name}: failed to load dataset - {e}"
+                error_msg = f"{model_type} ({run_id}): failed to load dataset - {e}"
                 print(f"  {error_msg}", file=sys.stderr)
                 errors.append(error_msg)
-                results[arg_name] = {
+                results.append({
                     "runId": run_id,
+                    "model": model_type,
+                    "columns": model_used_cols,
                     "trainAccuracy": None,
                     "compareAccuracy": None
-                }
+                })
                 continue
 
             # Get original training accuracy from result.json (most reliable source)
@@ -325,7 +312,7 @@ def main():
                         result_data = json.load(f)
                     train_accuracy = result_data.get('accuracy')
             except (json.JSONDecodeError, OSError) as e:
-                print(f"  Warning: Could not read result.json for {arg_name}: {e}", file=sys.stderr)
+                print(f"  Warning: Could not read result.json for {model_type}: {e}", file=sys.stderr)
 
             # Fallback: try parsing from .id filename if result.json failed
             if train_accuracy is None:
@@ -339,32 +326,34 @@ def main():
                             train_accuracy = int(score_str) / 1000000
                             break  # Use first .id file found
                 except (FileNotFoundError, ValueError, IndexError, OSError) as e:
-                    errors.append(f"{arg_name}: failed to read training accuracy - {e}")
+                    errors.append(f"{model_type} ({run_id}): failed to read training accuracy - {e}")
 
             # Load and evaluate the model on the dataset
             model_path = os.path.join(output_dir, 'model.pkl')
             try:
                 compare_accuracy, was_imputed = evaluate_model(model_path, X, y)
             except Exception as e:
-                error_msg = f"{arg_name}: failed to evaluate model - {e}"
+                error_msg = f"{model_type} ({run_id}): failed to evaluate model - {e}"
                 print(f"  {error_msg}", file=sys.stderr)
                 errors.append(error_msg)
                 compare_accuracy = None
                 was_imputed = False
 
-            results[arg_name] = {
+            results.append({
                 "runId": run_id,
+                "model": model_type,
+                "columns": model_used_cols,
                 "trainAccuracy": train_accuracy,
                 "compareAccuracy": compare_accuracy,
                 "imputed": was_imputed
-            }
+            })
 
             if compare_accuracy is not None and train_accuracy is not None:
                 ratio = compare_accuracy / train_accuracy
                 impute_note = " (imputed)" if was_imputed else ""
-                print(f"  {arg_name}: train={train_accuracy:.4f}, compare={compare_accuracy:.4f}, ratio={ratio:.4f}{impute_note}", file=sys.stderr)
+                print(f"  {model_type}: train={train_accuracy:.4f}, compare={compare_accuracy:.4f}, ratio={ratio:.4f}{impute_note}", file=sys.stderr)
             else:
-                print(f"  {arg_name}: error", file=sys.stderr)
+                print(f"  {model_type}: error", file=sys.stderr)
 
         # Check if any model failed
         if errors:
@@ -385,12 +374,10 @@ def main():
             Render.compare_accuracy_diff(results, "accuracy_diff.png")
             print(f"  Images saved to frontend/public/output/compare/{compare_id}/", file=sys.stderr)
 
-        # Output results as JSON
-        # Include per-model feature columns
+        # Output results as JSON (array format)
         print(json.dumps({
             "success": True,
             "compareId": compare_id,
-            "modelColumns": model_columns,
             "models": results
         }))
         return

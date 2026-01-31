@@ -11,10 +11,7 @@ const OUTPUT_DIR = path.join(process.cwd(), "public", "output");
 
 interface CompareRequest {
   dataset: string;
-  tree: string;
-  forest: string;
-  gradient: string;
-  'hist-gradient': string;
+  models: string[];  // Array of run IDs
   mask?: number;
   impute?: boolean;
   // ignore_columns is not used - determined from model's runtime.json
@@ -22,6 +19,8 @@ interface CompareRequest {
 
 interface ModelResult {
   runId: string;
+  model: 'tree' | 'forest' | 'gradient' | 'hist-gradient';
+  columns: number[];
   trainAccuracy: number;
   compareAccuracy: number;
   imputed?: boolean;
@@ -32,13 +31,7 @@ interface CompareResponse {
   data?: {
     compareId: string;
     images: string[];
-    modelColumns?: Record<string, number[]>;
-    models: {
-      tree: ModelResult | null;
-      forest: ModelResult | null;
-      gradient: ModelResult | null;
-      'hist-gradient': ModelResult | null;
-    };
+    models: ModelResult[];  // Array format
   };
   error?: {
     message: string;
@@ -120,32 +113,20 @@ async function executeScript(args: string[]): Promise<ScriptResult> {
   });
 }
 
-async function getModelAccuracy(runId: string): Promise<number | null> {
-  try {
-    const resultPath = path.join(OUTPUT_DIR, runId, "result.json");
-    const content = await fs.readFile(resultPath, "utf-8");
-    const result = JSON.parse(content);
-    return result.accuracy;
-  } catch {
-    return null;
-  }
-}
-
 export async function POST(
   request: NextRequest,
 ): Promise<NextResponse<CompareResponse>> {
   try {
     const body: CompareRequest = await request.json();
-    const { dataset, tree, forest, gradient, mask, impute } = body;
-    const histGradient = body['hist-gradient'];
+    const { dataset, models: modelIds, mask, impute } = body;
 
     // Validate required fields
-    if (!dataset || !tree || !forest || !gradient || !histGradient) {
+    if (!dataset || !modelIds || !Array.isArray(modelIds) || modelIds.length === 0) {
       return NextResponse.json(
         {
           success: false,
           error: {
-            message: "All model IDs (tree, forest, gradient, hist-gradient) are required",
+            message: "Dataset and at least one model ID are required",
             code: "INVALID_PARAMS",
           },
         },
@@ -157,14 +138,8 @@ export async function POST(
     const args = [
       "--dataset",
       dataset,
-      "--tree",
-      tree,
-      "--forest",
-      forest,
-      "--gradient",
-      gradient,
-      "--hist-gradient",
-      histGradient,
+      "--models",
+      modelIds.join(","),
     ];
 
     // Add optional mask parameter
@@ -238,9 +213,8 @@ export async function POST(
       );
     }
 
-    const models = compareOutput.models;
+    const modelResults = compareOutput.models as ModelResult[];
     const compareId = compareOutput.compareId;
-    const modelColumns = compareOutput.modelColumns;
 
     // Check for output images in compare directory
     const images: string[] = [];
@@ -262,32 +236,7 @@ export async function POST(
       data: {
         compareId,
         images,
-        modelColumns,
-        models: {
-          tree: models.tree ? {
-            runId: models.tree.runId,
-            trainAccuracy: models.tree.trainAccuracy,
-            compareAccuracy: models.tree.compareAccuracy,
-            imputed: models.tree.imputed,
-          } : null,
-          forest: models.forest ? {
-            runId: models.forest.runId,
-            trainAccuracy: models.forest.trainAccuracy,
-            compareAccuracy: models.forest.compareAccuracy,
-            imputed: models.forest.imputed,
-          } : null,
-          gradient: models.gradient ? {
-            runId: models.gradient.runId,
-            trainAccuracy: models.gradient.trainAccuracy,
-            compareAccuracy: models.gradient.compareAccuracy,
-            imputed: models.gradient.imputed,
-          } : null,
-          'hist-gradient': models['hist-gradient'] ? {
-            runId: models['hist-gradient'].runId,
-            trainAccuracy: models['hist-gradient'].trainAccuracy,
-            compareAccuracy: models['hist-gradient'].compareAccuracy,
-          } : null,
-        },
+        models: modelResults,
       },
     });
   } catch (error) {

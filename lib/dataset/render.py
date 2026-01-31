@@ -606,32 +606,38 @@ class Render:
         """Render bar chart comparing train vs compare accuracy for each model.
 
         Args:
-            models: Dict with keys 'tree', 'forest', 'gradient', 'hist-gradient', each containing
-                    'trainAccuracy' and 'compareAccuracy'
+            models: List of model results, each containing 'model', 'runId',
+                    'trainAccuracy', 'compareAccuracy', and optionally 'imputed'
             filename: Output filename
         """
-        cls.header(figsize=(12, 6))
+        if not models:
+            return
 
-        model_names = ['Decision Tree', 'Random Forest', 'Gradient Boosting', 'Hist Gradient']
-        model_keys = ['tree', 'forest', 'gradient', 'hist-gradient']
         colors = {'tree': 'forestgreen', 'forest': 'royalblue', 'gradient': 'darkorange', 'hist-gradient': 'purple'}
+        model_labels = {'tree': 'Tree', 'forest': 'Forest', 'gradient': 'Gradient', 'hist-gradient': 'Hist Grad'}
 
-        x = np.arange(len(model_names))
-        width = 0.35
+        cls.header(figsize=(max(10, len(models) * 2.5), 6))
 
+        # Build data from array
+        labels = []
         train_accs = []
         compare_accs = []
         bar_colors = []
 
-        for key in model_keys:
-            if key in models and models[key]:
-                train_accs.append(models[key].get('trainAccuracy', 0) or 0)
-                compare_accs.append(models[key].get('compareAccuracy', 0) or 0)
-                bar_colors.append(colors[key])
-            else:
-                train_accs.append(0)
-                compare_accs.append(0)
-                bar_colors.append('gray')
+        for m in models:
+            model_type = m.get('model', 'unknown')
+            run_id = m.get('runId', '')
+            short_id = run_id[-6:] if len(run_id) > 6 else run_id
+            label = f"{model_labels.get(model_type, model_type)}\n({short_id})"
+            if m.get('imputed'):
+                label += "\n[imputed]"
+            labels.append(label)
+            train_accs.append(m.get('trainAccuracy', 0) or 0)
+            compare_accs.append(m.get('compareAccuracy', 0) or 0)
+            bar_colors.append(colors.get(model_type, 'gray'))
+
+        x = np.arange(len(labels))
+        width = 0.35
 
         ax = plt.gca()
         bars1 = ax.bar(x - width/2, train_accs, width, label='Train Accuracy',
@@ -642,7 +648,7 @@ class Render:
         ax.set_ylabel('Accuracy', fontsize=12)
         ax.set_title('Model Accuracy Comparison: Training vs Current Settings', fontsize=14)
         ax.set_xticks(x)
-        ax.set_xticklabels(model_names)
+        ax.set_xticklabels(labels, fontsize=9)
         ax.set_ylim(0, 1.1)
         ax.legend(loc='upper right')
         ax.grid(True, alpha=0.3, axis='y')
@@ -662,7 +668,7 @@ class Render:
                 ax.annotate(f'{height:.2%}',
                            xy=(bar.get_x() + bar.get_width() / 2, height),
                            xytext=(0, 3), textcoords="offset points",
-                           ha='center', va='bottom', fontsize=9)
+                           ha='center', va='bottom', fontsize=9, fontweight='bold')
 
         cls.footer(filename)
 
@@ -671,46 +677,52 @@ class Render:
         """Render visual representation of accuracy differences (ratio chart).
 
         Args:
-            models: Dict with keys 'tree', 'forest', 'gradient', 'hist-gradient', each containing
-                    'trainAccuracy' and 'compareAccuracy'
+            models: List of model results, each containing 'model', 'runId',
+                    'trainAccuracy', 'compareAccuracy', and optionally 'imputed'
             filename: Output filename
         """
-        cls.header(figsize=(12, 6))
+        if not models:
+            return
 
-        model_names = ['Decision Tree', 'Random Forest', 'Gradient Boosting', 'Hist Gradient']
-        model_keys = ['tree', 'forest', 'gradient', 'hist-gradient']
         colors = {'tree': 'forestgreen', 'forest': 'royalblue', 'gradient': 'darkorange', 'hist-gradient': 'purple'}
+        model_labels = {'tree': 'Tree', 'forest': 'Forest', 'gradient': 'Gradient', 'hist-gradient': 'Hist Grad'}
 
+        cls.header(figsize=(12, max(4, len(models) * 1.2)))
+
+        # Build data from array
+        labels = []
         ratios = []
-        bar_colors = []
         ratio_colors = []
 
-        for key in model_keys:
-            if key in models and models[key]:
-                train_acc = models[key].get('trainAccuracy', 0) or 0
-                compare_acc = models[key].get('compareAccuracy', 0) or 0
-                if train_acc > 0:
-                    ratio = compare_acc / train_acc
-                else:
-                    ratio = 0
-                ratios.append(ratio)
-                bar_colors.append(colors[key])
-                # Color based on ratio
-                if ratio >= 1.0:
-                    ratio_colors.append('green')
-                elif ratio >= 0.95:
-                    ratio_colors.append('yellowgreen')
-                elif ratio >= 0.90:
-                    ratio_colors.append('orange')
-                else:
-                    ratio_colors.append('red')
+        for m in models:
+            model_type = m.get('model', 'unknown')
+            run_id = m.get('runId', '')
+            short_id = run_id[-6:] if len(run_id) > 6 else run_id
+            label = f"{model_labels.get(model_type, model_type)} ({short_id})"
+            if m.get('imputed'):
+                label += " [imputed]"
+            labels.append(label)
+
+            train_acc = m.get('trainAccuracy', 0) or 0
+            compare_acc = m.get('compareAccuracy', 0) or 0
+            if train_acc > 0:
+                ratio = compare_acc / train_acc
             else:
-                ratios.append(0)
-                bar_colors.append('gray')
-                ratio_colors.append('gray')
+                ratio = 0
+            ratios.append(ratio)
+
+            # Color based on ratio
+            if ratio >= 1.0:
+                ratio_colors.append('green')
+            elif ratio >= 0.95:
+                ratio_colors.append('yellowgreen')
+            elif ratio >= 0.90:
+                ratio_colors.append('orange')
+            else:
+                ratio_colors.append('red')
 
         ax = plt.gca()
-        x = np.arange(len(model_names))
+        x = np.arange(len(labels))
 
         bars = ax.barh(x, ratios, color=ratio_colors, edgecolor='black', height=0.6)
 
@@ -720,7 +732,7 @@ class Render:
         ax.set_xlabel('Accuracy Ratio (Compare / Train)', fontsize=12)
         ax.set_title('Accuracy Retention: How Well Models Generalize', fontsize=14)
         ax.set_yticks(x)
-        ax.set_yticklabels(model_names)
+        ax.set_yticklabels(labels, fontsize=9)
         ax.set_xlim(0, max(1.2, max(ratios) * 1.1) if ratios else 1.2)
         ax.legend(loc='lower right')
         ax.grid(True, alpha=0.3, axis='x')

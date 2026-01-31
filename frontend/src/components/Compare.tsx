@@ -1,7 +1,7 @@
 'use client';
 
 import { Button, Select, Card, CardHeader, CardTitle, Badge } from './ui';
-import type { CompareSelection, CompareResult, HistoryRun } from '@/hooks/useCompare';
+import type { CompareModelEntry, CompareResult, HistoryRun } from '@/hooks/useCompare';
 
 function formatTimeAgo(timestamp: number): string {
   const now = Math.floor(Date.now() / 1000);
@@ -14,23 +14,56 @@ function formatTimeAgo(timestamp: number): string {
   return new Date(timestamp * 1000).toLocaleDateString();
 }
 
-interface ModelHistorySelectProps {
-  label: string;
-  runs: HistoryRun[];
-  value: string | null;
-  onChange: (value: string | null) => void;
-  isLoading?: boolean;
+function getModelLabel(model: string): string {
+  switch (model) {
+    case 'tree': return 'Tree';
+    case 'forest': return 'Forest';
+    case 'gradient': return 'Gradient';
+    case 'hist-gradient': return 'Hist Gradient';
+    default: return model;
+  }
 }
 
-export function ModelHistorySelect({
-  label,
-  runs,
-  value,
-  onChange,
+type ModelType = 'tree' | 'forest' | 'gradient' | 'hist-gradient';
+
+const MODEL_TYPE_OPTIONS = [
+  { value: '', label: 'Select model...' },
+  { value: 'tree', label: 'Decision Tree' },
+  { value: 'forest', label: 'Random Forest' },
+  { value: 'gradient', label: 'Gradient Boosting' },
+  { value: 'hist-gradient', label: 'Hist Gradient' },
+];
+
+interface ModelRowProps {
+  allRuns: HistoryRun[];
+  modelType: ModelType | null;
+  runId: string | null;
+  onModelTypeChange: (modelType: ModelType | null) => void;
+  onRunChange: (runId: string | null) => void;
+  onRemove: () => void;
+  isDuplicate: boolean;
+  isLoading?: boolean;
+  canRemove?: boolean;
+}
+
+export function ModelRow({
+  allRuns,
+  modelType,
+  runId,
+  onModelTypeChange,
+  onRunChange,
+  onRemove,
+  isDuplicate,
   isLoading,
-}: ModelHistorySelectProps) {
+  canRemove = true,
+}: ModelRowProps) {
+  // Filter runs by selected model type
+  const filteredRuns = modelType
+    ? allRuns.filter((run) => run.model === modelType)
+    : [];
+
   // Sort runs: named first (alphabetically with numeric), then unnamed (alphabetically by ID)
-  const sortedRuns = [...runs].sort((a, b) => {
+  const sortedRuns = [...filteredRuns].sort((a, b) => {
     const aHasName = Boolean(a.name);
     const bHasName = Boolean(b.name);
 
@@ -44,8 +77,8 @@ export function ModelHistorySelect({
     return aLabel.localeCompare(bLabel, undefined, { numeric: true, sensitivity: 'base' });
   });
 
-  const options = [
-    { value: '', label: 'Select run...' },
+  const runOptions = [
+    { value: '', label: modelType ? 'Select run...' : 'Select model first' },
     ...sortedRuns.map((run) => ({
       value: run.runId,
       label: `${run.name ? run.name.replace(/_/g, ' ') : run.runId} - ${(run.accuracy * 100).toFixed(2)}% - ${formatTimeAgo(run.timestamp)}`,
@@ -53,85 +86,117 @@ export function ModelHistorySelect({
   ];
 
   return (
-    <div className="flex items-center gap-4">
-      <label className="text-sm font-medium text-gray-700 w-40">{label}:</label>
-      <div className="flex-1">
+    <div className="flex items-center gap-2">
+      <div className="w-44 shrink-0">
         <Select
-          options={options}
-          value={value || ''}
-          onChange={(val) => onChange(val || null)}
+          options={MODEL_TYPE_OPTIONS}
+          value={modelType || ''}
+          onChange={(val) => onModelTypeChange((val || null) as ModelType | null)}
           disabled={isLoading}
         />
       </div>
-      {value && (
-        <Badge variant="success" className="ml-2">
-          Selected
+      <div className="flex-1">
+        <Select
+          options={runOptions}
+          value={runId || ''}
+          onChange={(val) => onRunChange(val || null)}
+          disabled={isLoading || !modelType}
+          error={isDuplicate}
+        />
+      </div>
+      {isDuplicate && (
+        <Badge variant="error" className="shrink-0">
+          Duplicate
         </Badge>
+      )}
+      {canRemove ? (
+        <button
+          type="button"
+          onClick={onRemove}
+          className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+          aria-label="Remove model"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+          </svg>
+        </button>
+      ) : (
+        <div className="w-9" /> // Spacer to maintain alignment
       )}
     </div>
   );
 }
 
-interface CompareModelsTabProps {
-  selection: CompareSelection;
-  onSelectionChange: (key: keyof CompareSelection, value: string | null) => void;
-  historyTree: HistoryRun[];
-  historyForest: HistoryRun[];
-  historyGradient: HistoryRun[];
-  historyHistGradient: HistoryRun[];
+interface CompareModelsListProps {
+  models: CompareModelEntry[];
+  history: HistoryRun[];
+  duplicateRunIds: Set<string>;
+  onRemoveModel: (id: string) => void;
+  onUpdateModelType: (id: string, modelType: CompareModelEntry['modelType']) => void;
+  onUpdateModelRun: (id: string, runId: string | null) => void;
   isLoadingHistory: boolean;
 }
 
-export function CompareModelsTab({
-  selection,
-  onSelectionChange,
-  historyTree,
-  historyForest,
-  historyGradient,
-  historyHistGradient,
+export function CompareModelsList({
+  models,
+  history,
+  duplicateRunIds,
+  onRemoveModel,
+  onUpdateModelType,
+  onUpdateModelRun,
   isLoadingHistory,
-}: CompareModelsTabProps) {
+}: CompareModelsListProps) {
+  // Separate filled models from the empty one at the end
+  const filledModels = models.filter((m) => m.runId !== null);
+  const emptyModel = models.find((m) => m.runId === null);
+
   return (
-    <div className="space-y-4">
-      <p className="text-sm text-gray-600 mb-4">
-        Select one trained model of each type to compare their performance.
-      </p>
+    <div className="space-y-3">
+      <h4 className="text-sm font-medium text-gray-700">Models to Compare</h4>
 
-      <ModelHistorySelect
-        label="Decision Tree"
-        runs={historyTree}
-        value={selection.tree}
-        onChange={(val) => onSelectionChange('tree', val)}
-        isLoading={isLoadingHistory}
-      />
+      <div className="space-y-2">
+        {/* Filled models (can be removed) */}
+        {filledModels.map((model) => (
+          <ModelRow
+            key={model.id}
+            allRuns={history}
+            modelType={model.modelType}
+            runId={model.runId}
+            onModelTypeChange={(modelType) => onUpdateModelType(model.id, modelType)}
+            onRunChange={(runId) => onUpdateModelRun(model.id, runId)}
+            onRemove={() => onRemoveModel(model.id)}
+            isDuplicate={model.runId !== null && duplicateRunIds.has(model.runId)}
+            isLoading={isLoadingHistory}
+            canRemove={true}
+          />
+        ))}
 
-      <ModelHistorySelect
-        label="Random Forest"
-        runs={historyForest}
-        value={selection.forest}
-        onChange={(val) => onSelectionChange('forest', val)}
-        isLoading={isLoadingHistory}
-      />
+        {/* Always show one empty row for adding new models */}
+        {emptyModel && (
+          <ModelRow
+            key={emptyModel.id}
+            allRuns={history}
+            modelType={emptyModel.modelType}
+            runId={emptyModel.runId}
+            onModelTypeChange={(modelType) => onUpdateModelType(emptyModel.id, modelType)}
+            onRunChange={(runId) => onUpdateModelRun(emptyModel.id, runId)}
+            onRemove={() => {}}
+            isDuplicate={false}
+            isLoading={isLoadingHistory}
+            canRemove={false}
+          />
+        )}
+      </div>
 
-      <ModelHistorySelect
-        label="Gradient Boosting"
-        runs={historyGradient}
-        value={selection.gradient}
-        onChange={(val) => onSelectionChange('gradient', val)}
-        isLoading={isLoadingHistory}
-      />
-
-      <ModelHistorySelect
-        label="Hist Gradient Boosting"
-        runs={historyHistGradient}
-        value={selection['hist-gradient']}
-        onChange={(val) => onSelectionChange('hist-gradient', val)}
-        isLoading={isLoadingHistory}
-      />
-
-      {!isLoadingHistory && historyTree.length === 0 && historyForest.length === 0 && historyGradient.length === 0 && historyHistGradient.length === 0 && (
-        <p className="text-sm text-amber-600 mt-4">
+      {!isLoadingHistory && history.length === 0 && (
+        <p className="text-sm text-amber-600 mt-2">
           No training history found for this dataset. Train some models first.
+        </p>
+      )}
+
+      {duplicateRunIds.size > 0 && (
+        <p className="text-sm text-red-600 mt-2">
+          Remove duplicate selections to enable comparison.
         </p>
       )}
     </div>
@@ -199,21 +264,16 @@ function getBorderColor(ratio: number): string {
 }
 
 function ModelAccuracyCard({
-  label,
   model
 }: {
-  label: string;
-  model: { trainAccuracy: number; compareAccuracy: number; runId: string; name?: string }
+  model: { model: string; runId: string; trainAccuracy: number; compareAccuracy: number; imputed?: boolean }
 }) {
   const ratio = model.compareAccuracy / model.trainAccuracy;
-  const displayName = model.name ? model.name.replace(/_/g, ' ') : null;
   return (
     <div className={`p-3 rounded-lg border ${getBoxBackground(ratio)} ${getBorderColor(ratio)}`}>
       <div className="text-center mb-2">
-        <p className="text-sm font-medium text-gray-700">{label}</p>
-        <p className="text-xs text-gray-500 font-mono">
-          {displayName || model.runId}
-        </p>
+        <p className="text-sm font-medium text-gray-700">{getModelLabel(model.model)}</p>
+        <p className="text-xs text-gray-500 font-mono">{model.runId}</p>
       </div>
       <div className="space-y-1 text-sm">
         <div className="flex justify-between">
@@ -228,6 +288,7 @@ function ModelAccuracyCard({
           <span className="text-gray-500">Diff:</span>
           <span className={`font-medium ${getRatioColor(ratio)}`}>
             {getRatioIcon(ratio)} {formatRatio(ratio)}
+            {model.imputed && <span className="text-gray-400 ml-1">(imputed)</span>}
           </span>
         </div>
       </div>
@@ -245,21 +306,11 @@ export function CompareResults({ result }: CompareResultsProps) {
       <div>
         <h4 className="text-sm font-medium text-gray-700 mb-3">Model Accuracies</h4>
         <div className="space-y-4">
-          {result.models.tree && (
-            <ModelAccuracyCard label="Decision Tree" model={result.models.tree} />
-          )}
-          {result.models.forest && (
-            <ModelAccuracyCard label="Random Forest" model={result.models.forest} />
-          )}
-          {result.models.gradient && (
-            <ModelAccuracyCard label="Gradient Boosting" model={result.models.gradient} />
-          )}
-          {result.models['hist-gradient'] && (
-            <ModelAccuracyCard label="Hist Gradient" model={result.models['hist-gradient']} />
-          )}
+          {result.models.map((model) => (
+            <ModelAccuracyCard key={model.runId} model={model} />
+          ))}
         </div>
       </div>
     </Card>
   );
 }
-

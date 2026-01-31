@@ -1,24 +1,28 @@
 # Frontend Compare
 
 ## Overview
-Compare mode allows users to select four pre-trained models (tree, forest, gradient, hist-gradient) from training history and run a comparison benchmark with configurable mask rate. This integrates with the `compare.py` script.
+Compare mode allows users to select an arbitrary number of pre-trained models from training history and run a comparison benchmark with configurable mask rate. This integrates with the `compare.py` script.
 
 ## Requirements
 - Compare appears as a mode tab alongside "Train" at the top of the form
 - When Compare mode is active:
   - Model selector is hidden
   - Dataset selector extends to full width
-  - Two sub-tabs: "Dataset" and "Models"
-  - Dataset tab shows mask slider, impute checkbox (NO split slider, NO column selection)
-  - Models tab shows four model selectors from history
+  - No sub-tabs (unlike Train mode) - all content shown together
+  - Dataset params shown at top (mask slider, impute checkbox - NO split slider, NO column selection)
+  - Horizontal divider separates dataset params from models list
+  - Models list shown below with "Add Model" button
   - Form submits to compare API with mask param (ignore_columns determined from model's runtime.json)
-- User selects one model of each type from history:
-  - Decision Tree (required)
-  - Random Forest (required)
-  - Gradient Boosting (required)
-  - Hist Gradient Boosting (required)
+- Users can add any number of models to compare (minimum 1 to submit)
+- An empty model row is always visible at the bottom for adding new models
+- When a model is selected in the empty row, a new empty row appears automatically
+- Filled model rows can be removed via a delete button (empty row cannot be removed)
+- Empty rows are ignored when submitting comparison
+- Users CAN select the same model type multiple times, but duplicate selections are marked as errors
+- Only unique model selections are valid (same run ID cannot be selected twice)
 - Only runs matching the selected dataset are shown in history dropdowns
-- Compare button is disabled until all four models are selected
+- Compare button is disabled until at least one model is selected and no duplicates exist
+- Form state (added models and their selections) persisted to localStorage
 - Comparison evaluates models on the full dataset (no train/test split)
 - Results display comparison visualization from `compare.py`
 - Triggering Compare generates a new `compare_id` (timestamp-based)
@@ -43,23 +47,26 @@ Compare mode allows users to select four pre-trained models (tree, forest, gradi
 └─────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────┐
-│ [Dataset] [Models]                      │  <- Sub-tabs
-├─────────────────────────────────────────┤
-│ Dataset Tab:                            │
+│ Dataset Params:                         │  <- No tabs, shown directly
 │   Mask Rate: [====○====] 30%            │
 │   ☑ Impute missing values               │
 │   (No column selection - uses model's   │
 │    trained columns from runtime.json)   │
-│                                         │
-│ Models Tab:                             │
-│   Decision Tree:       [Select run... ▼]   │
-│   Random Forest:       [Select run... ▼]   │
-│   Gradient Boosting:   [Select run... ▼]   │
-│   Hist Gradient:       [Select run... ▼]   │
+├─────────────────────────────────────────┤  <- Horizontal divider
+│ Models to Compare                       │
+│   ┌────────────┐ ┌──────────────────┐   │
+│   │ [Tree ▼]   │ │ [my_run - 96%  ▼]│[×]│  <- Filled row (can remove)
+│   └────────────┘ └──────────────────┘   │
+│   ┌────────────┐ ┌──────────────────┐   │
+│   │ [Forest ▼] │ │ [other - 94%   ▼]│[×]│  <- Another filled row
+│   └────────────┘ └──────────────────┘   │
+│   ┌────────────┐ ┌──────────────────┐   │
+│   │ [Select...▼│ │ [Select model.. ▼]│   │  <- Empty row (always present, no ×)
+│   └────────────┘ └──────────────────┘   │
 └─────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────┐
-│ [Compare Models]                        │
+│ [Compare Models]                        │  <- Disabled if no models or duplicates
 └─────────────────────────────────────────┘
 ```
 
@@ -70,7 +77,7 @@ Compare mode allows users to select four pre-trained models (tree, forest, gradi
 └──────────────────┘ └──────────────────┘
 
 ┌─────────────────────────────────────────┐
-│ [Dataset] [Model]                       │  <- Different sub-tabs
+│ [Dataset] [Model]                       │  <- Sub-tabs (only in Train mode)
 ├─────────────────────────────────────────┤
 │ (existing Dataset/Model params)         │
 └─────────────────────────────────────────┘
@@ -91,46 +98,62 @@ Compare mode allows users to select four pre-trained models (tree, forest, gradi
 - Props: `params`, `dataset`, `onChange`, `onReset`, `hideColumns`
 - When `hideColumns={true}`, the Feature Columns section is not rendered
 
-### CompareModelsTab
-- Content for the Models sub-tab in Compare mode
-- Shows four model selectors (tree, forest, gradient, hist-gradient)
-- Each selector shows history runs filtered by current dataset
-- Props: `dataset`, `selection`, `onSelectionChange`, `historyTree`, `historyForest`, `historyGradient`, `historyHistGradient`, `isLoadingHistory`
+### CompareModelsList
+- Content for the Models section in Compare mode
+- Shows filled model rows followed by one empty row for adding new models
+- Empty rows are filtered out when displaying filled models
+- Props: `models`, `history`, `duplicateRunIds`, `onRemoveModel`, `onUpdateModelType`, `onUpdateModelRun`, `isLoadingHistory`
 
-### ModelHistorySelect
-- Dropdown showing runs from training history
+### ModelRow
+- Individual model selection row with two dropdowns and optional remove button
+- First dropdown: Model type (Tree, Forest, Gradient, Hist Gradient)
+- Second dropdown: Runs filtered by selected model type and dataset
+- When model type changes, run selection is cleared
+- Second dropdown disabled until model type is selected
+- Shows error state if the selected run ID is duplicated elsewhere
+- Remove button only shown for filled rows (`canRemove` prop)
+- Empty row has a spacer instead of remove button to maintain alignment
+- Props: `allRuns`, `modelType`, `runId`, `onModelTypeChange`, `onRunChange`, `onRemove`, `isDuplicate`, `isLoading`, `canRemove`
+
+### Run Dropdown
+- Shows runs filtered by selected model type
 - Displays: "Name or Run ID - Accuracy% - time ago"
   - If run has a custom name, displays name with underscores as spaces
   - Otherwise displays run ID
 - **Sorting**: Named runs first (alphabetically), then unnamed runs (alphabetically by ID)
-  - This ensures named runs appear at the top, not buried below numeric IDs
-- Filters by dataset and model type
-- Props: `label`, `runs`, `value`, `onChange`, `isLoading`
+- Shows "Select model first" placeholder when no model type selected
+- `error` prop: When true, shows error styling (red border) for duplicate selection
 
 ### CompareButton
 - Submit button for Compare mode
-- Disabled until all four models are selected
+- Disabled if:
+  - No models are added
+  - No models are selected (all dropdowns empty)
+  - Duplicate selections exist
 - Shows "Compare Models" text
 - Shows spinner when comparing
 - Props: `loading`, `disabled`, `onClick`
 
 ### CompareLoadingState
 - Displayed when comparison is in progress (`isComparing` is true) and no result yet
-- Replaces the "Select four models from history and click Compare" empty state
+- Replaces the "Add models and click Compare" empty state
 - Shows centered spinner with "Loading..." text
 - Card container matching the empty state styling
 
 ### CompareResults
-- Displays accuracy stats for all four models in a card
+- Displays accuracy stats for all compared models in a card
 - Model accuracy cards displayed in a vertical column layout (stacked)
+- Displays models in the order they were selected (matches API response order)
 - Each model card shows:
+  - Model type (tree, forest, gradient, hist-gradient)
+  - Run ID
   - Training accuracy (original accuracy when model was trained)
-  - Compare accuracy (accuracy with current mask/impute/ignore_columns)
+  - Compare accuracy (accuracy with current mask/impute settings)
   - Accuracy ratio (compare/train) with visual indicator:
     - Green (↑): ratio >= 0.99 (performance maintained or improved)
     - Yellow (→): ratio >= 0.95 (slight degradation)
     - Red (↓): ratio < 0.95 (significant degradation)
-- Props: `result` (includes `compareId` field)
+- Props: `result` (includes `compareId` field and `models` array)
 - Note: Visuals are shown in a separate `ImagesDisplay` component in the right column
 
 ## State Management
@@ -139,8 +162,7 @@ Compare mode allows users to select four pre-trained models (tree, forest, gradi
 ```typescript
 interface CompareState {
   mode: 'train' | 'compare';
-  compareTab: 'dataset' | 'models';
-  selection: CompareSelection;
+  models: CompareModelEntry[];  // Dynamic list of model selections
   datasetParams: {
     mask: number;
     impute: boolean;
@@ -148,11 +170,29 @@ interface CompareState {
   };
 }
 
-interface CompareSelection {
-  tree: string | null;
-  forest: string | null;
-  gradient: string | null;
-  'hist-gradient': string | null;
+// Each entry in the models array
+interface CompareModelEntry {
+  id: string;       // Unique key for React (e.g., UUID or timestamp)
+  modelType: 'tree' | 'forest' | 'gradient' | 'hist-gradient' | null;  // Selected model type
+  runId: string | null;  // Selected run ID, null if not yet selected
+}
+```
+
+### Duplicate Detection
+```typescript
+// Helper to find duplicate run IDs
+function getDuplicateRunIds(models: CompareModelEntry[]): Set<string> {
+  const seen = new Set<string>();
+  const duplicates = new Set<string>();
+  for (const model of models) {
+    if (model.runId) {
+      if (seen.has(model.runId)) {
+        duplicates.add(model.runId);
+      }
+      seen.add(model.runId);
+    }
+  }
+  return duplicates;
 }
 ```
 
@@ -161,17 +201,13 @@ interface CompareSelection {
 interface CompareResult {
   compareId: string;  // Unique ID for this comparison run
   images: string[];   // Paths to generated images
-  modelColumns?: Record<string, number[]>;  // Per-model column indices used
-  models: {
-    tree: CompareModelResult | null;
-    forest: CompareModelResult | null;
-    gradient: CompareModelResult | null;
-    'hist-gradient': CompareModelResult | null;
-  };
+  models: CompareModelResult[];  // Array of results (order matches input)
 }
 
 interface CompareModelResult {
   runId: string;
+  model: 'tree' | 'forest' | 'gradient' | 'hist-gradient';  // Auto-detected type
+  columns: number[];  // Column indices used for this model
   trainAccuracy: number;
   compareAccuracy: number;
   imputed?: boolean;  // True if automatic imputation was applied
@@ -187,10 +223,7 @@ API route: `POST /api/compare`
 ```json
 {
   "dataset": "Iris",
-  "tree": "1706540123",
-  "forest": "1706540456",
-  "gradient": "1706540789",
-  "hist-gradient": "1706541000",
+  "models": ["1706540123", "1706540456", "1706540789"],
   "mask": 30,
   "impute": true
 }
@@ -201,8 +234,8 @@ Note: `ignore_columns` is NOT sent - each model uses its own column configuratio
 **Backend Execution:**
 ```bash
 python compare.py --dataset Iris \
-  --tree 1706540123 --forest 1706540456 --gradient 1706540789 \
-  --hist-gradient 1706541000 --mask 30 --impute --images
+  --models 1706540123,1706540456,1706540789 \
+  --mask 30 --impute --images
 ```
 
 **Response:**
@@ -215,23 +248,40 @@ python compare.py --dataset Iris \
       "/output/compare/1706540999/accuracy_bars.png",
       "/output/compare/1706540999/accuracy_diff.png"
     ],
-    "modelColumns": {
-      "tree": [0, 2, 3],
-      "forest": [2, 3],
-      "gradient": [0, 2, 3]
-    },
-    "models": {
-      "tree": { "runId": "1706540123", "trainAccuracy": 0.96, "compareAccuracy": 0.92, "imputed": false },
-      "forest": { "runId": "1706540456", "trainAccuracy": 0.98, "compareAccuracy": 0.95, "imputed": false },
-      "gradient": { "runId": "1706540789", "trainAccuracy": 0.97, "compareAccuracy": 0.94, "imputed": true },
-      "hist-gradient": { "runId": "1706541000", "trainAccuracy": 0.97, "compareAccuracy": 0.93, "imputed": false }
-    }
+    "models": [
+      {
+        "runId": "1706540123",
+        "model": "tree",
+        "columns": [0, 2, 3],
+        "trainAccuracy": 0.96,
+        "compareAccuracy": 0.92,
+        "imputed": false
+      },
+      {
+        "runId": "1706540456",
+        "model": "forest",
+        "columns": [2, 3],
+        "trainAccuracy": 0.98,
+        "compareAccuracy": 0.95,
+        "imputed": false
+      },
+      {
+        "runId": "1706540789",
+        "model": "gradient",
+        "columns": [0, 2, 3],
+        "trainAccuracy": 0.97,
+        "compareAccuracy": 0.94,
+        "imputed": true
+      }
+    ]
   }
 }
 ```
 
-- `modelColumns`: Per-model array of column indices used for evaluation
-- `imputed`: True if model couldn't handle NaN values and automatic imputation was applied
+- `models`: Array of results in same order as request
+  - `model`: Model type auto-detected from runtime.json
+  - `columns`: Array of column indices used for this model's evaluation
+  - `imputed`: True if model couldn't handle NaN values and automatic imputation was applied
 
 ### Images Endpoint (Extended)
 API route: `GET /api/images`
@@ -251,27 +301,36 @@ Supports two modes:
 
 ## History Filtering
 
-Each ModelHistorySelect fetches from `/api/history` with filters:
+A single API call fetches all runs for the current dataset:
 
-| Model Type | API Call |
-|------------|----------|
-| Decision Tree | `/api/history?model=tree&dataset=Iris` |
-| Random Forest | `/api/history?model=forest&dataset=Iris` |
-| Gradient Boosting | `/api/history?model=gradient&dataset=Iris` |
-| Hist Gradient Boosting | `/api/history?model=hist-gradient&dataset=Iris` |
+| API Call | Description |
+|----------|-------------|
+| `/api/history?dataset=Iris` | All models for Iris dataset |
+| `/api/history?dataset=Income` | All models for Income dataset |
+
+Client-side filtering: The run dropdown filters the fetched history by the selected model type. When user selects "Tree" in the first dropdown, only tree runs appear in the second dropdown.
 
 ## Implementation Details
 
 - **Mode Persistence**: Active mode (train/compare) saved to localStorage as `tab_mode`
-- **Tab Persistence**: Active sub-tabs saved to localStorage:
+- **Tab Persistence**: Active sub-tab saved to localStorage:
   - Train mode: `tab_train` (dataset/model)
-  - Compare mode: `tab_compare` (dataset/models)
-- **Selection Persistence**: Selected model IDs saved per dataset
-- **Validation**: All four models must be from same dataset
+  - Compare mode: No tabs (content shown together)
+- **Models Persistence**: The entire `models` array (including entry IDs and selections) saved to localStorage as `compare_models_{dataset}` (e.g., `compare_models_Iris`)
+  - On page load, restore from localStorage
+  - On dataset change, load that dataset's saved models (or empty array if none)
+  - On model add/remove/change, save to localStorage immediately
+- **Validation**:
+  - At least one model must be selected to enable Compare button
+  - No duplicate run IDs allowed (duplicates shown with error styling)
 - **Error Handling**: Show error if selected run no longer exists
-- **Lazy History Loading**: History is fetched only when Compare mode Models tab is opened
-- **History Refresh**: Re-fetch history each time Models tab is activated
+- **History Loading**: History is fetched when Compare mode is active
+- **History Refresh**: Re-fetch history when entering Compare mode or changing dataset
 - **Dataset Params**: Mask and impute are separate from Train mode params (ignore_columns not used in Compare)
+- **Dataset Change Behavior**: When dataset changes:
+  - Save current models to `compare_models_{oldDataset}`
+  - Load models from `compare_models_{newDataset}` (or empty array)
+  - Re-fetch history for new dataset
 
 ## Related specs
 - [frontend/Layout](Layout.md) - Page structure

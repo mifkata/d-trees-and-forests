@@ -49,8 +49,18 @@ Visualization utilities for model analysis. Generates matplotlib plots for featu
 |--------|-------------|
 | `compare_accuracy(mask_values, results, colors, filename)` | Accuracy comparison line plot |
 | `compare_accuracy_impute(mask_values, results, colors, filename)` | Accuracy comparison with impute variants |
-| `compare_accuracy_bars(models, filename)` | Bar chart comparing train vs compare accuracy for all 4 models (tree, forest, gradient, hist-gradient) |
-| `compare_accuracy_diff(models, filename)` | Accuracy ratio chart for all 4 models |
+| `compare_accuracy_bars(models, filename)` | Bar chart comparing train vs compare accuracy for all compared models (array format) |
+| `compare_accuracy_diff(models, filename)` | Accuracy ratio chart for all compared models (array format) |
+
+**Note**: `compare_accuracy_bars` and `compare_accuracy_diff` accept an array of model results:
+```python
+[
+  {"model": "tree", "runId": "123", "trainAccuracy": 0.96, "compareAccuracy": 0.92, "imputed": False},
+  {"model": "forest", "runId": "456", "trainAccuracy": 0.98, "compareAccuracy": 0.95, "imputed": False},
+  ...
+]
+```
+The charts dynamically size to show all compared models with their run IDs and imputation status.
 
 ## Implementation Details
 - **Libraries**: matplotlib, seaborn, sklearn.tree.plot_tree, sklearn.inspection (PartialDependenceDisplay, DecisionBoundaryDisplay)

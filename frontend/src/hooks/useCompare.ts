@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { DatasetId } from '@/types/dataset';
 import type { TrainError } from '@/types/api';
 
-export interface CompareSelection {
-  tree: string | null;
-  forest: string | null;
-  gradient: string | null;
-  'hist-gradient': string | null;
+// Each entry in the models array for compare selection
+export interface CompareModelEntry {
+  id: string;       // Unique key for React (e.g., UUID or timestamp)
+  modelType: 'tree' | 'forest' | 'gradient' | 'hist-gradient' | null;  // Selected model type
+  runId: string | null;  // Selected run ID, null if not yet selected
 }
 
 export interface CompareDatasetParams {
@@ -28,7 +28,8 @@ export interface HistoryRun {
 
 export interface CompareModelResult {
   runId: string;
-  name?: string;
+  model: 'tree' | 'forest' | 'gradient' | 'hist-gradient';
+  columns: number[];
   trainAccuracy: number;
   compareAccuracy: number;
   imputed?: boolean;
@@ -37,25 +38,20 @@ export interface CompareModelResult {
 export interface CompareResult {
   compareId: string;
   images: string[];
-  modelColumns?: Record<string, number[]>;
-  models: {
-    tree: CompareModelResult | null;
-    forest: CompareModelResult | null;
-    gradient: CompareModelResult | null;
-    'hist-gradient': CompareModelResult | null;
-  };
+  models: CompareModelResult[];
 }
 
 interface UseCompareOptions {
   dataset: DatasetId;
   isCompareMode: boolean;
-  isModelsTabActive: boolean;
 }
 
 interface UseCompareReturn {
-  selection: CompareSelection;
-  setSelection: (selection: CompareSelection) => void;
-  updateSelection: (key: keyof CompareSelection, value: string | null) => void;
+  models: CompareModelEntry[];
+  removeModel: (id: string) => void;
+  updateModelType: (id: string, modelType: CompareModelEntry['modelType']) => void;
+  updateModelRun: (id: string, runId: string | null) => void;
+  duplicateRunIds: Set<string>;
   datasetParams: CompareDatasetParams;
   setDatasetParams: (params: Partial<CompareDatasetParams>) => void;
   resetDatasetParams: () => void;
@@ -64,15 +60,12 @@ interface UseCompareReturn {
   compareError: TrainError | null;
   runCompare: () => Promise<void>;
   clearCompareResult: () => void;
-  isSelectionComplete: boolean;
-  historyTree: HistoryRun[];
-  historyForest: HistoryRun[];
-  historyGradient: HistoryRun[];
-  historyHistGradient: HistoryRun[];
+  canCompare: boolean;
+  history: HistoryRun[];
   isLoadingHistory: boolean;
 }
 
-const COMPARE_SELECTION_KEY = 'compare_selection';
+const COMPARE_MODELS_KEY = 'compare_models';
 const COMPARE_PARAMS_KEY = 'compare_params';
 
 const DEFAULT_COMPARE_PARAMS: CompareDatasetParams = {
@@ -81,20 +74,38 @@ const DEFAULT_COMPARE_PARAMS: CompareDatasetParams = {
   ignore_columns: [],
 };
 
-function getStoredSelection(dataset: DatasetId): CompareSelection {
+function generateId(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function createEmptyModel(): CompareModelEntry {
+  return { id: generateId(), modelType: null, runId: null };
+}
+
+function ensureEmptyModel(models: CompareModelEntry[]): CompareModelEntry[] {
+  // Ensure there's exactly one empty model at the end
+  const hasEmpty = models.some((m) => m.runId === null);
+  if (!hasEmpty) {
+    return [...models, createEmptyModel()];
+  }
+  return models;
+}
+
+function getStoredModels(dataset: DatasetId): CompareModelEntry[] {
   try {
-    const stored = localStorage.getItem(`${COMPARE_SELECTION_KEY}_${dataset}`);
+    const stored = localStorage.getItem(`${COMPARE_MODELS_KEY}_${dataset}`);
     if (stored) {
-      return JSON.parse(stored);
+      const models = JSON.parse(stored) as CompareModelEntry[];
+      return ensureEmptyModel(models);
     }
   } catch {
     // ignore
   }
-  return { tree: null, forest: null, gradient: null, 'hist-gradient': null };
+  return [createEmptyModel()];
 }
 
-function storeSelection(dataset: DatasetId, selection: CompareSelection) {
-  localStorage.setItem(`${COMPARE_SELECTION_KEY}_${dataset}`, JSON.stringify(selection));
+function storeModels(dataset: DatasetId, models: CompareModelEntry[]) {
+  localStorage.setItem(`${COMPARE_MODELS_KEY}_${dataset}`, JSON.stringify(models));
 }
 
 function getStoredParams(dataset: DatasetId): CompareDatasetParams {
@@ -113,64 +124,56 @@ function storeParams(dataset: DatasetId, params: CompareDatasetParams) {
   localStorage.setItem(`${COMPARE_PARAMS_KEY}_${dataset}`, JSON.stringify(params));
 }
 
-export function useCompare(options: UseCompareOptions): UseCompareReturn {
-  const { dataset, isCompareMode, isModelsTabActive } = options;
+// Helper to find duplicate run IDs
+function getDuplicateRunIds(models: CompareModelEntry[]): Set<string> {
+  const seen = new Set<string>();
+  const duplicates = new Set<string>();
+  for (const model of models) {
+    if (model.runId) {
+      if (seen.has(model.runId)) {
+        duplicates.add(model.runId);
+      }
+      seen.add(model.runId);
+    }
+  }
+  return duplicates;
+}
 
-  const [selection, setSelectionState] = useState<CompareSelection>({
-    tree: null,
-    forest: null,
-    gradient: null,
-    'hist-gradient': null,
-  });
+export function useCompare(options: UseCompareOptions): UseCompareReturn {
+  const { dataset, isCompareMode } = options;
+
+  const [models, setModelsState] = useState<CompareModelEntry[]>([]);
   const [datasetParams, setDatasetParamsState] = useState<CompareDatasetParams>(DEFAULT_COMPARE_PARAMS);
   const [isComparing, setIsComparing] = useState(false);
   const [compareResult, setCompareResult] = useState<CompareResult | null>(null);
   const [compareError, setCompareError] = useState<TrainError | null>(null);
 
-  const [historyTree, setHistoryTree] = useState<HistoryRun[]>([]);
-  const [historyForest, setHistoryForest] = useState<HistoryRun[]>([]);
-  const [historyGradient, setHistoryGradient] = useState<HistoryRun[]>([]);
-  const [historyHistGradient, setHistoryHistGradient] = useState<HistoryRun[]>([]);
+  const [history, setHistory] = useState<HistoryRun[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
-  // Load stored selection and params when dataset changes
+  // Calculate duplicate run IDs
+  const duplicateRunIds = useMemo(() => getDuplicateRunIds(models), [models]);
+
+  // Load stored models and params when dataset changes
   useEffect(() => {
-    const stored = getStoredSelection(dataset);
-    setSelectionState(stored);
+    const storedModels = getStoredModels(dataset);
+    setModelsState(storedModels);
     const storedParams = getStoredParams(dataset);
     setDatasetParamsState(storedParams);
   }, [dataset]);
 
-  // Fetch history when Compare mode is active (needed for model selection and name lookup in results)
+  // Fetch history when Compare mode is active (all models for this dataset)
   useEffect(() => {
     if (!isCompareMode) return;
 
     async function fetchHistory() {
       setIsLoadingHistory(true);
       try {
-        const [treeRes, forestRes, gradientRes, histGradientRes] = await Promise.all([
-          fetch(`/api/history?model=tree&dataset=${dataset}`),
-          fetch(`/api/history?model=forest&dataset=${dataset}`),
-          fetch(`/api/history?model=gradient&dataset=${dataset}`),
-          fetch(`/api/history?model=hist-gradient&dataset=${dataset}`),
-        ]);
-
-        const [treeData, forestData, gradientData, histGradientData] = await Promise.all([
-          treeRes.json(),
-          forestRes.json(),
-          gradientRes.json(),
-          histGradientRes.json(),
-        ]);
-
-        setHistoryTree(treeData.runs || []);
-        setHistoryForest(forestData.runs || []);
-        setHistoryGradient(gradientData.runs || []);
-        setHistoryHistGradient(histGradientData.runs || []);
+        const response = await fetch(`/api/history?dataset=${dataset}`);
+        const data = await response.json();
+        setHistory(data.runs || []);
       } catch {
-        setHistoryTree([]);
-        setHistoryForest([]);
-        setHistoryGradient([]);
-        setHistoryHistGradient([]);
+        setHistory([]);
       } finally {
         setIsLoadingHistory(false);
       }
@@ -179,16 +182,30 @@ export function useCompare(options: UseCompareOptions): UseCompareReturn {
     fetchHistory();
   }, [dataset, isCompareMode]);
 
-  const setSelection = useCallback((newSelection: CompareSelection) => {
-    setSelectionState(newSelection);
-    storeSelection(dataset, newSelection);
+  const removeModel = useCallback((id: string) => {
+    setModelsState((prev) => {
+      const newModels = ensureEmptyModel(prev.filter((m) => m.id !== id));
+      storeModels(dataset, newModels);
+      return newModels;
+    });
   }, [dataset]);
 
-  const updateSelection = useCallback((key: keyof CompareSelection, value: string | null) => {
-    setSelectionState((prev) => {
-      const newSelection = { ...prev, [key]: value };
-      storeSelection(dataset, newSelection);
-      return newSelection;
+  const updateModelType = useCallback((id: string, modelType: CompareModelEntry['modelType']) => {
+    setModelsState((prev) => {
+      // When model type changes, clear the run selection
+      const newModels = prev.map((m) => (m.id === id ? { ...m, modelType, runId: null } : m));
+      storeModels(dataset, newModels);
+      return newModels;
+    });
+  }, [dataset]);
+
+  const updateModelRun = useCallback((id: string, runId: string | null) => {
+    setModelsState((prev) => {
+      const updated = prev.map((m) => (m.id === id ? { ...m, runId } : m));
+      // When a run is selected, ensure there's still an empty row for adding more
+      const newModels = ensureEmptyModel(updated);
+      storeModels(dataset, newModels);
+      return newModels;
     });
   }, [dataset]);
 
@@ -205,26 +222,27 @@ export function useCompare(options: UseCompareOptions): UseCompareReturn {
     storeParams(dataset, DEFAULT_COMPARE_PARAMS);
   }, [dataset]);
 
-  const isSelectionComplete = Boolean(
-    selection.tree && selection.forest && selection.gradient && selection['hist-gradient']
-  );
+  // Can compare if: at least one model selected, no duplicates
+  const selectedModels = models.filter((m) => m.runId !== null);
+  const canCompare = selectedModels.length > 0 && duplicateRunIds.size === 0;
 
   const runCompare = useCallback(async () => {
-    if (!isSelectionComplete) return;
+    if (!canCompare) return;
 
     setIsComparing(true);
     setCompareError(null);
 
     try {
+      const modelIds = models
+        .filter((m) => m.runId !== null)
+        .map((m) => m.runId as string);
+
       const response = await fetch('/api/compare', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           dataset,
-          tree: selection.tree,
-          forest: selection.forest,
-          gradient: selection.gradient,
-          'hist-gradient': selection['hist-gradient'],
+          models: modelIds,
           mask: datasetParams.mask,
           impute: datasetParams.mask > 0 && datasetParams.impute,
           // ignore_columns not sent - determined from model's runtime.json
@@ -252,7 +270,7 @@ export function useCompare(options: UseCompareOptions): UseCompareReturn {
     } finally {
       setIsComparing(false);
     }
-  }, [dataset, selection, datasetParams, isSelectionComplete]);
+  }, [dataset, models, datasetParams, canCompare]);
 
   const clearCompareResult = useCallback(() => {
     setCompareResult(null);
@@ -260,9 +278,11 @@ export function useCompare(options: UseCompareOptions): UseCompareReturn {
   }, []);
 
   return {
-    selection,
-    setSelection,
-    updateSelection,
+    models,
+    removeModel,
+    updateModelType,
+    updateModelRun,
+    duplicateRunIds,
     datasetParams,
     setDatasetParams,
     resetDatasetParams,
@@ -271,11 +291,8 @@ export function useCompare(options: UseCompareOptions): UseCompareReturn {
     compareError,
     runCompare,
     clearCompareResult,
-    isSelectionComplete,
-    historyTree,
-    historyForest,
-    historyGradient,
-    historyHistGradient,
+    canCompare,
+    history,
     isLoadingHistory,
   };
 }
