@@ -1,7 +1,7 @@
 # Frontend Layout
 
 ## Overview
-Page structure and component composition for the training interface.
+Page structure and component composition for the training and comparison interface.
 
 ## Requirements
 - Next.js App Router layout with metadata
@@ -34,14 +34,24 @@ After training completes, navigates to `/?run_id=<new_run_id>`.
 **Main Content**: Two-column layout on desktop, stacked on mobile.
 
 **Left Column (Form)**:
-- DatasetSelector and ModelSelector in a row
-- DatasetParams with mask slider (with impute checkbox), split slider, column selection, and reset button
-- ModelParams renders the appropriate form based on selected model type, with reset button
-- TrainButton, disabled during training with loading indicator
+- Main mode tabs: "Train" / "Compare"
+- When **Train** mode:
+  - DatasetSelector and ModelSelector in a row
+  - Tabs: "Dataset", "Model" for parameter configuration
+  - DatasetParams with mask slider (with impute checkbox), split slider, column selection
+  - ModelParams renders the appropriate form based on selected model type
+  - TrainButton at bottom
+- When **Compare** mode:
+  - DatasetSelector only (full width)
+  - Tabs: "Dataset", "Models" for configuration
+  - Dataset tab: mask slider (with impute checkbox), column selection (NO split slider)
+  - Models tab: three model selectors to pick runs from history
+  - CompareButton at bottom
 
 **Right Column (Output)**:
-- ErrorDisplay (dismissible) when training fails
+- ErrorDisplay (dismissible) when training/compare fails
 - ResultsDisplay when training succeeds
+- CompareResults when compare succeeds
 - Empty state or placeholder when no results yet
 
 ## Hydration
@@ -50,8 +60,14 @@ Skeleton placeholder shown until client hydration completes, preventing flash of
 ## State Management
 - useParamsCache: manages dataset, model, and parameters with localStorage persistence
 - useTraining: manages loading state, results, and errors
+- useCompare: manages compare mode selection, dataset params, and compare results
 - Parameters cached per dataset+model combination
+- Tab states persisted in localStorage:
+  - `tab_mode`: Current mode (train/compare)
+  - `tab_train`: Current Train mode sub-tab (dataset/model)
+  - `tab_compare`: Current Compare mode sub-tab (dataset/models)
 
 ## Related specs
 - [frontend/Form](Form.md) - Form input components
 - [frontend/Output](Output.md) - Results and error display
+- [frontend/Compare](Compare.md) - Compare mode for model comparison

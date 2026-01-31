@@ -29,12 +29,16 @@ Load pre-trained models from existing run directories instead of training fresh:
 | `--tree <ID>` | Run ID for decision tree model |
 | `--forest <ID>` | Run ID for random forest model |
 | `--gradient <ID>` | Run ID for gradient boosted model |
+| `--mask <PERCENT>` | Mask percentage for comparison (0-100) |
+| `--impute` | Impute missing values during comparison |
+| `--ignore-columns <LIST>` | Comma-separated column indices to ignore |
 
 **Requirements:**
-- At least one ID parameter must be provided when using this mode
+- All three ID parameters must be provided when using this mode
 - Each ID maps to directory: `frontend/public/output/<ID>/`
 - Each directory must contain `model.pkl`
 - Each directory must contain `runtime.json` for validation
+- Each directory must contain `result.json` for training accuracy
 
 **Validation:**
 - Read `runtime.json` from each provided ID directory
@@ -42,10 +46,10 @@ Load pre-trained models from existing run directories instead of training fresh:
 - Verify `runtime.json["model"]` matches the expected model type:
   - `--tree` ID must have `model: "tree"`
   - `--forest` ID must have `model: "forest"`
-  - `--gradient` ID must have `model: "gradient-forest"`
+  - `--gradient` ID must have `model: "gradient"`
 - Exit with error if validation fails
 
-### Execution Flow
+### Execution Flow (Fresh Training Mode)
 1. Initialize results dict for each model (with and without impute)
 2. For each mask value:
    - First script runs with `--json --mask` (generates new dataset)
@@ -54,8 +58,47 @@ Load pre-trained models from existing run directories instead of training fresh:
 3. Extract accuracy from JSON output (`output["accuracy"]`)
 4. Pass results to `Render.compare_accuracy()` and `Render.compare_accuracy_impute()`
 
+### Execution Flow (Model ID Mode)
+1. Load the full dataset (no train/test split)
+2. Apply mask rate and imputation if specified
+3. Drop ignored columns if specified
+4. For each model:
+   - Load model from `model.pkl`
+   - Evaluate on full dataset
+   - Get training accuracy from oldest `.id` file
+5. Return JSON with trainAccuracy and compareAccuracy for each model
+
 ### JSON Output Parsing
 Scripts output JSON with warnings potentially before the JSON object. Parser finds first `{` and last `}` to extract JSON, then reads `accuracy` field.
+
+### Model ID Mode Output
+When running with model IDs, outputs JSON with both training and comparison accuracies:
+
+```json
+{
+  "success": true,
+  "models": {
+    "tree": {
+      "runId": "1706540123",
+      "trainAccuracy": 0.96,
+      "compareAccuracy": 0.92
+    },
+    "forest": {
+      "runId": "1706540456",
+      "trainAccuracy": 0.98,
+      "compareAccuracy": 0.95
+    },
+    "gradient": {
+      "runId": "1706540789",
+      "trainAccuracy": 0.97,
+      "compareAccuracy": 0.94
+    }
+  }
+}
+```
+
+- `trainAccuracy`: Original accuracy from `result.json` when model was trained
+- `compareAccuracy`: Accuracy when tested with current mask/impute/ignore_columns settings
 
 ### Color Scheme
 | Model | Color |

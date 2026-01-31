@@ -45,10 +45,11 @@ export async function GET(
       for (const file of files) {
         if (!file.endsWith(".id")) continue;
 
-        const match = file.match(/^([^_]+)_([^_]+)_(\d{6})\.id$/);
+        const match = file.match(/^([^_]+)_([^_]+)_(\d+)\.id$/);
         if (!match) continue;
 
         const [, model, dataset, scoreStr] = match;
+        // Score is stored as accuracy * 1000000 (e.g., 0.98 -> 980000)
         const accuracy = parseInt(scoreStr, 10) / 1000000;
         const timestamp = parseInt(dir, 10);
 

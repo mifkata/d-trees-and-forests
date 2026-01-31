@@ -7,6 +7,13 @@ import type { DatasetParams, ModelParams } from '@/types/params';
 import { DEFAULT_DATASET_PARAMS, getDefaultModelParams } from '@/types/params';
 import { storage } from '@/lib/storage';
 
+export interface LoadRunParams {
+  dataset: DatasetId;
+  model: ModelId;
+  datasetParams: DatasetParams;
+  modelParams: ModelParams;
+}
+
 export interface UseParamsCacheReturn {
   dataset: DatasetId;
   model: ModelId;
@@ -18,6 +25,7 @@ export interface UseParamsCacheReturn {
   setModelParams: (params: Partial<ModelParams>) => void;
   resetDatasetParams: () => void;
   resetModelParams: () => void;
+  loadRun: (params: LoadRunParams) => void;
   isHydrated: boolean;
 }
 
@@ -87,6 +95,19 @@ export function useParamsCache(): UseParamsCacheReturn {
     });
   }, [dataset, model]);
 
+  // Load a complete run configuration atomically - used when restoring from run_id
+  // This avoids closure issues with setDataset/setModel/setModelParams
+  const loadRun = useCallback((params: LoadRunParams) => {
+    setDatasetState(params.dataset);
+    setModelState(params.model);
+    setDatasetParamsState(params.datasetParams);
+    setModelParamsState(params.modelParams);
+    storage.setLastSelection({ dataset: params.dataset, model: params.model });
+    // Save to the correct storage keys using explicit dataset/model
+    storage.setDatasetParams(params.dataset, params.model, params.datasetParams);
+    storage.setModelParams(params.dataset, params.model, params.modelParams);
+  }, []);
+
   const resetDatasetParams = useCallback(() => {
     setDatasetParamsState(DEFAULT_DATASET_PARAMS);
     storage.setDatasetParams(dataset, model, DEFAULT_DATASET_PARAMS);
@@ -109,6 +130,7 @@ export function useParamsCache(): UseParamsCacheReturn {
     setModelParams,
     resetDatasetParams,
     resetModelParams,
+    loadRun,
     isHydrated,
   };
 }
