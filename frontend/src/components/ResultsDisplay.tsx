@@ -194,6 +194,20 @@ function formatCellValue(value: unknown): string {
   return String(value);
 }
 
+function beautifyImageName(src: string): string {
+  // Extract filename from path
+  const filename = src.split('/').pop() || '';
+  // Remove extension
+  const nameWithoutExt = filename.replace(/\.[^/.]+$/, '');
+  // Replace dashes and underscores with spaces
+  const withSpaces = nameWithoutExt.replace(/[-_]/g, ' ');
+  // Capitalize each word (Title Case)
+  return withSpaces
+    .split(' ')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+}
+
 function ExpandIcon() {
   return (
     <svg
@@ -421,19 +435,24 @@ function ImageGallery({ runId }: ImageGalleryProps) {
 
   return (
     <div>
-      <h4 className="text-sm font-medium text-gray-700 mb-3">Generated Images</h4>
+      <h4 className="text-sm font-medium text-gray-700 mb-3">Visuals</h4>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
         {images.map((src) => (
           <button
             key={src}
             onClick={() => setSelectedImage(src)}
-            className="aspect-square rounded-lg overflow-hidden border border-gray-200 hover:border-gray-400 transition-colors bg-white"
+            className="flex flex-col rounded-lg overflow-hidden border border-gray-200 hover:border-gray-400 transition-colors bg-white"
           >
-            <img
-              src={src}
-              alt={src.split('/').pop() || 'Generated image'}
-              className="w-full h-full object-contain"
-            />
+            <div className="aspect-square overflow-hidden">
+              <img
+                src={src}
+                alt={beautifyImageName(src)}
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <span className="text-xs text-gray-600 px-2 py-1.5 text-center">
+              {beautifyImageName(src)}
+            </span>
           </button>
         ))}
       </div>
@@ -720,7 +739,7 @@ export function ImagesDisplay({ runId }: ImagesDisplayProps) {
     return (
       <Card variant="elevated">
         <CardHeader>
-          <CardTitle>Generated Images</CardTitle>
+          <CardTitle>Visuals</CardTitle>
         </CardHeader>
         <div className="flex justify-center py-8">
           <Spinner />
@@ -736,20 +755,25 @@ export function ImagesDisplay({ runId }: ImagesDisplayProps) {
   return (
     <Card variant="elevated">
       <CardHeader>
-        <CardTitle>Generated Images</CardTitle>
+        <CardTitle>Visuals</CardTitle>
       </CardHeader>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {images.map((src) => (
           <button
             key={src}
             onClick={() => setSelectedImage(src)}
-            className="aspect-square rounded-lg overflow-hidden border border-gray-200 hover:border-gray-400 transition-colors bg-white"
+            className="flex flex-col rounded-lg overflow-hidden border border-gray-200 hover:border-gray-400 transition-colors bg-white"
           >
-            <img
-              src={src}
-              alt={src.split('/').pop() || 'Generated image'}
-              className="w-full h-full object-contain"
-            />
+            <div className="aspect-square overflow-hidden">
+              <img
+                src={src}
+                alt={beautifyImageName(src)}
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <span className="text-xs text-gray-600 px-2 py-1.5 text-center">
+              {beautifyImageName(src)}
+            </span>
           </button>
         ))}
       </div>

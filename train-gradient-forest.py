@@ -94,9 +94,8 @@ Model.report(
 )
 
 if args.images:
-    # Export feature importance visualization using permutation importance
-    Render.gradient_forest_importance(
-        perm_importance.importances_mean,
-        X_train.columns.tolist(),
-        filename="gradient_forest_feature_importance.png"
-    )
+    # Export feature correlation heatmap
+    Render.heatmap(X_train)
+
+    # Export clustering visualization
+    Render.clustering(X_train, y_train)

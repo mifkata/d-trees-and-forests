@@ -12,12 +12,10 @@ Train a random forest ensemble classifier on tabular datasets with support for m
 - Train sklearn RandomForestClassifier
 - Output accuracy and classification report (or JSON summary with `--json`)
 - Generate visualizations when `--images` flag is present:
-  - Feature importance bar chart
-  - Sample trees from the forest (2x2 grid)
-  - Partial Dependence Plots (PDP) per class (for datasets with ≤6 features)
-  - Individual Conditional Expectation (ICE) plots per class (for datasets with ≤6 features)
-  - Out-of-bag error progression (if oob_score enabled)
+  - Sample trees from the forest (3x3 grid)
   - Proximity matrix heatmap (for datasets with ≤500 samples)
+  - Feature correlation heatmap (correlation matrix of input features)
+  - Clustering visualization (MDS of proximity matrix, colored by class)
 
 ## Implementation Details
 - **Library**: sklearn.ensemble.RandomForestClassifier

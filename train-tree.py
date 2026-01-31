@@ -105,9 +105,6 @@ if args.images:
         # Export heatmap of feature correlations
         Render.heatmap(pd.concat([X_train, X_test]))
 
-        # Export feature importance
-        Render.tree_importance(clf, X_train.columns.tolist())
-
         # Export decision boundaries (only for small feature sets)
         if len(X_train.columns) <= 6:
             Render.tree_boundaries(clf, X_train, y_train, X_train.columns.tolist())
