@@ -23,6 +23,7 @@
 * Automatically assign the current `gh` user to newly created PRs.
 * PR description should include only information about specific changes with no actionable items.
 * PR description should be updated when new commits are pushed, if a previously defined change was rolled back or modified, it should be only 1 record for the current state of a change (examples: deleted func(), restored func() in 2 commits should cleanup any reference to func() being changed, as it was rolled back to previous change; if a value was changed from 3 to 5 to 7, only 1 record for the change should be in the PR description - latest value: 7).
+* Do not add any generation/co-authoring references in PR description.
 
 ## Makefile Commands
 * `make setup` - Install Python and Node.js dependencies
