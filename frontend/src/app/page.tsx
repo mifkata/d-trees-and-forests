@@ -422,7 +422,7 @@ function HomeContent() {
                 ) : (
                   <span
                     onClick={() => {
-                      setEditingNameValue(runName ?? "");
+                      setEditingNameValue(runName?.replace(/_/g, " ") ?? "");
                       setIsEditingName(true);
                     }}
                     className="cursor-pointer hover:text-gray-700 hover:underline"
