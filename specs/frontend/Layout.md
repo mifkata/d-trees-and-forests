@@ -89,6 +89,7 @@ Inline editing for renaming a training run with a custom name.
 - Text input replaces the name/ID display
 - Placeholder: run ID (so user knows which run they're editing)
 - Input pre-filled with current name (underscores shown as spaces) if one exists, empty otherwise
+- Input width expands dynamically based on text length (minimum width based on run ID length)
 - Auto-focused when entering edit mode
 
 **Behavior**:

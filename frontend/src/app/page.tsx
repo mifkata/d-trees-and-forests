@@ -407,11 +407,12 @@ function HomeContent() {
                         }
                       }}
                       placeholder={runId}
-                      className={`bg-transparent border-b focus:outline-none px-1 w-40 ${
+                      className={`bg-transparent border-b focus:outline-none px-1 min-w-40 ${
                         renameError
                           ? "border-red-500 focus:border-red-500"
                           : "border-gray-400 focus:border-blue-500"
                       }`}
+                      style={{ width: `${Math.max(editingNameValue.length, runId.length) + 2}ch` }}
                       autoFocus
                       disabled={isRenamingLoading}
                     />
