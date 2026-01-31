@@ -29,7 +29,7 @@ export function ModelHistorySelect({
   onChange,
   isLoading,
 }: ModelHistorySelectProps) {
-  // Sort runs: named first (alphabetically), then unnamed (alphabetically by ID)
+  // Sort runs: named first (alphabetically with numeric), then unnamed (alphabetically by ID)
   const sortedRuns = [...runs].sort((a, b) => {
     const aHasName = Boolean(a.name);
     const bHasName = Boolean(b.name);
@@ -38,10 +38,10 @@ export function ModelHistorySelect({
     if (aHasName && !bHasName) return -1;
     if (!aHasName && bHasName) return 1;
 
-    // Within same group, sort alphabetically
+    // Within same group, sort alphabetically with numeric comparison
     const aLabel = a.name ? a.name.replace(/_/g, ' ') : a.runId;
     const bLabel = b.name ? b.name.replace(/_/g, ' ') : b.runId;
-    return aLabel.localeCompare(bLabel);
+    return aLabel.localeCompare(bLabel, undefined, { numeric: true, sensitivity: 'base' });
   });
 
   const options = [
