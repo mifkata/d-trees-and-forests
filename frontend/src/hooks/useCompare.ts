@@ -28,6 +28,7 @@ export interface HistoryRun {
 
 export interface CompareModelResult {
   runId: string;
+  name?: string;
   trainAccuracy: number;
   compareAccuracy: number;
   imputed?: boolean;
@@ -140,9 +141,9 @@ export function useCompare(options: UseCompareOptions): UseCompareReturn {
     setDatasetParamsState(storedParams);
   }, [dataset]);
 
-  // Fetch history when Compare mode Models tab becomes active
+  // Fetch history when Compare mode is active (needed for model selection and name lookup in results)
   useEffect(() => {
-    if (!isCompareMode || !isModelsTabActive) return;
+    if (!isCompareMode) return;
 
     async function fetchHistory() {
       setIsLoadingHistory(true);
@@ -176,7 +177,7 @@ export function useCompare(options: UseCompareOptions): UseCompareReturn {
     }
 
     fetchHistory();
-  }, [dataset, isCompareMode, isModelsTabActive]);
+  }, [dataset, isCompareMode]);
 
   const setSelection = useCallback((newSelection: CompareSelection) => {
     setSelectionState(newSelection);

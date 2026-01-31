@@ -188,12 +188,18 @@ function ModelAccuracyCard({
   model
 }: {
   label: string;
-  model: { trainAccuracy: number; compareAccuracy: number; runId: string }
+  model: { trainAccuracy: number; compareAccuracy: number; runId: string; name?: string }
 }) {
   const ratio = model.compareAccuracy / model.trainAccuracy;
+  const displayName = model.name ? model.name.replace(/_/g, ' ') : null;
   return (
     <div className={`p-3 rounded-lg border ${getBoxBackground(ratio)} ${getBorderColor(ratio)}`}>
-      <p className="text-xs text-gray-500 text-center mb-2">{label}</p>
+      <div className="text-center mb-2">
+        <p className="text-sm font-medium text-gray-700">{label}</p>
+        <p className="text-xs text-gray-500 font-mono">
+          {displayName || model.runId}
+        </p>
+      </div>
       <div className="space-y-1 text-sm">
         <div className="flex justify-between">
           <span className="text-gray-500">Train:</span>
@@ -210,7 +216,6 @@ function ModelAccuracyCard({
           </span>
         </div>
       </div>
-      <p className="text-xs text-gray-400 font-mono text-center mt-2">{model.runId}</p>
     </div>
   );
 }
@@ -222,43 +227,22 @@ export function CompareResults({ result }: CompareResultsProps) {
         <CardTitle>Comparison Results</CardTitle>
       </CardHeader>
 
-      <div className="space-y-6">
-        {/* Model accuracy summary */}
-        <div>
-          <h4 className="text-sm font-medium text-gray-700 mb-3">Model Accuracies</h4>
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {result.models.tree && (
-              <ModelAccuracyCard label="Decision Tree" model={result.models.tree} />
-            )}
-            {result.models.forest && (
-              <ModelAccuracyCard label="Random Forest" model={result.models.forest} />
-            )}
-            {result.models.gradient && (
-              <ModelAccuracyCard label="Gradient Boosting" model={result.models.gradient} />
-            )}
-            {result.models['hist-gradient'] && (
-              <ModelAccuracyCard label="Hist Gradient" model={result.models['hist-gradient']} />
-            )}
-          </div>
+      <div>
+        <h4 className="text-sm font-medium text-gray-700 mb-3">Model Accuracies</h4>
+        <div className="space-y-4">
+          {result.models.tree && (
+            <ModelAccuracyCard label="Decision Tree" model={result.models.tree} />
+          )}
+          {result.models.forest && (
+            <ModelAccuracyCard label="Random Forest" model={result.models.forest} />
+          )}
+          {result.models.gradient && (
+            <ModelAccuracyCard label="Gradient Boosting" model={result.models.gradient} />
+          )}
+          {result.models['hist-gradient'] && (
+            <ModelAccuracyCard label="Hist Gradient" model={result.models['hist-gradient']} />
+          )}
         </div>
-
-        {/* Comparison images */}
-        {result.images.length > 0 && (
-          <div>
-            <h4 className="text-sm font-medium text-gray-700 mb-3">Comparison Charts</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {result.images.map((src, i) => (
-                <div key={i} className="border border-gray-200 rounded-lg overflow-hidden">
-                  <img
-                    src={src}
-                    alt={`Comparison chart ${i + 1}`}
-                    className="w-full h-auto"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </Card>
   );
