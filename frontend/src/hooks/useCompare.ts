@@ -90,6 +90,9 @@ interface UseCompareReturn {
   renameCompareRun: (compareId: string, name: string | null) => Promise<boolean>;
   setCompareResult: (result: CompareResult | null) => void;
   loadModelsFromResult: (result: CompareResult) => void;
+  addModel: (runId: string, modelType: string) => void;
+  addAllModels: () => void;
+  clearAllModels: () => void;
 }
 
 const COMPARE_MODELS_KEY = 'compare_models';
@@ -372,6 +375,43 @@ export function useCompare(options: UseCompareOptions): UseCompareReturn {
     storeModels(dataset, modelsWithEmpty);
   }, [dataset]);
 
+  // Add a single model to the compare list if not already present
+  const addModel = useCallback((runId: string, modelType: string) => {
+    setModelsState((prev) => {
+      // Check if model with this runId already exists
+      const exists = prev.some((m) => m.runId === runId);
+      if (exists) return prev;
+
+      const newEntry: CompareModelEntry = {
+        id: generateId(),
+        modelType: modelType as CompareModelEntry['modelType'],
+        runId,
+      };
+      const newModels = ensureEmptyModel([...prev.filter((m) => m.runId !== null), newEntry]);
+      storeModels(dataset, newModels);
+      return newModels;
+    });
+  }, [dataset]);
+
+  // Add all models from history to the compare list
+  const addAllModels = useCallback(() => {
+    const newModels: CompareModelEntry[] = history.map((run) => ({
+      id: generateId(),
+      modelType: run.model as CompareModelEntry['modelType'],
+      runId: run.runId,
+    }));
+    const modelsWithEmpty = ensureEmptyModel(newModels);
+    setModelsState(modelsWithEmpty);
+    storeModels(dataset, modelsWithEmpty);
+  }, [dataset, history]);
+
+  // Clear all models from the compare list
+  const clearAllModels = useCallback(() => {
+    const emptyModels = [createEmptyModel()];
+    setModelsState(emptyModels);
+    storeModels(dataset, emptyModels);
+  }, [dataset]);
+
   return {
     models,
     removeModel,
@@ -397,5 +437,8 @@ export function useCompare(options: UseCompareOptions): UseCompareReturn {
     renameCompareRun,
     setCompareResult,
     loadModelsFromResult,
+    addModel,
+    addAllModels,
+    clearAllModels,
   };
 }

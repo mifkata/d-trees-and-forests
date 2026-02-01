@@ -66,6 +66,14 @@ function SaveIcon() {
   );
 }
 
+function PlusIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+      <path fillRule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clipRule="evenodd" />
+    </svg>
+  );
+}
+
 function formatTimeAgo(timestamp: number): string {
   const now = Math.floor(Date.now() / 1000);
   const diff = now - timestamp;
@@ -198,6 +206,8 @@ interface CompareModelsListProps {
   onUpdateModelType: (id: string, modelType: CompareModelEntry['modelType']) => void;
   onUpdateModelRun: (id: string, runId: string | null) => void;
   isLoadingHistory: boolean;
+  onAddAllModels?: () => void;
+  onClearAllModels?: () => void;
 }
 
 export function CompareModelsList({
@@ -208,6 +218,8 @@ export function CompareModelsList({
   onUpdateModelType,
   onUpdateModelRun,
   isLoadingHistory,
+  onAddAllModels,
+  onClearAllModels,
 }: CompareModelsListProps) {
   // Separate filled models from the empty one at the end
   const filledModels = models.filter((m) => m.runId !== null);
@@ -215,7 +227,33 @@ export function CompareModelsList({
 
   return (
     <div className="space-y-3">
-      <h4 className="text-sm font-medium text-gray-700">Models to Compare</h4>
+      <div className="flex items-center justify-between">
+        <h4 className="text-sm font-medium text-gray-700">
+          Models to Compare{filledModels.length > 0 && ` (${filledModels.length})`}
+        </h4>
+        <div className="flex gap-1">
+          {onAddAllModels && (
+            <button
+              type="button"
+              onClick={onAddAllModels}
+              disabled={isLoadingHistory || history.length === 0}
+              className="text-xs px-2 py-1 rounded text-blue-600 hover:bg-blue-50 disabled:text-gray-400 disabled:hover:bg-transparent transition-colors"
+            >
+              All models
+            </button>
+          )}
+          {onClearAllModels && (
+            <button
+              type="button"
+              onClick={onClearAllModels}
+              disabled={filledModels.length === 0}
+              className="text-xs px-2 py-1 rounded text-red-600 hover:bg-red-50 disabled:text-gray-400 disabled:hover:bg-transparent transition-colors"
+            >
+              Clear
+            </button>
+          )}
+        </div>
+      </div>
 
       <div className="space-y-2">
         {/* Filled models (can be removed) */}
@@ -289,6 +327,7 @@ export function CompareButton({ loading, disabled, onClick }: CompareButtonProps
 interface CompareResultsProps {
   result: CompareResult;
   onLoadModels?: () => void;
+  onAddModel?: (runId: string, modelType: string) => void;
 }
 
 function formatDiff(diff: number): string {
@@ -348,9 +387,13 @@ const MODEL_EMOJI: Record<string, string> = {
 };
 
 function ModelAccuracyCard({
-  model
+  model,
+  onAddModel,
+  showAddIcon,
 }: {
-  model: { model: string; runId: string; name?: string; trainAccuracy: number; compareAccuracy: number; imputed?: boolean }
+  model: { model: string; runId: string; name?: string; trainAccuracy: number; compareAccuracy: number; imputed?: boolean };
+  onAddModel?: (runId: string, modelType: string) => void;
+  showAddIcon?: boolean;
 }) {
   const diff = model.compareAccuracy - model.trainAccuracy;
   const displayName = model.name ? model.name.replace(/_/g, ' ') : model.runId;
@@ -360,7 +403,26 @@ function ModelAccuracyCard({
   return (
     <div className={`p-3 rounded-lg border ${getBoxBackground(diff)} ${getBorderColor(diff)}`}>
       <div className="flex justify-between">
-        <p className="text-sm font-medium text-gray-900">{displayName}</p>
+        <div className="flex items-center gap-1.5">
+          {showAddIcon && onAddModel && (
+            <button
+              type="button"
+              onClick={() => onAddModel(model.runId, model.model)}
+              title="Add to compare list"
+              className="p-0.5 rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+            >
+              <PlusIcon />
+            </button>
+          )}
+          <a
+            href={`/output/${model.runId}/`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm font-medium text-gray-900 hover:underline"
+          >
+            {displayName}
+          </a>
+        </div>
         <p className="text-xs text-gray-500">{modelLabel} {emoji}</p>
       </div>
       <div className="flex justify-between items-end">
@@ -381,7 +443,7 @@ function ModelAccuracyCard({
   );
 }
 
-export function CompareResults({ result, onLoadModels }: CompareResultsProps) {
+export function CompareResults({ result, onLoadModels, onAddModel }: CompareResultsProps) {
   const [sortBy, setSortBy] = useState<CompareSortOption>(() => {
     if (typeof window === 'undefined') return 'default';
     return (localStorage.getItem('compare_sort') as CompareSortOption) || 'default';
@@ -594,7 +656,12 @@ export function CompareResults({ result, onLoadModels }: CompareResultsProps) {
       <div>
         <div className="space-y-3">
           {sortedModels.map((model) => (
-            <ModelAccuracyCard key={model.runId} model={model} />
+            <ModelAccuracyCard
+              key={model.runId}
+              model={model}
+              onAddModel={onAddModel}
+              showAddIcon={!!onAddModel}
+            />
           ))}
         </div>
       </div>
