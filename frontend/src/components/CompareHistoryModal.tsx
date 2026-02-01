@@ -50,7 +50,7 @@ function ModelCounts({ models }: { models: { model: string }[] }) {
         const label = MODEL_LABELS[type] || type;
         const emoji = MODEL_EMOJI[type] || '';
         return (
-          <span key={type}>
+          <span key={type} className="whitespace-nowrap">
             <span className="text-base font-semibold text-gray-800">{count}x</span>
             <span className="text-sm text-gray-600"> {label} {emoji}</span>
           </span>
@@ -120,28 +120,37 @@ export function CompareHistoryModal({
                 <div className="flex-1 min-w-0">
                   {/* Header: Name/ID and timestamp */}
                   <div className="flex items-center gap-3 mb-2">
-                    <span className="font-medium text-gray-900">
+                    <span className="font-medium text-gray-900 whitespace-nowrap">
                       {run.name ? run.name.replace(/_/g, ' ') : run.compareId}
                     </span>
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-gray-500 whitespace-nowrap">
                       {formatTimeAgo(run.timestamp)}
                     </span>
                   </div>
 
-                  {/* Model counts with emojis and params */}
-                  <div className="flex items-center gap-3">
-                    <ModelCounts models={run.models} />
-                    {run.mask > 0 && (
-                      <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded">
-                        mask: {run.mask}%
-                      </span>
-                    )}
-                    {run.impute && (
-                      <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
-                        imputed
-                      </span>
-                    )}
-                  </div>
+                  {/* Param badges */}
+                  {(run.sequence || run.mask > 0 || run.impute) && (
+                    <div className="flex items-center gap-2 mb-2">
+                      {run.sequence && (
+                        <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded">
+                          sequence
+                        </span>
+                      )}
+                      {run.mask > 0 && (
+                        <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-700 rounded">
+                          mask: {run.mask}%
+                        </span>
+                      )}
+                      {run.impute && (
+                        <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-700 rounded">
+                          imputed
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Model counts with emojis */}
+                  <ModelCounts models={run.models} />
                 </div>
 
                 {/* Delete button */}

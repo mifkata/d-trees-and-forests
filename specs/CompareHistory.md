@@ -125,11 +125,12 @@ A "History" link in the top right corner of the Train/Compare tabs card:
 A modal showing past comparison runs. Uses `fitContent` sizing to grow horizontally as names grow (similar to TrainHistoryModal).
 
 Display for each entry:
-- Header row: Compare ID (or name if set), timestamp (formatted as "X ago" or date)
-- Details row: Model counts with emojis, optional mask/impute badges
-  - Model counts: aggregated by type, count styled larger/bolder (e.g., "**4x** Tree 🌳  **2x** Forest 🌲")
-  - Mask: shown as "mask: X%" badge only if mask > 0
-  - Impute: shown as "imputed" badge only if impute enabled
+- Header row: Compare ID (or name if set), timestamp (formatted as "X ago" or date) - both use `whitespace-nowrap`
+- Badges row (if any params set): sequence/mask/impute badges on own line
+  - Sequence: shown as "sequence" badge (purple) only if sequence mode enabled
+  - Mask: shown as "mask: X%" badge (amber) only if mask > 0
+  - Impute: shown as "imputed" badge (blue) only if impute enabled
+- Model counts row: aggregated by type, count styled larger/bolder (e.g., "**4x** Tree 🌳  **2x** Forest 🌲"), each item uses `whitespace-nowrap`
 
 Actions:
 - Click to load the compare run (directly loads data and updates URL to `?compare_id=<id>`)

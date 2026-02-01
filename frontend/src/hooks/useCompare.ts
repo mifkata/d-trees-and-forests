@@ -57,6 +57,7 @@ export interface CompareHistoryRun {
   name: string | null;
   mask: number;
   impute: boolean;
+  sequence: boolean;
   models: CompareHistoryModelInfo[];
 }
 
@@ -365,9 +366,33 @@ export function useCompare(options: UseCompareOptions): UseCompareReturn {
 
   // Load models from a compare result into the models list
   const loadModelsFromResult = useCallback((result: CompareResult) => {
-    const newModels: CompareModelEntry[] = result.models.map((m) => ({
+    // For sequence mode, extract unique models from results
+    // For normal mode, use models array directly
+    let sourceModels: Array<{ runId: string; model: string }> = [];
+
+    if (result.models && result.models.length > 0) {
+      sourceModels = result.models;
+    } else if (result.results) {
+      // Sequence mode: extract unique models from all mask rate results
+      const seenRunIds = new Set<string>();
+      for (const maskResult of Object.values(result.results)) {
+        for (const m of maskResult.models || []) {
+          if (!seenRunIds.has(m.runId)) {
+            seenRunIds.add(m.runId);
+            sourceModels.push({ runId: m.runId, model: m.model });
+          }
+        }
+      }
+    }
+
+    // Don't overwrite if no models found
+    if (sourceModels.length === 0) {
+      return;
+    }
+
+    const newModels: CompareModelEntry[] = sourceModels.map((m) => ({
       id: generateId(),
-      modelType: m.model,
+      modelType: m.model as CompareModelEntry['modelType'],
       runId: m.runId,
     }));
     const modelsWithEmpty = ensureEmptyModel(newModels);

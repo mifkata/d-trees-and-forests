@@ -479,7 +479,19 @@ export function CompareResults({ result, onLoadModels, onAddModel }: CompareResu
       return (
         <Card variant="elevated">
           <CardHeader>
-            <CardTitle>Sequence Comparison Results</CardTitle>
+            <div className="flex items-center gap-2">
+              {onLoadModels && (
+                <button
+                  type="button"
+                  onClick={onLoadModels}
+                  title="Load models into compare"
+                  className="p-1.5 rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                >
+                  <SaveIcon />
+                </button>
+              )}
+              <CardTitle>Sequence Comparison Results</CardTitle>
+            </div>
           </CardHeader>
           <div>
             <p className="text-sm text-gray-600">No results available.</p>
@@ -504,7 +516,19 @@ export function CompareResults({ result, onLoadModels, onAddModel }: CompareResu
       <>
         <Card variant="elevated">
           <CardHeader>
-            <CardTitle>Sequence Comparison Results</CardTitle>
+            <div className="flex items-center gap-2">
+              {onLoadModels && (
+                <button
+                  type="button"
+                  onClick={onLoadModels}
+                  title="Load models into compare"
+                  className="p-1.5 rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                >
+                  <SaveIcon />
+                </button>
+              )}
+              <CardTitle>Sequence Comparison Results</CardTitle>
+            </div>
           </CardHeader>
           <div className="overflow-x-auto">
             <table className="w-full text-xs border-collapse">

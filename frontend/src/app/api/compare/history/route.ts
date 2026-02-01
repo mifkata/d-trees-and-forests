@@ -18,6 +18,7 @@ interface CompareHistoryRun {
   name: string | null;
   mask: number;
   impute: boolean;
+  sequence: boolean;
   models: ModelInfo[];
 }
 
@@ -26,6 +27,7 @@ interface CompareRuntime {
   dataset: string;
   mask: number;
   impute: boolean;
+  sequence: boolean;
   name: string | null;
   models: Array<{ runId: string; model: string }>;
 }
@@ -92,6 +94,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           name: runtime.name || null,
           mask: runtime.mask || 0,
           impute: runtime.impute || false,
+          sequence: runtime.sequence || false,
           models,
         });
       } catch {

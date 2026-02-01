@@ -1,6 +1,6 @@
 'use client';
 
-import { Slider, Checkbox, Button, ImputeCheckbox, SequenceCheckbox } from './ui';
+import { Slider, Checkbox, Button, ImputeCheckbox } from './ui';
 import type { CompareDatasetParams as CompareDatasetParamsType } from '@/hooks/useCompare';
 import type { DatasetId } from '@/types/dataset';
 import { DATASETS } from '@/types/dataset';
@@ -64,40 +64,56 @@ export function CompareDatasetParams({ params, dataset, onChange, onReset, disab
     }
   };
 
+  const modeOptions = [
+    { value: 'compare', label: 'Compare' },
+    { value: 'sequence', label: 'Sequence' },
+  ];
+
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-medium text-gray-700">Dataset Parameters</h3>
+        <div className="flex items-center gap-3">
+          <h3 className="text-sm font-medium text-gray-700">Dataset Parameters</h3>
+          <div className="flex items-center gap-2 whitespace-nowrap">
+            <span className="text-sm font-medium text-gray-700">Mode:</span>
+            <select
+              value={params.sequence ? 'sequence' : 'compare'}
+              onChange={(e) => onChange({ sequence: e.target.value === 'sequence' })}
+              disabled={disabled}
+              className="rounded-lg border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50"
+            >
+              {modeOptions.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
         <Button type="button" variant="ghost" size="sm" onClick={onReset} disabled={disabled}>
           Reset
         </Button>
       </div>
 
       <div className="space-y-4">
-        <Slider
-          label="Mask Rate"
-          value={params.mask}
-          onChange={(mask) => onChange({ mask })}
-          min={0}
-          max={100}
-          step={5}
-          unit="%"
-          disabled={disabled || params.sequence}
-          action={
-            <ImputeCheckbox
-              mask={params.mask}
-              impute={params.impute}
-              onChange={(impute) => onChange({ impute })}
-              disabled={disabled || params.sequence}
-            />
-          }
-        />
-
-        <SequenceCheckbox
-          checked={params.sequence}
-          onChange={(sequence) => onChange({ sequence })}
-          disabled={disabled}
-        />
+        {!params.sequence && (
+          <Slider
+            label="Mask Rate"
+            value={params.mask}
+            onChange={(mask) => onChange({ mask })}
+            min={0}
+            max={100}
+            step={5}
+            unit="%"
+            disabled={disabled}
+            action={
+              <ImputeCheckbox
+                mask={params.mask}
+                impute={params.impute}
+                onChange={(impute) => onChange({ impute })}
+                disabled={disabled}
+              />
+            }
+          />
+        )}
 
         {!hideColumns && (
           <div>
