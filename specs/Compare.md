@@ -181,6 +181,42 @@ The `columns` from each model in the compare result can be displayed as read-onl
 - When `hideColumns` is true, the entire "Feature Columns" section is not rendered
 - The parent component sets `hideColumns={true}` when in Compare (Model ID) mode
 
+### CompareModelsList Component
+The "Models to Compare" section header should include:
+- A count of added models in parentheses after the title (e.g., "Models to Compare (3)")
+- Count only shown when at least one model is added
+- Button labeled "All models" appears next to the section title
+  - When clicked, populates the models list with all available models from history
+  - One entry per unique run in the history (avoids duplicates)
+  - Button is disabled when history is loading or empty
+- Button labeled "Clear" appears next to "All models"
+  - When clicked, removes all models from the compare list
+  - Button is disabled when no models are added
+
+### CompareResults Component - Add Individual Models
+Each result card should have a clickable icon to add that model:
+- Icon appears on the left side of the model's display name (ID or name)
+- Icon is a "plus" or "add" style icon
+- When clicked, adds the model to "Models to Compare" if not already present
+- If model is already in the list, clicking does nothing (or shows visual feedback)
+- Requires callback prop: `onAddModel?: (runId: string, modelType: string) => void`
+
+**Implementation Details:**
+- `ModelAccuracyCard` receives optional `onAddModel` prop
+- Icon only displays when `onAddModel` is provided
+- Icon uses consistent styling with other action icons in the UI
+- Parent passes down the callback that:
+  1. Checks if runId already exists in models list
+  2. If not, adds a new entry with the model type and runId
+  3. Ensures an empty row remains at the end for adding more models
+
+### CompareResults Component - Model Links
+The model's display name (ID or name) in each result card should be a clickable link:
+- Links to the model's detail page: `/output/{runId}/`
+- Display text shows the model's name if available, otherwise the runId
+- Link opens in a new tab (target="_blank")
+- Styled as a standard link (underline on hover)
+
 ## Related specs
 - [train/DecisionTree](train/DecisionTree.md) - Tree model being compared
 - [train/RandomForest](train/RandomForest.md) - Forest model being compared

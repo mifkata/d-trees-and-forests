@@ -120,6 +120,9 @@ function HomeContent() {
     renameCompareRun,
     setCompareResult,
     loadModelsFromResult,
+    addModel,
+    addAllModels,
+    clearAllModels,
   } = useCompare({ dataset, isCompareMode });
 
   // Column selection clipboard (memory only, not persisted)
@@ -840,6 +843,8 @@ function HomeContent() {
                     onUpdateModelType={updateModelType}
                     onUpdateModelRun={updateModelRun}
                     isLoadingHistory={isLoadingHistory}
+                    onAddAllModels={addAllModels}
+                    onClearAllModels={clearAllModels}
                   />
                 </div>
               ) : (
@@ -908,7 +913,7 @@ function HomeContent() {
             {/* Compare results */}
             {isCompareMode && compareResult && (
               <div className={compareResult.sequence ? "" : "grid grid-cols-2 xl:grid-cols-2 gap-6"}>
-                <CompareResults result={compareResult} onLoadModels={() => loadModelsFromResult(compareResult)} />
+                <CompareResults result={compareResult} onLoadModels={() => loadModelsFromResult(compareResult)} onAddModel={addModel} />
                 {/* Show ImagesDisplay separately only for non-sequence comparisons */}
                 {!compareResult.sequence && compareResult.compareId && <ImagesDisplay compareId={compareResult.compareId} />}
               </div>
