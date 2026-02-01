@@ -188,6 +188,7 @@ The "Models to Compare" section header should include:
 - Button labeled "All models" appears next to the section title
   - When clicked, populates the models list with all available models from history
   - One entry per unique run in the history (avoids duplicates)
+  - Models are sorted by: model type, then named runs before unnamed runs, then alphabetically by name or ID
   - Button is disabled when history is loading or empty
 - Button labeled "Clear" appears next to "All models"
   - When clicked, removes all models from the compare list

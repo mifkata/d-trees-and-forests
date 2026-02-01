@@ -101,7 +101,6 @@ function HomeContent() {
     removeModel,
     updateModelType,
     updateModelRun,
-    duplicateRunIds,
     datasetParams: compareDatasetParams,
     setDatasetParams: setCompareDatasetParams,
     resetDatasetParams: resetCompareDatasetParams,
@@ -838,7 +837,6 @@ function HomeContent() {
                   <CompareModelsList
                     models={compareModels}
                     history={compareHistory}
-                    duplicateRunIds={duplicateRunIds}
                     onRemoveModel={removeModel}
                     onUpdateModelType={updateModelType}
                     onUpdateModelRun={updateModelRun}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import type { DatasetId } from '@/types/dataset';
 import type { TrainError } from '@/types/api';
 
@@ -70,7 +70,6 @@ interface UseCompareReturn {
   removeModel: (id: string) => void;
   updateModelType: (id: string, modelType: CompareModelEntry['modelType']) => void;
   updateModelRun: (id: string, runId: string | null) => void;
-  duplicateRunIds: Set<string>;
   datasetParams: CompareDatasetParams;
   setDatasetParams: (params: Partial<CompareDatasetParams>) => void;
   resetDatasetParams: () => void;
@@ -155,21 +154,6 @@ function storeParams(dataset: DatasetId, params: CompareDatasetParams) {
   localStorage.setItem(`${COMPARE_PARAMS_KEY}_${dataset}`, JSON.stringify(params));
 }
 
-// Helper to find duplicate run IDs
-function getDuplicateRunIds(models: CompareModelEntry[]): Set<string> {
-  const seen = new Set<string>();
-  const duplicates = new Set<string>();
-  for (const model of models) {
-    if (model.runId) {
-      if (seen.has(model.runId)) {
-        duplicates.add(model.runId);
-      }
-      seen.add(model.runId);
-    }
-  }
-  return duplicates;
-}
-
 export function useCompare(options: UseCompareOptions): UseCompareReturn {
   const { dataset, isCompareMode } = options;
 
@@ -185,9 +169,6 @@ export function useCompare(options: UseCompareOptions): UseCompareReturn {
   // Compare history state
   const [compareHistory, setCompareHistory] = useState<CompareHistoryRun[]>([]);
   const [isLoadingCompareHistory, setIsLoadingCompareHistory] = useState(false);
-
-  // Calculate duplicate run IDs
-  const duplicateRunIds = useMemo(() => getDuplicateRunIds(models), [models]);
 
   // Load stored models and params when dataset changes
   useEffect(() => {
@@ -257,9 +238,9 @@ export function useCompare(options: UseCompareOptions): UseCompareReturn {
     storeParams(dataset, DEFAULT_COMPARE_PARAMS);
   }, [dataset]);
 
-  // Can compare if: at least one model selected, no duplicates
+  // Can compare if at least one model is selected
   const selectedModels = models.filter((m) => m.runId !== null);
-  const canCompare = selectedModels.length > 0 && duplicateRunIds.size === 0;
+  const canCompare = selectedModels.length > 0;
 
   const runCompare = useCallback(async () => {
     if (!canCompare) return;
@@ -365,6 +346,7 @@ export function useCompare(options: UseCompareOptions): UseCompareReturn {
 
   // Load models from a compare result into the models list
   const loadModelsFromResult = useCallback((result: CompareResult) => {
+    if (!result.models) return;
     const newModels: CompareModelEntry[] = result.models.map((m) => ({
       id: generateId(),
       modelType: m.model,
@@ -395,7 +377,25 @@ export function useCompare(options: UseCompareOptions): UseCompareReturn {
 
   // Add all models from history to the compare list
   const addAllModels = useCallback(() => {
-    const newModels: CompareModelEntry[] = history.map((run) => ({
+    // Sort history: by model type, then named runs before unnamed, then by name/id
+    const sortedHistory = [...history].sort((a, b) => {
+      // First sort by model type
+      if (a.model !== b.model) {
+        return a.model.localeCompare(b.model);
+      }
+      // Then named runs come before unnamed runs
+      const aHasName = !!a.name;
+      const bHasName = !!b.name;
+      if (aHasName !== bHasName) {
+        return aHasName ? -1 : 1;
+      }
+      // Finally sort by name (if both have names) or runId (if both unnamed)
+      const aKey = a.name || a.runId;
+      const bKey = b.name || b.runId;
+      return aKey.localeCompare(bKey);
+    });
+
+    const newModels: CompareModelEntry[] = sortedHistory.map((run) => ({
       id: generateId(),
       modelType: run.model as CompareModelEntry['modelType'],
       runId: run.runId,
@@ -417,7 +417,6 @@ export function useCompare(options: UseCompareOptions): UseCompareReturn {
     removeModel,
     updateModelType,
     updateModelRun,
-    duplicateRunIds,
     datasetParams,
     setDatasetParams,
     resetDatasetParams,

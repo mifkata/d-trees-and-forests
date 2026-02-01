@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button, Select, Card, CardHeader, CardTitle, Badge } from './ui';
 import { ImagesDisplay } from './ResultsDisplay';
 import type { CompareModelEntry, CompareResult, HistoryRun } from '@/hooks/useCompare';
@@ -112,7 +112,7 @@ interface ModelRowProps {
   onModelTypeChange: (modelType: ModelType | null) => void;
   onRunChange: (runId: string | null) => void;
   onRemove: () => void;
-  isDuplicate: boolean;
+  selectedRunIds: Set<string>;
   isLoading?: boolean;
   canRemove?: boolean;
 }
@@ -124,13 +124,13 @@ export function ModelRow({
   onModelTypeChange,
   onRunChange,
   onRemove,
-  isDuplicate,
+  selectedRunIds,
   isLoading,
   canRemove = true,
 }: ModelRowProps) {
-  // Filter runs by selected model type
+  // Filter runs by selected model type and exclude already-selected runs (except current)
   const filteredRuns = modelType
-    ? allRuns.filter((run) => run.model === modelType)
+    ? allRuns.filter((run) => run.model === modelType && (!selectedRunIds.has(run.runId) || run.runId === runId))
     : [];
 
   // Sort runs: named first (alphabetically with numeric), then unnamed (alphabetically by ID)
@@ -172,14 +172,8 @@ export function ModelRow({
           value={runId || ''}
           onChange={(val) => onRunChange(val || null)}
           disabled={isLoading || !modelType}
-          error={isDuplicate}
         />
       </div>
-      {isDuplicate && (
-        <Badge variant="error" className="shrink-0">
-          Duplicate
-        </Badge>
-      )}
       {canRemove ? (
         <button
           type="button"
@@ -201,7 +195,6 @@ export function ModelRow({
 interface CompareModelsListProps {
   models: CompareModelEntry[];
   history: HistoryRun[];
-  duplicateRunIds: Set<string>;
   onRemoveModel: (id: string) => void;
   onUpdateModelType: (id: string, modelType: CompareModelEntry['modelType']) => void;
   onUpdateModelRun: (id: string, runId: string | null) => void;
@@ -213,7 +206,6 @@ interface CompareModelsListProps {
 export function CompareModelsList({
   models,
   history,
-  duplicateRunIds,
   onRemoveModel,
   onUpdateModelType,
   onUpdateModelRun,
@@ -224,6 +216,11 @@ export function CompareModelsList({
   // Separate filled models from the empty one at the end
   const filledModels = models.filter((m) => m.runId !== null);
   const emptyModel = models.find((m) => m.runId === null);
+
+  // Compute selected run IDs to filter from dropdowns
+  const selectedRunIds = useMemo(() => {
+    return new Set(models.filter((m) => m.runId !== null).map((m) => m.runId as string));
+  }, [models]);
 
   return (
     <div className="space-y-3">
@@ -266,7 +263,7 @@ export function CompareModelsList({
             onModelTypeChange={(modelType) => onUpdateModelType(model.id, modelType)}
             onRunChange={(runId) => onUpdateModelRun(model.id, runId)}
             onRemove={() => onRemoveModel(model.id)}
-            isDuplicate={model.runId !== null && duplicateRunIds.has(model.runId)}
+            selectedRunIds={selectedRunIds}
             isLoading={isLoadingHistory}
             canRemove={true}
           />
@@ -282,7 +279,7 @@ export function CompareModelsList({
             onModelTypeChange={(modelType) => onUpdateModelType(emptyModel.id, modelType)}
             onRunChange={(runId) => onUpdateModelRun(emptyModel.id, runId)}
             onRemove={() => {}}
-            isDuplicate={false}
+            selectedRunIds={selectedRunIds}
             isLoading={isLoadingHistory}
             canRemove={false}
           />
@@ -292,12 +289,6 @@ export function CompareModelsList({
       {!isLoadingHistory && history.length === 0 && (
         <p className="text-sm text-amber-600 mt-2">
           No training history found for this dataset. Train some models first.
-        </p>
-      )}
-
-      {duplicateRunIds.size > 0 && (
-        <p className="text-sm text-red-600 mt-2">
-          Remove duplicate selections to enable comparison.
         </p>
       )}
     </div>
