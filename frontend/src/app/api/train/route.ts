@@ -83,7 +83,6 @@ async function executeScript(
     const child = spawn("python", ["-W", "ignore", scriptPath, ...args], {
       cwd: SCRIPTS_DIR,
       timeout: SCRIPT_TIMEOUT,
-      env: { ...process.env, PYTHONUNBUFFERED: "1" },
     });
 
     let stdout = "";
@@ -97,18 +96,9 @@ async function executeScript(
       stderr += data.toString();
     });
 
-    child.on("close", (code, signal) => {
+    child.on("close", (code) => {
       if (code === 0) {
         resolve({ stdout, stderr, code });
-      } else if (signal) {
-        reject(
-          new ScriptError(
-            `Script was killed by signal ${signal}`,
-            "SCRIPT_EXECUTION_ERROR",
-            stderr || stdout || `Process killed by ${signal}`,
-            extractStackTrace(stderr),
-          ),
-        );
       } else {
         reject(
           new ScriptError(
@@ -192,6 +182,10 @@ interface PythonOutput {
     impute: boolean;
     ignore_columns: number[];
   };
+  train_data?: Record<string, unknown>[];
+  test_data?: Record<string, unknown>[];
+  train_labels?: string[];
+  test_labels?: string[];
   feature_names?: string[];
 }
 
@@ -279,6 +273,22 @@ function parseJsonOutput(stdout: string): TrainResult | null {
 
     if (jsonOutput.params) {
       result.params = jsonOutput.params;
+    }
+
+    if (jsonOutput.train_data) {
+      result.trainData = jsonOutput.train_data;
+    }
+
+    if (jsonOutput.test_data) {
+      result.testData = jsonOutput.test_data;
+    }
+
+    if (jsonOutput.train_labels) {
+      result.trainLabels = jsonOutput.train_labels;
+    }
+
+    if (jsonOutput.test_labels) {
+      result.testLabels = jsonOutput.test_labels;
     }
 
     if (jsonOutput.feature_names) {

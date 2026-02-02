@@ -11,7 +11,7 @@ Enable compare runs to be persisted and browsable like model training runs. Each
 - History modal for compare runs shows:
   - Compare ID (timestamp)
   - Optional user-defined name
-  - List of compared model names/IDs (array format supporting arbitrary models)
+  - Model counts with labels and emojis (e.g., "4x Tree 🌳  2x Forest 🌲")
 
 ## Implementation Details
 
@@ -122,13 +122,15 @@ A "History" link in the top right corner of the Train/Compare tabs card:
 - In Train mode: opens TrainHistoryModal for the current model/dataset
 
 ### Compare History Modal
-A modal showing past comparison runs.
+A modal showing past comparison runs. Uses `fitContent` sizing to grow horizontally as names grow (similar to TrainHistoryModal).
 
 Display for each entry:
-- Compare ID (or name if set)
-- Timestamp (formatted as "X ago" or date)
-- Mask percentage and impute status badges
-- Model list showing each model type with its name or ID (array format)
+- Header row: Compare ID (or name if set), timestamp (formatted as "X ago" or date) - both use `whitespace-nowrap`
+- Badges row (if any params set): sequence/mask/impute badges on own line
+  - Sequence: shown as "sequence" badge (purple) only if sequence mode enabled
+  - Mask: shown as "mask: X%" badge (amber) only if mask > 0
+  - Impute: shown as "imputed" badge (blue) only if impute enabled
+- Model counts row: aggregated by type, count styled larger/bolder (e.g., "**4x** Tree 🌳  **2x** Forest 🌲"), each item uses `whitespace-nowrap`
 
 Actions:
 - Click to load the compare run (directly loads data and updates URL to `?compare_id=<id>`)
@@ -185,8 +187,11 @@ Add to the hook:
 
 #### CompareHistoryModal Component
 New component (`src/components/CompareHistoryModal.tsx`) showing list of past comparisons:
+- Modal uses `maxWidth="lg"` with `fitContent` and `minWidth={600}` to grow horizontally as names grow
+- Content is scrollable when exceeding max height
 - Receives runs from parent (fetched via `fetchCompareHistory`)
-- Each row shows: name/ID, timestamp, mask/impute badges, model names (array format)
+- Each row shows: name/ID, timestamp, mask/impute badges, model counts with emojis
+- Model counts: aggregated by type with larger/bolder count (e.g., "**4x** Tree 🌳  **2x** Forest 🌲")
 - Click row to load that compare run directly
 - Delete button per row
 

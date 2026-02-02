@@ -5,10 +5,6 @@ import json
 def merge_config(yaml_config, json_config):
     """Merge JSON config overrides into YAML config.
 
-    Only includes override keys that exist in the base YAML config.
-    This prevents passing incompatible params (e.g., max_iter from
-    HistGradientBoosting to GradientBoosting which uses n_estimators).
-
     Args:
         yaml_config: Base config from YAML file
         json_config: JSON string with overrides (snake_case keys)
@@ -25,10 +21,7 @@ def merge_config(yaml_config, json_config):
         return yaml_config
 
     merged = yaml_config.copy()
-    # Only apply overrides for keys that exist in the base config
-    for key, value in overrides.items():
-        if key in yaml_config:
-            merged[key] = value
+    merged.update(overrides)
 
     return merged
 
