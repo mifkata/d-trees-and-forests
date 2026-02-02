@@ -143,32 +143,46 @@ class Render:
         cls.footer(filename)
 
     @classmethod
-    def clustering(cls, X, y, filename="clustering.png"):
+    def clustering(cls, X, y, filename="clustering.png", max_samples=2000):
         """Render MDS clustering visualization based on feature space.
 
         Args:
             X: Feature data
             y: Target labels
             filename: Output filename
+            max_samples: Maximum samples for MDS (MDS is O(n²) in memory)
         """
         from sklearn.preprocessing import StandardScaler
 
+        # Subsample if dataset is too large (MDS is O(n²) in memory)
+        if len(X) > max_samples:
+            np.random.seed(42)
+            indices = np.random.choice(len(X), max_samples, replace=False)
+            X_sample = X.iloc[indices]
+            y_sample = y.iloc[indices] if hasattr(y, 'iloc') else np.array(y)[indices]
+        else:
+            X_sample = X
+            y_sample = y
+
         # Standardize features and handle missing values
-        X_filled = X.fillna(X.mean())
+        X_filled = X_sample.fillna(X_sample.mean())
         X_scaled = StandardScaler().fit_transform(X_filled)
 
         # Apply MDS
-        mds = MDS(n_components=2, random_state=42, normalized_stress="auto")
+        mds = MDS(n_components=2, random_state=42, normalized_stress="auto", n_init=4, init="random")
         embedding = mds.fit_transform(X_scaled)
 
         # Plot
         cls.header(figsize=(10, 8))
-        scatter = plt.scatter(embedding[:, 0], embedding[:, 1], c=LabelEncoder().fit_transform(y),
+        scatter = plt.scatter(embedding[:, 0], embedding[:, 1], c=LabelEncoder().fit_transform(y_sample),
                              cmap="viridis", alpha=0.7, s=50)
         plt.colorbar(scatter, label="Class")
         plt.xlabel("MDS 1")
         plt.ylabel("MDS 2")
-        cls.footer(filename, title="Feature Space Clustering (MDS)")
+        title = "Feature Space Clustering (MDS)"
+        if len(X) > max_samples:
+            title += f" - {max_samples}/{len(X)} samples"
+        cls.footer(filename, title=title)
 
     @classmethod
     def tree(cls, clf, feature_names, class_names, filename="decision_tree.png"):
@@ -396,17 +410,26 @@ class Render:
         cls.footer(filename)
 
     @classmethod
-    def forest_proximity(cls, clf, X, filename="forest_proximity.png"):
+    def forest_proximity(cls, clf, X, filename="forest_proximity.png", max_samples=2000):
         """Render proximity matrix heatmap for random forest.
 
         Args:
             clf: Trained RandomForestClassifier
             X: Feature data
             filename: Output filename
+            max_samples: Maximum samples (proximity matrix is O(n²) in memory)
         """
+        # Subsample if dataset is too large
+        if len(X) > max_samples:
+            np.random.seed(42)
+            indices = np.random.choice(len(X), max_samples, replace=False)
+            X_sample = X.iloc[indices] if hasattr(X, 'iloc') else X[indices]
+        else:
+            X_sample = X
+
         # Compute proximity matrix
-        leaves = clf.apply(X)
-        n_samples = len(X)
+        leaves = clf.apply(X_sample)
+        n_samples = len(X_sample)
         proximity = np.zeros((n_samples, n_samples))
 
         for tree_leaves in leaves.T:
@@ -424,10 +447,13 @@ class Render:
                     xticklabels=False, yticklabels=False)
         plt.xlabel("Sample")
         plt.ylabel("Sample")
-        cls.footer(filename, title="Random Forest Proximity Matrix")
+        title = "Random Forest Proximity Matrix"
+        if len(X) > max_samples:
+            title += f" - {max_samples}/{len(X)} samples"
+        cls.footer(filename, title=title)
 
     @classmethod
-    def forest_clustering(cls, clf, X, y, filename="forest_clustering.png"):
+    def forest_clustering(cls, clf, X, y, filename="forest_clustering.png", max_samples=2000):
         """Render t-SNE clustering visualization based on proximity matrix.
 
         Args:
@@ -435,10 +461,21 @@ class Render:
             X: Feature data
             y: Target labels
             filename: Output filename
+            max_samples: Maximum samples (proximity matrix is O(n²) in memory)
         """
+        # Subsample if dataset is too large
+        if len(X) > max_samples:
+            np.random.seed(42)
+            indices = np.random.choice(len(X), max_samples, replace=False)
+            X_sample = X.iloc[indices] if hasattr(X, 'iloc') else X[indices]
+            y_sample = y.iloc[indices] if hasattr(y, 'iloc') else np.array(y)[indices]
+        else:
+            X_sample = X
+            y_sample = y
+
         # Compute proximity matrix
-        leaves = clf.apply(X)
-        n_samples = len(X)
+        leaves = clf.apply(X_sample)
+        n_samples = len(X_sample)
         proximity = np.zeros((n_samples, n_samples))
 
         for tree_leaves in leaves.T:
@@ -455,17 +492,20 @@ class Render:
         dissimilarity = 1 - proximity
 
         # Apply MDS on dissimilarity matrix
-        mds = MDS(n_components=2, dissimilarity="precomputed", random_state=42, normalized_stress="auto")
+        mds = MDS(n_components=2, dissimilarity="precomputed", random_state=42, normalized_stress="auto", n_init=4, init="random")
         embedding = mds.fit_transform(dissimilarity)
 
         # Plot
         cls.header(figsize=(10, 8))
-        scatter = plt.scatter(embedding[:, 0], embedding[:, 1], c=LabelEncoder().fit_transform(y),
+        scatter = plt.scatter(embedding[:, 0], embedding[:, 1], c=LabelEncoder().fit_transform(y_sample),
                              cmap="viridis", alpha=0.7, s=50)
         plt.colorbar(scatter, label="Class")
         plt.xlabel("MDS 1")
         plt.ylabel("MDS 2")
-        cls.footer(filename, title="Random Forest Clustering (MDS of Proximity)")
+        title = "Random Forest Clustering (MDS of Proximity)"
+        if len(X) > max_samples:
+            title += f" - {max_samples}/{len(X)} samples"
+        cls.footer(filename, title=title)
 
     @classmethod
     def gradient_forest_importance(cls, importances, feature_names, filename="gradient_forest_feature_importance.png"):

@@ -264,22 +264,6 @@ function HomeContent() {
             trainResult.params = resultData.params;
           }
 
-          if (resultData.train_data) {
-            trainResult.trainData = resultData.train_data;
-          }
-
-          if (resultData.test_data) {
-            trainResult.testData = resultData.test_data;
-          }
-
-          if (resultData.train_labels) {
-            trainResult.trainLabels = resultData.train_labels;
-          }
-
-          if (resultData.test_labels) {
-            trainResult.testLabels = resultData.test_labels;
-          }
-
           if (resultData.feature_names) {
             trainResult.featureNames = resultData.feature_names;
           }

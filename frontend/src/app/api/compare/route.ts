@@ -93,9 +93,18 @@ async function executeScript(args: string[]): Promise<ScriptResult> {
       stderr += data.toString();
     });
 
-    child.on("close", (code) => {
+    child.on("close", (code, signal) => {
       if (code === 0) {
         resolve({ stdout, stderr, code });
+      } else if (signal) {
+        reject(
+          new CompareError(
+            `Compare script was killed by signal ${signal}`,
+            "SCRIPT_EXECUTION_ERROR",
+            stderr || stdout || `Process killed by ${signal}`,
+            extractStackTrace(stderr),
+          ),
+        );
       } else {
         reject(
           new CompareError(

@@ -213,10 +213,51 @@ function ExpandIcon() {
   );
 }
 
+interface CsvData {
+  data: Record<string, unknown>[];
+  labels: string[];
+  featureNames: string[];
+}
+
+async function loadCsvData(runId: string, type: 'train' | 'test'): Promise<CsvData | null> {
+  try {
+    const response = await fetch(`/output/${runId}/${type}.csv`);
+    if (!response.ok) return null;
+    const text = await response.text();
+    const lines = text.trim().split('\n');
+    if (lines.length < 2) return null;
+
+    const headers = lines[0].split(',');
+    const labelCol = headers[headers.length - 1]; // Last column is label
+    const featureNames = headers.slice(0, -1);
+
+    const data: Record<string, unknown>[] = [];
+    const labels: string[] = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',');
+      const row: Record<string, unknown> = {};
+      for (let j = 0; j < featureNames.length; j++) {
+        const val = values[j];
+        row[featureNames[j]] = val === '' ? null : isNaN(Number(val)) ? val : Number(val);
+      }
+      data.push(row);
+      labels.push(values[values.length - 1]);
+    }
+
+    return { data, labels, featureNames };
+  } catch {
+    return null;
+  }
+}
+
 export function ResultsDisplay({ result, isLoading }: ResultsDisplayProps) {
   const { accuracy, classificationReport, modelInfo, featureImportance, executionTime, runId } = result;
   const [datasetView, setDatasetView] = useState<'train' | 'test'>('train');
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [trainData, setTrainData] = useState<CsvData | null>(null);
+  const [testData, setTestData] = useState<CsvData | null>(null);
+  const [isLoadingDataset, setIsLoadingDataset] = useState(false);
 
   const sortedFeatureImportance = useMemo(() => {
     if (!featureImportance) return [];
@@ -225,7 +266,26 @@ export function ResultsDisplay({ result, isLoading }: ResultsDisplayProps) {
       .sort((a, b) => b.value - a.value);
   }, [featureImportance]);
 
-  const hasDataset = result.trainData || result.testData;
+  // Load CSV data when switching to dataset view
+  useEffect(() => {
+    if (!runId) return;
+
+    const loadData = async () => {
+      setIsLoadingDataset(true);
+      if (datasetView === 'train' && !trainData) {
+        const data = await loadCsvData(runId, 'train');
+        setTrainData(data);
+      } else if (datasetView === 'test' && !testData) {
+        const data = await loadCsvData(runId, 'test');
+        setTestData(data);
+      }
+      setIsLoadingDataset(false);
+    };
+
+    loadData();
+  }, [runId, datasetView, trainData, testData]);
+
+  const hasDataset = !!runId;
 
   return (
     <Card variant="elevated">
@@ -362,7 +422,7 @@ export function ResultsDisplay({ result, isLoading }: ResultsDisplayProps) {
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
-                      Train ({result.trainData?.length ?? 0} rows)
+                      Train {trainData ? `(${trainData.data.length} rows)` : ''}
                     </button>
                     <button
                       onClick={() => setDatasetView('test')}
@@ -372,7 +432,7 @@ export function ResultsDisplay({ result, isLoading }: ResultsDisplayProps) {
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
-                      Test ({result.testData?.length ?? 0} rows)
+                      Test {testData ? `(${testData.data.length} rows)` : ''}
                     </button>
                   </div>
                   <button
@@ -385,18 +445,23 @@ export function ResultsDisplay({ result, isLoading }: ResultsDisplayProps) {
                 </div>
 
                 <div className="overflow-x-auto">
-                  {datasetView === 'train' && result.trainData && (
+                  {isLoadingDataset && (
+                    <div className="flex justify-center py-8">
+                      <Spinner />
+                    </div>
+                  )}
+                  {!isLoadingDataset && datasetView === 'train' && trainData && (
                     <DatasetTable
-                      data={result.trainData}
-                      labels={result.trainLabels}
-                      featureNames={result.featureNames}
+                      data={trainData.data}
+                      labels={trainData.labels}
+                      featureNames={trainData.featureNames}
                     />
                   )}
-                  {datasetView === 'test' && result.testData && (
+                  {!isLoadingDataset && datasetView === 'test' && testData && (
                     <DatasetTable
-                      data={result.testData}
-                      labels={result.testLabels}
-                      featureNames={result.featureNames}
+                      data={testData.data}
+                      labels={testData.labels}
+                      featureNames={testData.featureNames}
                     />
                   )}
                 </div>
@@ -416,7 +481,7 @@ export function ResultsDisplay({ result, isLoading }: ResultsDisplayProps) {
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                       >
-                        Train ({result.trainData?.length ?? 0} rows)
+                        Train {trainData ? `(${trainData.data.length} rows)` : ''}
                       </button>
                       <button
                         onClick={() => setDatasetView('test')}
@@ -426,24 +491,29 @@ export function ResultsDisplay({ result, isLoading }: ResultsDisplayProps) {
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                       >
-                        Test ({result.testData?.length ?? 0} rows)
+                        Test {testData ? `(${testData.data.length} rows)` : ''}
                       </button>
                     </div>
 
                     <div className="overflow-x-auto">
-                      {datasetView === 'train' && result.trainData && (
+                      {isLoadingDataset && (
+                        <div className="flex justify-center py-8">
+                          <Spinner />
+                        </div>
+                      )}
+                      {!isLoadingDataset && datasetView === 'train' && trainData && (
                         <DatasetTable
-                          data={result.trainData}
-                          labels={result.trainLabels}
-                          featureNames={result.featureNames}
+                          data={trainData.data}
+                          labels={trainData.labels}
+                          featureNames={trainData.featureNames}
                           pageSize={25}
                         />
                       )}
-                      {datasetView === 'test' && result.testData && (
+                      {!isLoadingDataset && datasetView === 'test' && testData && (
                         <DatasetTable
-                          data={result.testData}
-                          labels={result.testLabels}
-                          featureNames={result.featureNames}
+                          data={testData.data}
+                          labels={testData.labels}
+                          featureNames={testData.featureNames}
                           pageSize={25}
                         />
                       )}
