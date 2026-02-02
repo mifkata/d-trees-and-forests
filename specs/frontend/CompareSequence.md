@@ -4,34 +4,31 @@
 Add a "Sequence" mode to Compare that runs comparisons across multiple mask rates automatically. When Sequence is enabled, it disables manual Mask Rate and Impute controls and instead runs a full sequence of comparisons at predefined mask rates, testing both with and without imputation for each non-zero mask rate.
 
 ## Requirements
-- Add a "Sequence" checkbox in `CompareDatasetParams` next to the Impute checkbox
-- When Sequence is checked:
-  - Mask Rate slider is disabled (grayed out)
-  - Impute checkbox is disabled (grayed out)
+- Add a "Mode" dropdown next to "Dataset Parameters" heading with options: "Compare" and "Sequence"
+- When Mode is "Sequence":
+  - Mask Rate slider and Impute checkbox are hidden (not shown)
   - Comparison runs across mask rates: 0%, 10%, 20%, 30%, 40%, 50%, 60%
   - For each mask rate > 0, runs both with impute=false and impute=true
   - Generates a single comparison chart showing all models across all mask rates
-- When Sequence is unchecked (default):
-  - Current behavior preserved: manual Mask Rate and Impute controls work as before
-- Sequence checkbox state persisted to localStorage with other compare params
+- When Mode is "Compare" (default):
+  - Current behavior preserved: manual Mask Rate and Impute controls shown
+- Mode state persisted to localStorage with other compare params
 
 ## Layout
 
-**CompareDatasetParams with Sequence:**
+**CompareDatasetParams with Mode dropdown (Compare mode):**
 ```
 ┌─────────────────────────────────────────────────┐
-│ Dataset Params:                          [Reset]│
+│ Dataset Parameters  Mode: [Compare ▼]   [Reset]│
 │   Mask Rate: [====○====] 30%    ☑ Impute       │
-│   ☐ Sequence                                    │
 └─────────────────────────────────────────────────┘
 ```
 
-**When Sequence is checked:**
+**When Mode is Sequence:**
 ```
 ┌─────────────────────────────────────────────────┐
-│ Dataset Params:                          [Reset]│
-│   Mask Rate: [====○====] 30%    ☐ Impute       │  <- Both disabled/grayed
-│   ☑ Sequence                                    │
+│ Dataset Parameters  Mode: [Sequence ▼]  [Reset]│
+│   (Mask Rate and Impute hidden)                 │
 └─────────────────────────────────────────────────┘
 ```
 
@@ -39,18 +36,11 @@ Add a "Sequence" mode to Compare that runs comparisons across multiple mask rate
 
 ### CompareDatasetParams (Updated)
 - Add `sequence` boolean to params interface
-- Render Sequence checkbox below the Mask Rate / Impute row
-- Checkbox label: "Sequence"
-- When `sequence` is true:
-  - Pass `disabled={true}` to the Mask Rate slider
-  - Pass `disabled={true}` to the Impute checkbox
+- Render Mode dropdown next to "Dataset Parameters" heading
+- Dropdown options: "Compare", "Sequence"
+- When `sequence` is true (Mode is "Sequence"):
+  - Mask Rate slider and Impute checkbox are hidden entirely
 - Props change: `params.sequence` added
-
-### SequenceCheckbox (New Component)
-- Simple checkbox component for Sequence mode toggle
-- Props: `checked`, `onChange`, `disabled`
-- Location: `frontend/src/components/ui/SequenceCheckbox.tsx`
-- Styling consistent with ImputeCheckbox
 
 ## State Management
 
@@ -183,6 +173,8 @@ Uses `Render.compare_accuracy_impute()` style visualization:
 
 ### CompareResults (Sequence Mode)
 When sequence mode results are displayed:
+- Header shows "Sequence Comparison Results" with load models icon button (same as normal Compare Results)
+  - Load models icon loads all runtime models from the compare run into the compare form
 - Show the generated comparison chart image (`sequence_comparison.png`)
 - Chart shows accuracy trends across all mask rates for each model
 - Solid lines: without imputation
@@ -210,8 +202,8 @@ When sequence mode results are displayed:
 ```
 
 ## Implementation Details
-- Sequence checkbox should be visually consistent with Impute checkbox styling
-- When Reset button is clicked, `sequence` resets to `false`
+- Mode dropdown uses standard Select component
+- When Reset button is clicked, `sequence` resets to `false` (Mode returns to "Compare")
 - Compare button text remains "Compare Models" (no change for sequence mode)
 - Loading state shows spinner as usual during sequence comparison
 - Mask rates are fixed: [0, 10, 20, 30, 40, 50, 60] - not configurable by user

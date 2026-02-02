@@ -101,6 +101,7 @@ function HomeContent() {
     removeModel,
     updateModelType,
     updateModelRun,
+    duplicateRunIds,
     datasetParams: compareDatasetParams,
     setDatasetParams: setCompareDatasetParams,
     resetDatasetParams: resetCompareDatasetParams,
@@ -262,6 +263,22 @@ function HomeContent() {
 
           if (resultData.params) {
             trainResult.params = resultData.params;
+          }
+
+          if (resultData.train_data) {
+            trainResult.trainData = resultData.train_data;
+          }
+
+          if (resultData.test_data) {
+            trainResult.testData = resultData.test_data;
+          }
+
+          if (resultData.train_labels) {
+            trainResult.trainLabels = resultData.train_labels;
+          }
+
+          if (resultData.test_labels) {
+            trainResult.testLabels = resultData.test_labels;
           }
 
           if (resultData.feature_names) {
@@ -821,12 +838,16 @@ function HomeContent() {
                   <CompareModelsList
                     models={compareModels}
                     history={compareHistory}
+                    duplicateRunIds={duplicateRunIds}
                     onRemoveModel={removeModel}
                     onUpdateModelType={updateModelType}
                     onUpdateModelRun={updateModelRun}
                     isLoadingHistory={isLoadingHistory}
                     onAddAllModels={addAllModels}
                     onClearAllModels={clearAllModels}
+                    onCompare={runCompare}
+                    isComparing={isComparing}
+                    canCompare={canCompare}
                   />
                 </div>
               ) : (

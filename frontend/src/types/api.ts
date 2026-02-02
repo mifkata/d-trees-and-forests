@@ -56,6 +56,10 @@ export interface TrainResult {
   modelInfo?: ModelInfo;
   featureImportance?: Record<string, number>;
   params?: TrainParams;
+  trainData?: Record<string, unknown>[];
+  testData?: Record<string, unknown>[];
+  trainLabels?: string[];
+  testLabels?: string[];
   featureNames?: string[];
   executionTime: number;
   runId?: string;

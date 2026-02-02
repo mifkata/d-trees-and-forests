@@ -68,10 +68,18 @@ def report(y_true, y_pred, json_output=False, model_info=None, params=None,
         if feature_importance is not None:
             summary["feature_importance"] = feature_importance
 
-        # Only include feature names (small), not the full dataset
-        # Dataset is already exported as CSV files by DataSource.export()
         if X_train is not None:
+            summary["train_data"] = X_train.to_dict(orient='records')
             summary["feature_names"] = X_train.columns.tolist()
+
+        if X_test is not None:
+            summary["test_data"] = X_test.to_dict(orient='records')
+
+        if y_train is not None:
+            summary["train_labels"] = y_train.tolist() if hasattr(y_train, 'tolist') else list(y_train)
+
+        if y_test is not None:
+            summary["test_labels"] = y_test.tolist() if hasattr(y_test, 'tolist') else list(y_test)
 
         # Convert any remaining NaN values to None
         summary = convert_nan_to_none(summary)

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { Button, Select, Card, CardHeader, CardTitle, Badge } from './ui';
 import { ImagesDisplay } from './ResultsDisplay';
 import type { CompareModelEntry, CompareResult, HistoryRun } from '@/hooks/useCompare';
@@ -112,7 +112,7 @@ interface ModelRowProps {
   onModelTypeChange: (modelType: ModelType | null) => void;
   onRunChange: (runId: string | null) => void;
   onRemove: () => void;
-  selectedRunIds: Set<string>;
+  isDuplicate: boolean;
   isLoading?: boolean;
   canRemove?: boolean;
 }
@@ -124,13 +124,13 @@ export function ModelRow({
   onModelTypeChange,
   onRunChange,
   onRemove,
-  selectedRunIds,
+  isDuplicate,
   isLoading,
   canRemove = true,
 }: ModelRowProps) {
-  // Filter runs by selected model type and exclude already-selected runs (except current)
+  // Filter runs by selected model type
   const filteredRuns = modelType
-    ? allRuns.filter((run) => run.model === modelType && (!selectedRunIds.has(run.runId) || run.runId === runId))
+    ? allRuns.filter((run) => run.model === modelType)
     : [];
 
   // Sort runs: named first (alphabetically with numeric), then unnamed (alphabetically by ID)
@@ -172,8 +172,14 @@ export function ModelRow({
           value={runId || ''}
           onChange={(val) => onRunChange(val || null)}
           disabled={isLoading || !modelType}
+          error={isDuplicate}
         />
       </div>
+      {isDuplicate && (
+        <Badge variant="error" className="shrink-0">
+          Duplicate
+        </Badge>
+      )}
       {canRemove ? (
         <button
           type="button"
@@ -195,35 +201,50 @@ export function ModelRow({
 interface CompareModelsListProps {
   models: CompareModelEntry[];
   history: HistoryRun[];
+  duplicateRunIds: Set<string>;
   onRemoveModel: (id: string) => void;
   onUpdateModelType: (id: string, modelType: CompareModelEntry['modelType']) => void;
   onUpdateModelRun: (id: string, runId: string | null) => void;
   isLoadingHistory: boolean;
   onAddAllModels?: () => void;
   onClearAllModels?: () => void;
+  onCompare?: () => void;
+  isComparing?: boolean;
+  canCompare?: boolean;
 }
 
 export function CompareModelsList({
   models,
   history,
+  duplicateRunIds,
   onRemoveModel,
   onUpdateModelType,
   onUpdateModelRun,
   isLoadingHistory,
   onAddAllModels,
   onClearAllModels,
+  onCompare,
+  isComparing,
+  canCompare,
 }: CompareModelsListProps) {
   // Separate filled models from the empty one at the end
   const filledModels = models.filter((m) => m.runId !== null);
   const emptyModel = models.find((m) => m.runId === null);
-
-  // Compute selected run IDs to filter from dropdowns
-  const selectedRunIds = useMemo(() => {
-    return new Set(models.filter((m) => m.runId !== null).map((m) => m.runId as string));
-  }, [models]);
+  const showTopCompareButton = filledModels.length >= 3 && !!onCompare;
 
   return (
     <div className="space-y-3">
+      {showTopCompareButton && (
+        <Button
+          type="button"
+          fullWidth
+          loading={isComparing}
+          disabled={!canCompare}
+          onClick={onCompare}
+        >
+          {isComparing ? 'Comparing...' : 'Compare Models'}
+        </Button>
+      )}
       <div className="flex items-center justify-between">
         <h4 className="text-sm font-medium text-gray-700">
           Models to Compare{filledModels.length > 0 && ` (${filledModels.length})`}
@@ -263,7 +284,7 @@ export function CompareModelsList({
             onModelTypeChange={(modelType) => onUpdateModelType(model.id, modelType)}
             onRunChange={(runId) => onUpdateModelRun(model.id, runId)}
             onRemove={() => onRemoveModel(model.id)}
-            selectedRunIds={selectedRunIds}
+            isDuplicate={model.runId !== null && duplicateRunIds.has(model.runId)}
             isLoading={isLoadingHistory}
             canRemove={true}
           />
@@ -279,7 +300,7 @@ export function CompareModelsList({
             onModelTypeChange={(modelType) => onUpdateModelType(emptyModel.id, modelType)}
             onRunChange={(runId) => onUpdateModelRun(emptyModel.id, runId)}
             onRemove={() => {}}
-            selectedRunIds={selectedRunIds}
+            isDuplicate={false}
             isLoading={isLoadingHistory}
             canRemove={false}
           />
@@ -289,6 +310,12 @@ export function CompareModelsList({
       {!isLoadingHistory && history.length === 0 && (
         <p className="text-sm text-amber-600 mt-2">
           No training history found for this dataset. Train some models first.
+        </p>
+      )}
+
+      {duplicateRunIds.size > 0 && (
+        <p className="text-sm text-red-600 mt-2">
+          Remove duplicate selections to enable comparison.
         </p>
       )}
     </div>
@@ -377,6 +404,10 @@ const MODEL_EMOJI: Record<string, string> = {
   'hist-gradient': '📊',
 };
 
+function switchToTrainMode() {
+  localStorage.setItem('tab_mode', 'train');
+}
+
 function ModelAccuracyCard({
   model,
   onAddModel,
@@ -406,9 +437,8 @@ function ModelAccuracyCard({
             </button>
           )}
           <a
-            href={`/output/${model.runId}/`}
-            target="_blank"
-            rel="noopener noreferrer"
+            href={`/?run_id=${model.runId}`}
+            onClick={switchToTrainMode}
             className="text-sm font-medium text-gray-900 hover:underline"
           >
             {displayName}
@@ -444,10 +474,6 @@ export function CompareResults({ result, onLoadModels, onAddModel }: CompareResu
     localStorage.setItem('compare_sort', sortBy);
   }, [sortBy]);
 
-  const handleModelClick = () => {
-    // Switch to train mode before navigation
-    localStorage.setItem('tab_mode', 'train');
-  };
 
   // Sequence mode: show summary table with accuracy at each mask rate
   if (result.sequence && result.results) {
@@ -470,7 +496,19 @@ export function CompareResults({ result, onLoadModels, onAddModel }: CompareResu
       return (
         <Card variant="elevated">
           <CardHeader>
-            <CardTitle>Sequence Comparison Results</CardTitle>
+            <div className="flex items-center gap-2">
+              {onLoadModels && (
+                <button
+                  type="button"
+                  onClick={onLoadModels}
+                  title="Load models into compare"
+                  className="p-1.5 rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                >
+                  <SaveIcon />
+                </button>
+              )}
+              <CardTitle>Sequence Comparison Results</CardTitle>
+            </div>
           </CardHeader>
           <div>
             <p className="text-sm text-gray-600">No results available.</p>
@@ -495,7 +533,19 @@ export function CompareResults({ result, onLoadModels, onAddModel }: CompareResu
       <>
         <Card variant="elevated">
           <CardHeader>
-            <CardTitle>Sequence Comparison Results</CardTitle>
+            <div className="flex items-center gap-2">
+              {onLoadModels && (
+                <button
+                  type="button"
+                  onClick={onLoadModels}
+                  title="Load models into compare"
+                  className="p-1.5 rounded text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                >
+                  <SaveIcon />
+                </button>
+              )}
+              <CardTitle>Sequence Comparison Results</CardTitle>
+            </div>
           </CardHeader>
           <div className="overflow-x-auto">
             <table className="w-full text-xs border-collapse">
@@ -527,7 +577,7 @@ export function CompareResults({ result, onLoadModels, onAddModel }: CompareResu
                       <td className="p-2 border-r border-gray-200">
                         <a
                           href={`/?run_id=${model.runId}`}
-                          onClick={handleModelClick}
+                          onClick={switchToTrainMode}
                           className="text-blue-600 hover:text-blue-800 hover:underline"
                         >
                           {displayName}
@@ -644,17 +694,15 @@ export function CompareResults({ result, onLoadModels, onAddModel }: CompareResu
         </div>
       </CardHeader>
 
-      <div>
-        <div className="space-y-3">
-          {sortedModels.map((model) => (
-            <ModelAccuracyCard
-              key={model.runId}
-              model={model}
-              onAddModel={onAddModel}
-              showAddIcon={!!onAddModel}
-            />
-          ))}
-        </div>
+      <div className="space-y-3">
+        {sortedModels.map((model) => (
+          <ModelAccuracyCard
+            key={model.runId}
+            model={model}
+            onAddModel={onAddModel}
+            showAddIcon={!!onAddModel}
+          />
+        ))}
       </div>
     </Card>
   );

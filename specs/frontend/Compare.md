@@ -18,10 +18,10 @@ Compare mode allows users to select an arbitrary number of pre-trained models fr
 - When a model is selected in the empty row, a new empty row appears automatically
 - Filled model rows can be removed via a delete button (empty row cannot be removed)
 - Empty rows are ignored when submitting comparison
-- Users CAN select the same model type multiple times
-- Already-selected runs are filtered out of the run dropdown (prevents duplicate selection)
+- Users CAN select the same model type multiple times, but duplicate selections are marked as errors
+- Only unique model selections are valid (same run ID cannot be selected twice)
 - Only runs matching the selected dataset are shown in history dropdowns
-- Compare button is disabled until at least one model is selected
+- Compare button is disabled until at least one model is selected and no duplicates exist
 - Form state (added models and their selections) persisted to localStorage
 - Comparison evaluates models on the full dataset (no train/test split)
 - Results display comparison visualization from `compare.py`
@@ -66,7 +66,7 @@ Compare mode allows users to select an arbitrary number of pre-trained models fr
 └─────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────┐
-│ [Compare Models]                        │  <- Disabled if no models selected
+│ [Compare Models]                        │  <- Disabled if no models or duplicates
 └─────────────────────────────────────────┘
 ```
 
@@ -102,20 +102,18 @@ Compare mode allows users to select an arbitrary number of pre-trained models fr
 - Content for the Models section in Compare mode
 - Shows filled model rows followed by one empty row for adding new models
 - Empty rows are filtered out when displaying filled models
-- Computes `selectedRunIds` set from all models with selections
-- Props: `models`, `history`, `onRemoveModel`, `onUpdateModelType`, `onUpdateModelRun`, `isLoadingHistory`
+- Props: `models`, `history`, `duplicateRunIds`, `onRemoveModel`, `onUpdateModelType`, `onUpdateModelRun`, `isLoadingHistory`
 
 ### ModelRow
 - Individual model selection row with two dropdowns and optional remove button
 - First dropdown: Model type (Tree, Forest, Gradient, Hist Gradient)
 - Second dropdown: Runs filtered by selected model type and dataset
-- Already-selected runs (from other rows) are filtered out of the dropdown options
-- Current row's selection remains visible in dropdown (not filtered out)
 - When model type changes, run selection is cleared
 - Second dropdown disabled until model type is selected
+- Shows error state if the selected run ID is duplicated elsewhere
 - Remove button only shown for filled rows (`canRemove` prop)
 - Empty row has a spacer instead of remove button to maintain alignment
-- Props: `allRuns`, `modelType`, `runId`, `onModelTypeChange`, `onRunChange`, `onRemove`, `selectedRunIds`, `isLoading`, `canRemove`
+- Props: `allRuns`, `modelType`, `runId`, `onModelTypeChange`, `onRunChange`, `onRemove`, `isDuplicate`, `isLoading`, `canRemove`
 
 ### Run Dropdown
 - Shows runs filtered by selected model type
@@ -124,12 +122,14 @@ Compare mode allows users to select an arbitrary number of pre-trained models fr
   - Otherwise displays run ID
 - **Sorting**: Named runs first (alphabetically), then unnamed runs (alphabetically by ID)
 - Shows "Select model first" placeholder when no model type selected
+- `error` prop: When true, shows error styling (red border) for duplicate selection
 
 ### CompareButton
 - Submit button for Compare mode
 - Disabled if:
   - No models are added
   - No models are selected (all dropdowns empty)
+  - Duplicate selections exist
 - Shows "Compare Models" text
 - Shows spinner when comparing
 - Props: `loading`, `disabled`, `onClick`
@@ -181,6 +181,24 @@ interface CompareModelEntry {
   id: string;       // Unique key for React (e.g., UUID or timestamp)
   modelType: 'tree' | 'forest' | 'gradient' | 'hist-gradient' | null;  // Selected model type
   runId: string | null;  // Selected run ID, null if not yet selected
+}
+```
+
+### Duplicate Detection
+```typescript
+// Helper to find duplicate run IDs
+function getDuplicateRunIds(models: CompareModelEntry[]): Set<string> {
+  const seen = new Set<string>();
+  const duplicates = new Set<string>();
+  for (const model of models) {
+    if (model.runId) {
+      if (seen.has(model.runId)) {
+        duplicates.add(model.runId);
+      }
+      seen.add(model.runId);
+    }
+  }
+  return duplicates;
 }
 ```
 
@@ -310,7 +328,7 @@ Client-side filtering: The run dropdown filters the fetched history by the selec
   - On model add/remove/change, save to localStorage immediately
 - **Validation**:
   - At least one model must be selected to enable Compare button
-  - Already-selected runs are filtered from dropdowns (prevents duplicate selection)
+  - No duplicate run IDs allowed (duplicates shown with error styling)
 - **Error Handling**: Show error if selected run no longer exists
 - **History Loading**: History is fetched when Compare mode is active
 - **History Refresh**: Re-fetch history when entering Compare mode or changing dataset

@@ -1,15 +1,9 @@
-"use client";
+'use client';
 
-import { Select, Input, Checkbox, Button } from "./ui";
-import type { ModelId } from "@/types/model";
-import type {
-  TreeParams,
-  ForestParams,
-  GradientParams,
-  HistGradientParams,
-  ModelParams as ModelParamsType,
-} from "@/types/params";
-import { MODELS } from "@/types/model";
+import { Select, Input, Checkbox, Button } from './ui';
+import type { ModelId } from '@/types/model';
+import type { TreeParams, ForestParams, GradientParams, HistGradientParams, ModelParams as ModelParamsType } from '@/types/params';
+import { MODELS } from '@/types/model';
 
 interface ModelParamsProps {
   model: ModelId;
@@ -19,57 +13,29 @@ interface ModelParamsProps {
   disabled?: boolean;
 }
 
-export function ModelParams({
-  model,
-  params,
-  onChange,
-  onReset,
-  disabled,
-}: ModelParamsProps) {
+export function ModelParams({ model, params, onChange, onReset, disabled }: ModelParamsProps) {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-medium text-gray-700">
           Model Parameters ({MODELS[model].name})
         </h3>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={onReset}
-          disabled={disabled}
-        >
+        <Button type="button" variant="ghost" size="sm" onClick={onReset} disabled={disabled}>
           Reset
         </Button>
       </div>
 
-      {model === "tree" && (
-        <TreeParamsForm
-          params={params as TreeParams}
-          onChange={onChange}
-          disabled={disabled}
-        />
+      {model === 'tree' && (
+        <TreeParamsForm params={params as TreeParams} onChange={onChange} disabled={disabled} />
       )}
-      {model === "forest" && (
-        <ForestParamsForm
-          params={params as ForestParams}
-          onChange={onChange}
-          disabled={disabled}
-        />
+      {model === 'forest' && (
+        <ForestParamsForm params={params as ForestParams} onChange={onChange} disabled={disabled} />
       )}
-      {model === "gradient" && (
-        <GradientParamsForm
-          params={params as GradientParams}
-          onChange={onChange}
-          disabled={disabled}
-        />
+      {model === 'gradient' && (
+        <GradientParamsForm params={params as GradientParams} onChange={onChange} disabled={disabled} />
       )}
-      {model === "hist-gradient" && (
-        <HistGradientParamsForm
-          params={params as HistGradientParams}
-          onChange={onChange}
-          disabled={disabled}
-        />
+      {model === 'hist-gradient' && (
+        <HistGradientParamsForm params={params as HistGradientParams} onChange={onChange} disabled={disabled} />
       )}
     </div>
   );
@@ -88,11 +54,11 @@ function TreeParamsForm({ params, onChange, disabled }: TreeParamsFormProps) {
         label="Criterion"
         tooltip="Function to measure split quality. Gini is faster, entropy may give slightly better results."
         value={params.criterion}
-        onChange={(v) => onChange({ criterion: v as TreeParams["criterion"] })}
+        onChange={(v) => onChange({ criterion: v as TreeParams['criterion'] })}
         options={[
-          { value: "gini", label: "Gini" },
-          { value: "entropy", label: "Entropy" },
-          { value: "log_loss", label: "Log Loss" },
+          { value: 'gini', label: 'Gini' },
+          { value: 'entropy', label: 'Entropy' },
+          { value: 'log_loss', label: 'Log Loss' },
         ]}
         disabled={disabled}
       />
@@ -101,10 +67,10 @@ function TreeParamsForm({ params, onChange, disabled }: TreeParamsFormProps) {
         label="Splitter"
         tooltip="Strategy to choose the split. Best chooses optimal split, random is faster but less accurate."
         value={params.splitter}
-        onChange={(v) => onChange({ splitter: v as TreeParams["splitter"] })}
+        onChange={(v) => onChange({ splitter: v as TreeParams['splitter'] })}
         options={[
-          { value: "best", label: "Best" },
-          { value: "random", label: "Random" },
+          { value: 'best', label: 'Best' },
+          { value: 'random', label: 'Random' },
         ]}
         disabled={disabled}
       />
@@ -112,16 +78,12 @@ function TreeParamsForm({ params, onChange, disabled }: TreeParamsFormProps) {
       <Select
         label="Max Features"
         tooltip="Number of features to consider for best split. Fewer features = faster but potentially less accurate."
-        value={params.max_features ?? "auto"}
-        onChange={(v) =>
-          onChange({
-            max_features: v === "auto" ? null : (v as "sqrt" | "log2"),
-          })
-        }
+        value={params.max_features ?? 'auto'}
+        onChange={(v) => onChange({ max_features: v === 'auto' ? null : v as 'sqrt' | 'log2' })}
         options={[
-          { value: "auto", label: "Auto (all)" },
-          { value: "sqrt", label: "Square Root" },
-          { value: "log2", label: "Log2" },
+          { value: 'auto', label: 'Auto (all)' },
+          { value: 'sqrt', label: 'Square Root' },
+          { value: 'log2', label: 'Log2' },
         ]}
         disabled={disabled}
       />
@@ -130,8 +92,8 @@ function TreeParamsForm({ params, onChange, disabled }: TreeParamsFormProps) {
         label="Max Depth"
         tooltip="Maximum depth of tree. Deeper trees can overfit. Leave empty for unlimited."
         type="number"
-        value={params.max_depth ?? ""}
-        onChange={(v) => onChange({ max_depth: v === "" ? null : Number(v) })}
+        value={params.max_depth ?? ''}
+        onChange={(v) => onChange({ max_depth: v === '' ? null : Number(v) })}
         placeholder="Unlimited"
         min={1}
         disabled={disabled}
@@ -141,10 +103,8 @@ function TreeParamsForm({ params, onChange, disabled }: TreeParamsFormProps) {
         label="Max Leaf Nodes"
         tooltip="Maximum number of leaf nodes. Limits tree complexity. Leave empty for unlimited."
         type="number"
-        value={params.max_leaf_nodes ?? ""}
-        onChange={(v) =>
-          onChange({ max_leaf_nodes: v === "" ? null : Number(v) })
-        }
+        value={params.max_leaf_nodes ?? ''}
+        onChange={(v) => onChange({ max_leaf_nodes: v === '' ? null : Number(v) })}
         placeholder="Unlimited"
         min={2}
         disabled={disabled}
@@ -177,7 +137,7 @@ function TreeParamsForm({ params, onChange, disabled }: TreeParamsFormProps) {
         value={params.min_impurity_decrease}
         onChange={(v) => onChange({ min_impurity_decrease: Number(v) || 0 })}
         min={0}
-        step={0.01}
+        step={0.001}
         disabled={disabled}
       />
 
@@ -188,20 +148,18 @@ function TreeParamsForm({ params, onChange, disabled }: TreeParamsFormProps) {
         value={params.ccp_alpha}
         onChange={(v) => onChange({ ccp_alpha: Number(v) || 0 })}
         min={0}
-        step={0.01}
+        step={0.001}
         disabled={disabled}
       />
 
       <Select
         label="Class Weight"
         tooltip="Weight classes inversely proportional to frequency. Useful for imbalanced datasets."
-        value={params.class_weight ?? "none"}
-        onChange={(v) =>
-          onChange({ class_weight: v === "none" ? null : (v as "balanced") })
-        }
+        value={params.class_weight ?? 'none'}
+        onChange={(v) => onChange({ class_weight: v === 'none' ? null : v as 'balanced' })}
         options={[
-          { value: "none", label: "None" },
-          { value: "balanced", label: "Balanced" },
+          { value: 'none', label: 'None' },
+          { value: 'balanced', label: 'Balanced' },
         ]}
         disabled={disabled}
       />
@@ -215,11 +173,7 @@ interface ForestParamsFormProps {
   disabled?: boolean;
 }
 
-function ForestParamsForm({
-  params,
-  onChange,
-  disabled,
-}: ForestParamsFormProps) {
+function ForestParamsForm({ params, onChange, disabled }: ForestParamsFormProps) {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -237,13 +191,11 @@ function ForestParamsForm({
           label="Criterion"
           tooltip="Function to measure split quality. Gini is faster, entropy may give slightly better results."
           value={params.criterion}
-          onChange={(v) =>
-            onChange({ criterion: v as ForestParams["criterion"] })
-          }
+          onChange={(v) => onChange({ criterion: v as ForestParams['criterion'] })}
           options={[
-            { value: "gini", label: "Gini" },
-            { value: "entropy", label: "Entropy" },
-            { value: "log_loss", label: "Log Loss" },
+            { value: 'gini', label: 'Gini' },
+            { value: 'entropy', label: 'Entropy' },
+            { value: 'log_loss', label: 'Log Loss' },
           ]}
           disabled={disabled}
         />
@@ -251,16 +203,12 @@ function ForestParamsForm({
         <Select
           label="Max Features"
           tooltip="Features to consider per split. sqrt is recommended for classification."
-          value={params.max_features ?? "auto"}
-          onChange={(v) =>
-            onChange({
-              max_features: v === "auto" ? null : (v as "sqrt" | "log2"),
-            })
-          }
+          value={params.max_features ?? 'auto'}
+          onChange={(v) => onChange({ max_features: v === 'auto' ? null : v as 'sqrt' | 'log2' })}
           options={[
-            { value: "auto", label: "Auto (all)" },
-            { value: "sqrt", label: "Square Root" },
-            { value: "log2", label: "Log2" },
+            { value: 'auto', label: 'Auto (all)' },
+            { value: 'sqrt', label: 'Square Root' },
+            { value: 'log2', label: 'Log2' },
           ]}
           disabled={disabled}
         />
@@ -269,8 +217,8 @@ function ForestParamsForm({
           label="Max Depth"
           tooltip="Maximum depth of each tree. Shallower trees prevent overfitting."
           type="number"
-          value={params.max_depth ?? ""}
-          onChange={(v) => onChange({ max_depth: v === "" ? null : Number(v) })}
+          value={params.max_depth ?? ''}
+          onChange={(v) => onChange({ max_depth: v === '' ? null : Number(v) })}
           placeholder="Unlimited"
           min={1}
           disabled={disabled}
@@ -280,10 +228,8 @@ function ForestParamsForm({
           label="Max Leaf Nodes"
           tooltip="Maximum leaf nodes per tree. Limits complexity."
           type="number"
-          value={params.max_leaf_nodes ?? ""}
-          onChange={(v) =>
-            onChange({ max_leaf_nodes: v === "" ? null : Number(v) })
-          }
+          value={params.max_leaf_nodes ?? ''}
+          onChange={(v) => onChange({ max_leaf_nodes: v === '' ? null : Number(v) })}
           placeholder="Unlimited"
           min={2}
           disabled={disabled}
@@ -293,10 +239,8 @@ function ForestParamsForm({
           label="Max Samples"
           tooltip="Samples to draw for training each tree. Lower values increase diversity."
           type="number"
-          value={params.max_samples ?? ""}
-          onChange={(v) =>
-            onChange({ max_samples: v === "" ? null : Number(v) })
-          }
+          value={params.max_samples ?? ''}
+          onChange={(v) => onChange({ max_samples: v === '' ? null : Number(v) })}
           placeholder="All"
           min={1}
           disabled={disabled}
@@ -329,7 +273,7 @@ function ForestParamsForm({
           value={params.min_impurity_decrease}
           onChange={(v) => onChange({ min_impurity_decrease: Number(v) || 0 })}
           min={0}
-          step={0.01}
+          step={0.001}
           disabled={disabled}
         />
 
@@ -340,7 +284,7 @@ function ForestParamsForm({
           value={params.ccp_alpha}
           onChange={(v) => onChange({ ccp_alpha: Number(v) || 0 })}
           min={0}
-          step={0.01}
+          step={0.001}
           disabled={disabled}
         />
 
@@ -348,8 +292,8 @@ function ForestParamsForm({
           label="N Jobs"
           tooltip="Parallel jobs for fitting. -1 uses all CPU cores."
           type="number"
-          value={params.n_jobs ?? ""}
-          onChange={(v) => onChange({ n_jobs: v === "" ? null : Number(v) })}
+          value={params.n_jobs ?? ''}
+          onChange={(v) => onChange({ n_jobs: v === '' ? null : Number(v) })}
           placeholder="1 (-1 for all)"
           min={-1}
           disabled={disabled}
@@ -358,17 +302,12 @@ function ForestParamsForm({
         <Select
           label="Class Weight"
           tooltip="Weight classes inversely proportional to frequency. balanced_subsample uses bootstrap sample weights."
-          value={params.class_weight ?? "none"}
-          onChange={(v) =>
-            onChange({
-              class_weight:
-                v === "none" ? null : (v as "balanced" | "balanced_subsample"),
-            })
-          }
+          value={params.class_weight ?? 'none'}
+          onChange={(v) => onChange({ class_weight: v === 'none' ? null : v as 'balanced' | 'balanced_subsample' })}
           options={[
-            { value: "none", label: "None" },
-            { value: "balanced", label: "Balanced" },
-            { value: "balanced_subsample", label: "Balanced Subsample" },
+            { value: 'none', label: 'None' },
+            { value: 'balanced', label: 'Balanced' },
+            { value: 'balanced_subsample', label: 'Balanced Subsample' },
           ]}
           disabled={disabled}
         />
@@ -407,11 +346,7 @@ interface GradientParamsFormProps {
   disabled?: boolean;
 }
 
-function GradientParamsForm({
-  params,
-  onChange,
-  disabled,
-}: GradientParamsFormProps) {
+function GradientParamsForm({ params, onChange, disabled }: GradientParamsFormProps) {
   const earlyStoppingEnabled = params.n_iter_no_change !== null;
 
   return (
@@ -420,10 +355,10 @@ function GradientParamsForm({
         label="Loss"
         tooltip="Loss function. log_loss for multi-class, exponential for AdaBoost-like algorithm (binary only)."
         value={params.loss}
-        onChange={(v) => onChange({ loss: v as GradientParams["loss"] })}
+        onChange={(v) => onChange({ loss: v as GradientParams['loss'] })}
         options={[
-          { value: "log_loss", label: "Log Loss" },
-          { value: "exponential", label: "Exponential" },
+          { value: 'log_loss', label: 'Log Loss' },
+          { value: 'exponential', label: 'Exponential' },
         ]}
         disabled={disabled}
       />
@@ -434,7 +369,7 @@ function GradientParamsForm({
         type="number"
         value={params.learning_rate}
         onChange={(v) => onChange({ learning_rate: Number(v) || 0.1 })}
-        min={0.01}
+        min={0.001}
         max={1}
         step={0.01}
         disabled={disabled}
@@ -458,7 +393,7 @@ function GradientParamsForm({
         onChange={(v) => onChange({ subsample: Number(v) || 1.0 })}
         min={0.01}
         max={1}
-        step={0.01}
+        step={0.05}
         disabled={disabled}
       />
 
@@ -466,12 +401,10 @@ function GradientParamsForm({
         label="Criterion"
         tooltip="Function to measure split quality. friedman_mse is generally preferred."
         value={params.criterion}
-        onChange={(v) =>
-          onChange({ criterion: v as GradientParams["criterion"] })
-        }
+        onChange={(v) => onChange({ criterion: v as GradientParams['criterion'] })}
         options={[
-          { value: "friedman_mse", label: "Friedman MSE" },
-          { value: "squared_error", label: "Squared Error" },
+          { value: 'friedman_mse', label: 'Friedman MSE' },
+          { value: 'squared_error', label: 'Squared Error' },
         ]}
         disabled={disabled}
       />
@@ -489,16 +422,12 @@ function GradientParamsForm({
       <Select
         label="Max Features"
         tooltip="Number of features to consider for best split. Fewer features = faster but potentially less accurate."
-        value={params.max_features ?? "auto"}
-        onChange={(v) =>
-          onChange({
-            max_features: v === "auto" ? null : (v as "sqrt" | "log2"),
-          })
-        }
+        value={params.max_features ?? 'auto'}
+        onChange={(v) => onChange({ max_features: v === 'auto' ? null : v as 'sqrt' | 'log2' })}
         options={[
-          { value: "auto", label: "Auto (all)" },
-          { value: "sqrt", label: "Square Root" },
-          { value: "log2", label: "Log2" },
+          { value: 'auto', label: 'Auto (all)' },
+          { value: 'sqrt', label: 'Square Root' },
+          { value: 'log2', label: 'Log2' },
         ]}
         disabled={disabled}
       />
@@ -507,10 +436,8 @@ function GradientParamsForm({
         label="Max Leaf Nodes"
         tooltip="Maximum number of leaf nodes per tree. Limits tree complexity."
         type="number"
-        value={params.max_leaf_nodes ?? ""}
-        onChange={(v) =>
-          onChange({ max_leaf_nodes: v === "" ? null : Number(v) })
-        }
+        value={params.max_leaf_nodes ?? ''}
+        onChange={(v) => onChange({ max_leaf_nodes: v === '' ? null : Number(v) })}
         placeholder="Unlimited"
         min={2}
         disabled={disabled}
@@ -555,7 +482,7 @@ function GradientParamsForm({
         value={params.min_impurity_decrease}
         onChange={(v) => onChange({ min_impurity_decrease: Number(v) || 0 })}
         min={0}
-        step={0.01}
+        step={0.001}
         disabled={disabled}
       />
 
@@ -566,7 +493,7 @@ function GradientParamsForm({
         value={params.ccp_alpha}
         onChange={(v) => onChange({ ccp_alpha: Number(v) || 0 })}
         min={0}
-        step={0.01}
+        step={0.001}
         disabled={disabled}
       />
 
@@ -574,10 +501,8 @@ function GradientParamsForm({
         label="N Iter No Change"
         tooltip="Iterations without improvement before stopping. Leave empty to disable early stopping."
         type="number"
-        value={params.n_iter_no_change ?? ""}
-        onChange={(v) =>
-          onChange({ n_iter_no_change: v === "" ? null : Number(v) })
-        }
+        value={params.n_iter_no_change ?? ''}
+        onChange={(v) => onChange({ n_iter_no_change: v === '' ? null : Number(v) })}
         placeholder="Disabled"
         min={1}
         disabled={disabled}
@@ -615,13 +540,8 @@ interface HistGradientParamsFormProps {
   disabled?: boolean;
 }
 
-function HistGradientParamsForm({
-  params,
-  onChange,
-  disabled,
-}: HistGradientParamsFormProps) {
-  const earlyStoppingEnabled =
-    params.early_stopping === true || params.early_stopping === "auto";
+function HistGradientParamsForm({ params, onChange, disabled }: HistGradientParamsFormProps) {
+  const earlyStoppingEnabled = params.early_stopping === true || params.early_stopping === 'auto';
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -631,7 +551,7 @@ function HistGradientParamsForm({
         type="number"
         value={params.learning_rate}
         onChange={(v) => onChange({ learning_rate: Number(v) || 0.1 })}
-        min={0.01}
+        min={0.001}
         max={1}
         step={0.01}
         disabled={disabled}
@@ -651,8 +571,8 @@ function HistGradientParamsForm({
         label="Max Depth"
         tooltip="Maximum depth of each tree. Controls model complexity."
         type="number"
-        value={params.max_depth ?? ""}
-        onChange={(v) => onChange({ max_depth: v === "" ? null : Number(v) })}
+        value={params.max_depth ?? ''}
+        onChange={(v) => onChange({ max_depth: v === '' ? null : Number(v) })}
         placeholder="Unlimited"
         min={1}
         disabled={disabled}
@@ -662,10 +582,8 @@ function HistGradientParamsForm({
         label="Max Leaf Nodes"
         tooltip="Maximum leaf nodes per tree. 31 is a common default."
         type="number"
-        value={params.max_leaf_nodes ?? ""}
-        onChange={(v) =>
-          onChange({ max_leaf_nodes: v === "" ? null : Number(v) })
-        }
+        value={params.max_leaf_nodes ?? ''}
+        onChange={(v) => onChange({ max_leaf_nodes: v === '' ? null : Number(v) })}
         placeholder="Unlimited"
         min={2}
         disabled={disabled}
@@ -708,13 +626,13 @@ function HistGradientParamsForm({
         tooltip="Stop training when validation score stops improving. Auto enables for large datasets."
         value={String(params.early_stopping)}
         onChange={(v) => {
-          const value = v === "auto" ? "auto" : v === "true";
+          const value = v === 'auto' ? 'auto' : v === 'true';
           onChange({ early_stopping: value });
         }}
         options={[
-          { value: "false", label: "Off" },
-          { value: "true", label: "On" },
-          { value: "auto", label: "Auto" },
+          { value: 'false', label: 'Off' },
+          { value: 'true', label: 'On' },
+          { value: 'auto', label: 'Auto' },
         ]}
         disabled={disabled}
       />
@@ -755,16 +673,12 @@ function HistGradientParamsForm({
       <Select
         label="Scoring"
         tooltip="Scoring method for early stopping. Loss uses the loss function, accuracy uses classification accuracy."
-        value={params.scoring ?? "auto"}
-        onChange={(v) =>
-          onChange({
-            scoring: v === "auto" ? null : (v as "accuracy" | "loss"),
-          })
-        }
+        value={params.scoring ?? 'auto'}
+        onChange={(v) => onChange({ scoring: v === 'auto' ? null : v as 'accuracy' | 'loss' })}
         options={[
-          { value: "auto", label: "Auto (loss)" },
-          { value: "loss", label: "Loss" },
-          { value: "accuracy", label: "Accuracy" },
+          { value: 'auto', label: 'Auto (loss)' },
+          { value: 'loss', label: 'Loss' },
+          { value: 'accuracy', label: 'Accuracy' },
         ]}
         disabled={disabled || !earlyStoppingEnabled}
       />
@@ -772,13 +686,11 @@ function HistGradientParamsForm({
       <Select
         label="Class Weight"
         tooltip="Weight classes inversely proportional to frequency. Useful for imbalanced datasets."
-        value={params.class_weight ?? "none"}
-        onChange={(v) =>
-          onChange({ class_weight: v === "none" ? null : (v as "balanced") })
-        }
+        value={params.class_weight ?? 'none'}
+        onChange={(v) => onChange({ class_weight: v === 'none' ? null : v as 'balanced' })}
         options={[
-          { value: "none", label: "None" },
-          { value: "balanced", label: "Balanced" },
+          { value: 'none', label: 'None' },
+          { value: 'balanced', label: 'Balanced' },
         ]}
         disabled={disabled}
       />
